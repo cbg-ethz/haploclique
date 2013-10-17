@@ -1,4 +1,4 @@
-#HaploClever
+#HaploClique
 We present a novel method to reconstruct the structure of a viral quasispecies from NGS data.
 Our approach can be used to:
  - reconstruct local error-corrected haplotypes and estimate their abundance
