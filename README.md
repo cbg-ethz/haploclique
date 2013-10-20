@@ -6,7 +6,7 @@ Our approach can be used to:
  - detect large deletions and insertions from paired-end data.
  
 The source code and further information, how to apply this software package to your data will be available soon.  
-This is a work in progress project.
+This is a work in progress project and the goal is to make it a one click solution.
 
 ## INSTALL
 ###Dependencies
