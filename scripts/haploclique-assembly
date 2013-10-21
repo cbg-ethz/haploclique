@@ -1,3 +1,4 @@
+#! /usr/bin/env sh
 FORWARD=$2
 if [ ${#FORWARD} -eq 0 ] || [ ! -s $FORWARD ]; then FORWARD=data_cliques_paired_R1.fastq; fi
 BACKWARD=$3
@@ -60,9 +61,9 @@ fi
 rm *sam *bam *.priors
 
 if [ -s data_clique_to_reads.tsv ]; then
-    time clever-core -c 2000 -s 1 -q 0.99 -o 0.6 -a < alignment.prior > data_clique.fastq;
+    time haploclique -c 2000 -s 1 -q 0.99 -o 0.6 -a < alignment.prior > data_clique.fastq;
 else
-    time clever-core -c 2000 -s 5 -q 0.95 -o 0.6 -a < alignment.prior > data_clique.fastq;
+    time haploclique -c 2000 -s 5 -q 0.95 -o 0.6 -a < alignment.prior > data_clique.fastq;
 fi 
 python $HAPLOCLIQUE/scripts/haploclique-postprocess.py < data_clique.fastq
 rm data_clique.fastq

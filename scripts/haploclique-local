@@ -1,0 +1,32 @@
+#! /usr/bin/env sh
+samtools view -uf 1 $2 > paired.bam 
+samtools view -uF 1 $2 > single.bam 
+
+java -jar $SAF/SequenceAlignmentFixer.jar -i $2
+
+samtools sort -n single.bam single_sort 
+samtools view single_sort.bam > single_sort.sam 
+samtools view paired.bam > paired.sam 
+
+touch paired.priors single.priors
+if [ -s paired.sam ]; then bam-to-alignment-priors $1 paired.bam > paired.priors; fi
+if [ -s single_sort.sam ]; then bam-to-alignment-priors --unsorted --single-end $1 single_sort.bam > single.priors; fi
+if [ -s data_clique_to_reads.tsv ]; then cat paired.priors single.priors  | sort -k6,6 -g | python $HAPLOCLIQUE/scripts/manipulate_alignment_prior.py data_clique_to_reads.tsv > alignment.prior; else cat paired.priors single.priors  | sort -k6,6 -g > alignment.prior; fi
+#rm *sam *bam *.priors
+
+time haploclique -c 2000 -s 5 -q 0.95 -o 0.6 -a < alignment.prior > data_clique.fastq;
+
+python $HAPLOCLIQUE/scripts/haploclique-postprocess.py < data_clique.fastq
+rm data_clique.fastq
+
+sed -i -e '/^$/d;s/@Clique1/@Clique/g' data_cliques_paired_R1.fastq
+sed -i -e '/^$/d;s/@Clique2/@Clique/g' data_cliques_paired_R2.fastq
+awk 'BEGIN {FS=""} {if (NR%4 == 2) { for (i = NF; i >= 1; i = i - 1) { if ($i == "A") { printf "T"; } else if ($i == "C") { printf "G";} else if ($i == "G") { printf "C";} else if ($i == "T") { printf "A";} else if ($i == "N") { printf "N";} } print ""; } else print $0 }' data_cliques_paired_R2.fastq > tmp.fastq
+rm data_cliques_paired_R2.fastq
+mv tmp.fastq data_cliques_paired_R2.fastq
+sed -i -e '/^$/d;s/@Clique1/@Clique/g' data_cliques_single.fastq
+rm -rf *-e
+
+#/Users/toepfera/Dropbox/references/hxb2.fasta
+
+#if [ -s single_sort.sam ]; then bam-to-alignment-priors --unsorted --single-end /Users/toepfera/Dropbox/references/hxb2.fasta single_sort.bam > single.priors; fi

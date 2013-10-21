@@ -1,4 +1,4 @@
-# Copyright 2012 Tobias Marschall
+# Copyright 2012 Tobias Marschall & Armin Töpfer
 # 
 # This file is part of HaploClique.
 # 
@@ -34,7 +34,7 @@ IF(${STATIC_LINKING} MATCHES "1")
 	message("Statically linked binaries requested.")
 	SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
 ENDIF()
-
+set(bwa)
 SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
 SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
@@ -53,3 +53,4 @@ endif()
 add_subdirectory(3rd-party/bamtools/src/bamtools/api)
 add_subdirectory(src)
 
+install(PROGRAMS scripts/haploclique-postprocess.py scripts/manipulate_alignment_prior.py scripts/haploclique-local scripts/haploclique-assembly bwa/bwa samtools/samtools DESTINATION bin)
