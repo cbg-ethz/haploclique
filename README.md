@@ -36,15 +36,13 @@ make install
 HaploClique takes a BAM alignment as input for error-correction:  
  - `haploclique-local reference.fasta alignment.bam` 
 
+To assemble global haplotypes after local reconstruction (performs 50 iterations):
+ - `haploclique-assembly reference.fasta`
+
 The reconstructed local haplotypes are saved as:  
  - __data_cliques_paired_R1.fastq__
  - __data_cliques_paired_R2.fastq__
  - __data_cliques_single.fastq__
-
-To assemble global haplotypes after local reconstruction, execute this command until the number and length of haplotypes converged:  
- - `haploclique-assembly reference.fasta`
-
-Perform at least 50 iterations, like `for i in {1..50}; do haploclique-assembly reference.fasta; done`
 
 #####Contact:
 ```
