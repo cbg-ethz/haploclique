@@ -30,7 +30,7 @@ make install
 
 ## USAGE
 HaploClique takes a BAM alignment as input for error-correction:  
- - `haploclique-local alignment.bam reference.fasta` 
+ - `haploclique-local reference.fasta alignment.bam` 
 
 The reconstructed local haplotypes are saved as:  
  - __data_cliques_paired_R1.fastq__
