@@ -10,7 +10,6 @@ This is a work in progress project and the goal is to make it a one click soluti
 
 ## INSTALL
 ###Dependencies
-Please install and add to your $PATH: [samtools](https://github.com/samtools/samtools/releases/) and [bwa](https://github.com/lh3/bwa).  
 Download [saf](https://github.com/armintoepfer/seqalfixer/releases/) and export its parent directory as $SAF enviroment variable.  
 HaploClique depends on [boost](http://www.boost.org/) and [cmake](http://www.cmake.org/). You can install them with a package manager of your choice. For OSX, we recommend [macports](http://www.macports.org/).
 
