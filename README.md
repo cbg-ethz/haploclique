@@ -39,6 +39,7 @@ The reconstructed local haplotypes are saved as:
 
 To assemble global haplotypes after local reconstruction, execute this command until the number and length of haplotypes converged:  
  - `haploclique-assembly reference.fasta`
+
 Perform at least 50 iterations, like `for i in {1..50}; do haploclique-assembly reference.fasta; done`
 
 #####Contact:
