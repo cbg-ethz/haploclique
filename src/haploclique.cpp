@@ -328,14 +328,14 @@ int main(int argc, char* argv[]) {
     clique_writer.finish();
 
 
-    cerr << "Paired reads: " << clique_writer.getPairedCount() << endl;
+    /*cerr << "Paired reads: " << clique_writer.getPairedCount() << endl;
     cerr << "Single reads: " << clique_writer.getSingleCount() << endl;
     cerr << "Total alignments: " << total_alignments << endl;
     cerr << "Valid alignments: " << valid_alignments << endl;
     cerr << "Alignments with too low weight (skipped): " << skipped_by_weight << endl;
-    cerr << "Alignments with too large insert length (skipped): " << skipped_by_length << endl;
-    cerr << "Alignments skipped due to coverage constraints: " << skipped_by_coverage << endl;
-    cerr << "Total number of cliques: " << clique_writer.getTotalCount() << endl;
+    cerr << "Alignments with too large insert length (skipped): " << skipped_by_length << endl;*/
+    cerr << "Skipped reads:\t\t" << skipped_by_coverage << endl;
+    cerr << "Cliques:\t\t" << clique_writer.getTotalCount() << endl;
 
     if (indel_os != 0) {
         indel_os->close();
@@ -356,6 +356,6 @@ int main(int argc, char* argv[]) {
         delete coverage_writer;
     }
     double cpu_time = (double) (clock() - clock_start) / CLOCKS_PER_SEC;
-    cerr << "Total CPU time: " << cpu_time << endl;
+    cerr << "CPU time:\t\t" << round(cpu_time) << endl;
     return 0;
 }

@@ -1,23 +1,31 @@
 #! /usr/bin/env sh
-samtools view -uf 1 $2 > paired.bam 
-samtools view -uF 1 $2 > single.bam 
+samtools view -uf 1 $2 > paired.bam 2> /dev/null
+samtools view -uF 1 $2 > single.bam 2> /dev/null
 
-java -jar $SAF/SequenceAlignmentFixer.jar -i $2
+java -jar $SAF/SequenceAlignmentFixer.jar -i $2 2> /dev/null > /dev/null
 
-samtools sort -n single.bam single_sort 
-samtools view single_sort.bam > single_sort.sam 
-samtools view paired.bam > paired.sam 
+samtools sort -n single.bam single_sort 2> /dev/null
+samtools view single_sort.bam > single_sort.sam 2> /dev/null
+samtools view paired.bam > paired.sam 2> /dev/null
 
 touch paired.priors single.priors
-if [ -s paired.sam ]; then bam-to-alignment-priors $1 paired.bam > paired.priors; fi
-if [ -s single_sort.sam ]; then bam-to-alignment-priors --unsorted --single-end $1 single_sort.bam > single.priors; fi
-if [ -s data_clique_to_reads.tsv ]; then cat paired.priors single.priors  | sort -k6,6 -g | python $HAPLOCLIQUE/scripts/manipulate_alignment_prior.py data_clique_to_reads.tsv > alignment.prior; else cat paired.priors single.priors  | sort -k6,6 -g > alignment.prior; fi
-#rm *sam *bam *.priors
+if [ -s paired.sam ]; then 
+	bam-to-alignment-priors $1 paired.bam > paired.priors 2> /dev/null
+fi
+if [ -s single_sort.sam ]; then 
+	bam-to-alignment-priors --unsorted --single-end $1 single_sort.bam > single.priors 2> /dev/null
+fi
+if [ -s data_clique_to_reads.tsv ]; then 
+	cat paired.priors single.priors  | sort -k6,6 -g | manipulate_alignment_prior.py data_clique_to_reads.tsv > alignment.prior 2> /dev/null
+else 
+	cat paired.priors single.priors  | sort -k6,6 -g > alignment.prior; 
+fi
+rm *sam *bam *.priors
 
-time haploclique -c 2000 -s 5 -q 0.95 -o 0.6 -a < alignment.prior > data_clique.fastq;
+haploclique -A support/allel_distribution_phred_weighted.txt -c 2000 -s 5 -q 0.95 -o 0.6 -a < alignment.prior > data_clique.fastq;
 
-python $HAPLOCLIQUE/scripts/haploclique-postprocess.py < data_clique.fastq
-rm data_clique.fastq
+haploclique-postprocess.py < data_clique.fastq
+rm -rf data_clique.fastq support
 
 sed -i -e '/^$/d;s/@Clique1/@Clique/g' data_cliques_paired_R1.fastq
 sed -i -e '/^$/d;s/@Clique2/@Clique/g' data_cliques_paired_R2.fastq

@@ -7,66 +7,92 @@ SINGLE=$4
 if [ ${#SINGLE} -eq 0 ] || [ ! -s $SINGLE ]; then SINGLE=data_cliques_single.fastq; fi
 
 function alignMemPaired () {
-    bwa index -a bwtsw $2  
-    bwa mem -t 79 $2 $1 $3 > aln.sam 
-    samtools faidx $2  
-    samtools view -q 20 -F 4 -bt $2.fai aln.sam > aln.bam  
-    samtools sort aln.bam reads  
+    bwa index -a bwtsw $2 2> /dev/null > /dev/null
+    bwa mem -t 79 $2 $1 $3 > aln.sam 2> /dev/null
+    samtools faidx $2 2> /dev/null
+    samtools view -q 20 -F 4 -bt $2.fai aln.sam > aln.bam  2> /dev/null
+    samtools sort aln.bam reads  2> /dev/null
     rm aln*  
-    samtools view -uf 1 reads.bam > paired.bam 
-    samtools view -uF 1 reads.bam > single_1.bam 
+    samtools view -uf 1 reads.bam > paired.bam 2> /dev/null
+    samtools view -uF 1 reads.bam > single_1.bam 2> /dev/null
     rm reads.bam 
 }
 function alignMemSingle () {
-    bwa index -a bwtsw $2  
-    bwa mem -t 79 $2 $1 > aln.sam 
-    samtools faidx $2 
-    samtools view -q 20 -F 4 -bt $2.fai aln.sam > aln.bam 
-    samtools sort aln.bam single_2 
+    bwa index -a bwtsw $2  2> /dev/null > /dev/null
+    bwa mem -t 79 $2 $1 > aln.sam 2> /dev/null
+    samtools faidx $2 2> /dev/null
+    samtools view -q 20 -F 4 -bt $2.fai aln.sam > aln.bam 2> /dev/null
+    samtools sort aln.bam single_2 2> /dev/null
     rm aln* 
 }
+
 alignMemPaired $FORWARD $1 $BACKWARD
 
 if [ -s $SINGLE ]; then
     alignMemSingle $SINGLE $1
-    samtools merge single.bam single_1.bam single_2.bam 
+    samtools merge single.bam single_1.bam single_2.bam 2> /dev/null
 else
     mv single_1.bam single.bam
 fi
 
-samtools merge reads_unsorted.bam single.bam paired.bam 
-samtools sort reads_unsorted.bam assembly 
-samtools index assembly.bam 
+samtools merge reads_unsorted.bam single.bam paired.bam 2> /dev/null
+samtools sort reads_unsorted.bam assembly 2> /dev/null
+samtools index assembly.bam 2> /dev/null
 
-java -jar $SAF/SequenceAlignmentFixer.jar -i assembly.bam
+java -jar $SAF/SequenceAlignmentFixer.jar -i assembly.bam 2> /dev/null > /dev/null
 
 rm -rf assembly*
 
-samtools sort -n single.bam single_sort 
-samtools view single_sort.bam > single_sort.sam 
-samtools view paired.bam > paired.sam 
+samtools sort -n single.bam single_sort 2> /dev/null
+samtools view single_sort.bam > single_sort.sam 2> /dev/null
+samtools view paired.bam > paired.sam 2> /dev/null
 
 touch paired.priors single.priors
 if [ -s paired.sam ]; then
-    bam-to-alignment-priors $1 paired.bam > paired.priors 
+    bam-to-alignment-priors $1 paired.bam > paired.priors 2> /dev/null
 fi
 if [ -s single_sort.sam ]; then
-    bam-to-alignment-priors --unsorted --single-end $1 single_sort.bam > single.priors  
+    bam-to-alignment-priors --unsorted --single-end $1 single_sort.bam > single.priors  2> /dev/null
 fi
 if [ -s data_clique_to_reads.tsv ]; then
-    cat paired.priors single.priors  | sort -k6,6 -g | python $HAPLOCLIQUE/scripts/manipulate_alignment_prior.py data_clique_to_reads.tsv > alignment.prior
+    cat paired.priors single.priors  | sort -k6,6 -g | python $HAPLOCLIQUE/scripts/manipulate_alignment_prior.py data_clique_to_reads.tsv > alignment.prior 2> /dev/null
 else
-    cat paired.priors single.priors  | sort -k6,6 -g > alignment.prior
+    cat paired.priors single.priors  | sort -k6,6 -g > alignment.prior 2> /dev/null
 fi
 rm *sam *bam *.priors
 
-if [ -s data_clique_to_reads.tsv ]; then
-    time haploclique -c 2000 -s 1 -q 0.99 -o 0.6 -a < alignment.prior > data_clique.fastq;
+if [ ! -s iteration ]; then
+    echo "1" > iteration;
 else
-    time haploclique -c 2000 -s 5 -q 0.95 -o 0.6 -a < alignment.prior > data_clique.fastq;
+    awk '{ print  $1+1}' iteration > iteration_tmp;
+    mv iteration_tmp iteration;
+fi
+
+ITERATION=`cat iteration`
+echo "Current iteration:\t${ITERATION}"
+#if [ ${ITERATION} -lt 2 ]; then
+#    HQ=0.99
+#    HO=0.8
+#elif [ ${ITERATION} -lt 4 ]; then
+#    HQ=0.999
+#    HO=0.7
+#elif [ ${ITERATION} -lt 6 ]; then
+#    HQ=0.999
+#    HO=0.6
+#else
+#    HQ=0.9999
+#    HO=0.5
+#fi
+echo "HQ:\t\t\t${HQ}"
+echo "HO:\t\t\t${HO}"
+
+if [ -s data_clique_to_reads.tsv ]; then
+    haploclique -A support/allel_distribution_phred_weighted.txt -c 2000 -s 1 -q $HQ -o $HO -a < alignment.prior > data_clique.fastq;
+else
+    haploclique -A support/allel_distribution_phred_weighted.txt -c 2000 -s 5 -q 0.95 -o 0.6 -a < alignment.prior > data_clique.fastq;
 fi 
 python $HAPLOCLIQUE/scripts/haploclique-postprocess.py < data_clique.fastq
-rm data_clique.fastq
+rm -rf data_clique.fastq support
 
 sed -i -e '/^$/d;s/@Clique1/@Clique/g' data_cliques_paired_R1.fastq
 sed -i -e '/^$/d;s/@Clique2/@Clique/g' data_cliques_paired_R2.fastq
