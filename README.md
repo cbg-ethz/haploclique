@@ -4,9 +4,13 @@ Our approach can be used to:
  - reconstruct local error-corrected haplotypes and estimate their abundance
  - assemble full-length viral haplotypes
  - detect large deletions and insertions from paired-end data.
- 
-The source code and further information, how to apply this software package to your data will be available soon.  
-This is a work in progress project and the goal is to make it a one click solution.
+
+## CURRENT STATUS
+<b>This is a work in progress project and the goal is to make it a one click solution. </b>
+ - [x] Local reconstruction
+ - [x] Global assembly
+ - [ ] Support data sets with coverage > 1000x
+ - [ ] InDel prediction
 
 ## INSTALL
 ###Dependencies
