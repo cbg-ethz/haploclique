@@ -17,6 +17,7 @@ HaploClique depends on [boost](http://www.boost.org/) and [cmake](http://www.cma
 ```bash
 git clone https://github.com/armintoepfer/haploclique
 cd haploclique
+sh install-additional-software.sh
 mkdir build
 cd build
 cmake ..
@@ -28,20 +29,16 @@ make install
 ```
 
 ## USAGE
-HaploClique takes a BAM alignment as input:  
- - `haploclique alignment.bam` for alignments with coverage <1000x  
- - `haploclique-chunk alignment.bam` for ultra-deep sequencing data sets.
+HaploClique takes a BAM alignment as input for error-correction:  
+ - `haploclique-local alignment.bam reference.fasta` 
 
 The reconstructed local haplotypes are saved as:  
  - __data_cliques_paired_R1.fastq__
  - __data_cliques_paired_R2.fastq__
  - __data_cliques_single.fastq__
 
-The indel predictions are stored in __indel.vcf__
-
-To assemble global haplotypes, execute this command until the number and length of haplotypes converged:  
- - `haploclique-assembly reference_genome.fasta` if reconstructed haplotypes have coverage <1000x  
- - `haploclique-assembly-chunk reference_genome.fasta` if coverage is >=1000x
+To assemble global haplotypes after local reconstruction, execute this command until the number and length of haplotypes converged:  
+ - `haploclique-assembly reference.fasta`
 
 #####Contact:
 ```
