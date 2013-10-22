@@ -15,9 +15,21 @@ Our approach can be used to:
 ## INSTALL
 ###Dependencies
 Download [saf](https://github.com/armintoepfer/seqalfixer/releases/) and export its parent directory as $SAF enviroment variable.  
-HaploClique depends on [boost](http://www.boost.org/) and [cmake](http://www.cmake.org/). You can install them with a package manager of your choice. For OSX, we recommend [macports](http://www.macports.org/).
+HaploClique depends on [boost](http://www.boost.org/) and [cmake](http://www.cmake.org/). You can install them with a package manager of your choice.
+
+Ubuntu:  
+```
+apt-get install libncurses5-dev cmake libboost-all-dev git build-essential zlib1g-dev
+```
+
+OSX wit [macports](http://www.macports.org/):
+```
+port install cmake boost
+```
 
 ###HaploClique
+HaploClique has not been tested on Windows. The scripts depend on the bash shell, awk, and sed.  
+If you want to install HaploClique to a non-standard directory, change it with `cmake -DCMAKE_INSTALL_PREFIX=<prefix-path> ..`
 ```bash
 git clone https://github.com/armintoepfer/haploclique
 cd haploclique
@@ -25,9 +37,6 @@ sh install-additional-software.sh
 mkdir build
 cd build
 cmake ..
-```
-If you want to install HaploClique to a non-standard directory, change it with `cmake -DCMAKE_INSTALL_PREFIX=<prefix-path> ..`
-```
 make
 make install
 ```
@@ -39,7 +48,7 @@ HaploClique takes a BAM alignment as input for error-correction:
 To assemble global haplotypes after local reconstruction (performs 50 iterations):
  - `haploclique-assembly reference.fasta`
 
-The reconstructed local haplotypes are saved as:  
+The reconstructed haplotypes are saved as:  
  - __data_cliques_paired_R1.fastq__
  - __data_cliques_paired_R2.fastq__
  - __data_cliques_single.fastq__
