@@ -22,7 +22,7 @@ Ubuntu:
 apt-get install libncurses5-dev cmake libboost-all-dev git build-essential zlib1g-dev parallel
 ```
 
-OSX, please XCode and its command line tool, and with [macports](http://www.macports.org/):
+OSX, please XCode and its command line tools, and with [macports](http://www.macports.org/):
 ```
 port install cmake boost parallel
 ```
