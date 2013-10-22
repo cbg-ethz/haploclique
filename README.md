@@ -15,16 +15,16 @@ Our approach can be used to:
 ## INSTALL
 ###Dependencies
 Download [saf](https://github.com/armintoepfer/seqalfixer/releases/) and export its parent directory as $SAF enviroment variable.  
-HaploClique depends on [boost](http://www.boost.org/) and [cmake](http://www.cmake.org/). You can install them with a package manager of your choice.
+HaploClique depends on [boost](http://www.boost.org/), [gnu parallel](http://www.gnu.org/software/parallel/), and [cmake](http://www.cmake.org/). You can install them with a package manager of your choice.
 
 Ubuntu:  
 ```
-apt-get install libncurses5-dev cmake libboost-all-dev git build-essential zlib1g-dev
+apt-get install libncurses5-dev cmake libboost-all-dev git build-essential zlib1g-dev parallel
 ```
 
 OSX wit [macports](http://www.macports.org/):
 ```
-port install cmake boost
+port install cmake boost parallel
 ```
 
 ###HaploClique
