@@ -6,7 +6,7 @@ Our approach can be used to:
  - detect large deletions and insertions from paired-end data.
 
 ## CURRENT STATUS
-<b>This is a work in progress project and the goal is to make it a one click solution. </b>
+<b>This is a work in progress project. The "missing" functionality is already implemented, but the one click scripts are in work.</b>
  - [x] Local reconstruction
  - [x] Global assembly
  - [ ] Support data sets with coverage > 1000x
