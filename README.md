@@ -8,13 +8,13 @@ Our approach can be used to:
 ## CURRENT STATUS
 <b>This is a work in progress project. The core algorithm is fully functionality, but some helper-scripts are in still in work.</b>
  - [x] Local reconstruction
- - [x] Global assembly
- - [ ] Support data sets with coverage > 1000x
+ - [x] Global assembly > 1000x
+ - [ ] Local reconstruction with coverage > 1000x
  - [ ] InDel prediction
 
 ## INSTALL
 ###Dependencies
-Download [saf](https://github.com/armintoepfer/seqalfixer/releases/) and export its parent directory as $SAF enviroment variable.  
+Download [saf](https://github.com/armintoepfer/seqalfixer/releases/) and [InDelFixer](https://github.com/armintoepfer/InDelFixer/releases) and export its parent directory as $SAF enviroment variable.  
 HaploClique depends on [boost](http://www.boost.org/), [gnu parallel](http://www.gnu.org/software/parallel/), and [cmake](http://www.cmake.org/). You can install them with a package manager of your choice.
 
 Ubuntu:  
