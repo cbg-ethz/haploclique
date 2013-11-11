@@ -1,7 +1,7 @@
 /* Copyright 2012 Tobias Marschall
- * 
+ *
  * This file is part of HaploClique.
- * 
+ *
  * HaploClique is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -21,13 +21,14 @@
 #include <map>
 #include <boost/unordered_set.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/algorithm/string/split.hpp>   
+#include <boost/algorithm/string/split.hpp>
 #include "CliqueWriter.h"
+#include <sstream>
 
-using namespace std;
-using namespace boost;
+ using namespace std;
+ using namespace boost;
 
-CliqueWriter::CliqueWriter(ostream& os, VariationCaller* variation_caller, std::ostream* indel_os, const ReadGroups* read_groups, bool multisample, bool output_all, double fdr_threshold, bool verbose, int min_coverage) : os(os), variation_caller(variation_caller), read_groups(read_groups) {
+ CliqueWriter::CliqueWriter(ostream& os, VariationCaller* variation_caller, std::ostream* indel_os, const ReadGroups* read_groups, bool multisample, bool output_all, double fdr_threshold, bool verbose, int min_coverage) : os(os), variation_caller(variation_caller), read_groups(read_groups) {
     this->indel_os = indel_os;
     this->significant_ins_count = -1;
     this->significant_del_count = -1;
@@ -66,223 +67,380 @@ void CliqueWriter::enableReadListOutput(std::ostream& os) {
 }
 
 void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, size_t coverage, clique_stats_t* stats) {
+//    cerr << endl << "CALL VARIATION " << pairs.size() << endl;
+    //cerr.flush();
     bool DEBUG = 0;
     bool merge = 1;
-    bool work = 0;
     bool problem = 0;
-    do {
-        assert(stats != 0);
-        VariationCaller::additional_stats_t vc_stats;
-        if (variation_caller != 0) {
-            stats->variation = variation_caller->call(pairs.begin(), pairs.end(), &vc_stats);
-        } else {
-            stats->variation = Variation();
-        }
-        stats->min_coverage_user = min_coverage;
-        stats->clique_size = pairs.size();
-        stats->start = vc_stats.insert_start;
-        stats->end = vc_stats.insert_end;
-        stats->length = vc_stats.insert_length;
-        stats->diff = vc_stats.diff;
-        stats->total_weight = vc_stats.total_weight;
-        stats->coverage = coverage;
-        stats->pvalue_corr = min(1.0, stats->variation.getPValue() * pow(2.0, static_cast<int> (stats->coverage)));
+    assert(stats != 0);
+    VariationCaller::additional_stats_t vc_stats;
+    if (variation_caller != 0) {
+        stats->variation = variation_caller->call(pairs.begin(), pairs.end(), &vc_stats);
+    } else {
+        stats->variation = Variation();
+    }
+    stats->min_coverage_user = min_coverage;
+    stats->clique_size = pairs.size();
+    stats->start = vc_stats.insert_start;
+    stats->end = vc_stats.insert_end;
+    stats->length = vc_stats.insert_length;
+    stats->diff = vc_stats.diff;
+    stats->total_weight = vc_stats.total_weight;
+    stats->coverage = coverage;
+    stats->pvalue_corr = min(1.0, stats->variation.getPValue() * pow(2.0, static_cast<int> (stats->coverage)));
         // assume every clique to be not significant until the final FDR control
-        stats->is_significant = false;
+    stats->is_significant = false;
 
-        stats->readnames = new vector<std::string>();
+    stats->readnames = new vector<std::string>();
 
-        vector<std::string> duplicates;
+    vector<std::string> duplicates;
         //Ignore cliques with less than 5 reads.
         //We consider them as trash :)
         //if (pairs.end() - pairs.begin() < min_coverage) return;
 
         //Compute the borders of both super-reads
         //and save them in stats
-        vector<const AlignmentRecord*>::const_iterator it = pairs.begin();
-        if (DEBUG) cerr << pairs.end() - pairs.begin() << "\t";
+    vector<const AlignmentRecord*>::const_iterator it = pairs.begin();
+    if (DEBUG) cerr << pairs.end() - pairs.begin() << "\t";
 
-        stats->clique_number = clique_count++;
+    int single_end_count = 0;
+    int paired_end_count = 0;
+    ofstream singles;
 
-        int single_end_count = 0;
-        int paired_end_count = 0;
-        if (pairs.end() - pairs.begin() < min_coverage) {
-            return;
+    for (; it != pairs.end(); ++it) {
+        const AlignmentRecord& ap = **it;
+        if (ap.getName().find("-+-") != std::string::npos) {
+            string bla = ap.getName();
+            vector<string> fields;
+            boost::split(fields, bla, is_any_of("-+-"));
+            for (int i = 1; i < fields.size(); i++) stats->readnames->push_back(fields[i]);
+                //            cerr << fields[0] << "\t" << fields[1] << "\t" << fields[2] << "\t" << fields[3]  << "\t" << fields.size() << "\t" << bla << endl;
+        } else {
+                //            cerr << "NOOOO" << endl;
+            stats->readnames->push_back(ap.getName());
         }
+    }
+    it = pairs.begin();
+    if (stats->readnames->size() < min_coverage) {
+        singles.open ("singles.prior", ios::out | ios::app);
         for (; it != pairs.end(); ++it) {
             const AlignmentRecord& ap = **it;
+            singles << ap.getLine() << "\n";
+        }
+        singles.close();
+        return;
+    }
+    stats->clique_number = clique_count++;
+    it = pairs.begin();
+    for (; it != pairs.end(); ++it) {
+        const AlignmentRecord& ap = **it;
             //        if (std::find(stats->readnames->begin(), stats->readnames->end(), ap.getName())!=stats->readnames->end()) {
             //            duplicates.push_back(ap.getName());
             //            continue;
             //        }
-            if (ap.isSingleEnd()) {
-                single_end_count += 1;
-            } else {
-                paired_end_count += 1;
-            }
-            if (ap.getName().find("-+-") != std::string::npos) {
-                string bla = ap.getName();
-                vector<string> fields;
-                boost::split(fields, bla, is_any_of("-+-"));
-                for (int i = 1; i < fields.size(); i++) stats->readnames->push_back(fields[i]);
-                //            cerr << fields[0] << "\t" << fields[1] << "\t" << fields[2] << "\t" << fields[3]  << "\t" << fields.size() << "\t" << bla << endl;
-            } else {
-                //            cerr << "NOOOO" << endl;
-                stats->readnames->push_back(ap.getName());
-            }
+        if (ap.isSingleEnd()) {
+            single_end_count += 1;
+        } else {
+            paired_end_count += 1;
+        }
+        
             //cerr << ap.getName() << "\t";
-            vector<BamTools::CigarOp>::const_iterator it_cigar = ap.getCigar1().begin();
-            int deletions1 = 0;
-            int shift1 = 0;
-            int shift_end1 = 0;
-            int read_begin1 = 1;
-            for (; it_cigar != ap.getCigar1().end(); ++it_cigar) {
+        vector<BamTools::CigarOp>::const_iterator it_cigar = ap.getCigar1().begin();
+        int deletions1 = 0;
+        int shift1 = 0;
+        int shift_end1 = 0;
+        int read_begin1 = 1;
+        for (; it_cigar != ap.getCigar1().end(); ++it_cigar) {
+            if (it_cigar->Type == 'S') {
+                if (read_begin1) {
+                    shift1 += it_cigar->Length;
+                    read_begin1 = 0;
+                } else {
+                    shift_end1 += it_cigar->Length;
+                }
+            }
+            if (it_cigar->Type == 'D') {
+                deletions1 += it_cigar->Length;
+            }
+        }
+        if (stats->window_start1 == -1 || int(ap.getStart1() + shift1) < stats->window_start1) {
+            stats->window_start1 = ap.getStart1() + shift1;
+        }
+        if (stats->window_end1 == -1 || int(ap.getStart1() + ap.getSequence1().size() + deletions1 - shift_end1) > stats->window_end1) {
+            stats->window_end1 = ap.getStart1() + ap.getSequence1().size() + deletions1 - shift_end1;
+        }
+        if (ap.isPairedEnd()) {
+            it_cigar = ap.getCigar2().begin();
+            int deletions2 = 0;
+            int shift2 = 0;
+            int shift_end2 = 0;
+            int read_begin2 = 1;
+            for (; it_cigar != ap.getCigar2().end(); ++it_cigar) {
                 if (it_cigar->Type == 'S') {
                     if (read_begin1) {
-                        shift1 += it_cigar->Length;
-                        read_begin1 = 0;
+                        shift2 += it_cigar->Length;
+                        read_begin2 = 0;
                     } else {
-                        shift_end1 += it_cigar->Length;
+                        shift_end2 += it_cigar->Length;
                     }
                 }
                 if (it_cigar->Type == 'D') {
-                    deletions1 += it_cigar->Length;
+                    deletions2 += it_cigar->Length;
                 }
             }
-            if (stats->window_start1 == -1 || int(ap.getStart1() + shift1) < stats->window_start1) {
-                stats->window_start1 = ap.getStart1() + shift1;
+            if (stats->window_start2 == -1 || int(ap.getStart2() + shift2) < stats->window_start2) {
+                stats->window_start2 = ap.getStart2() + shift2;
             }
-            if (stats->window_end1 == -1 || int(ap.getStart1() + ap.getSequence1().size() + deletions1 - shift_end1) > stats->window_end1) {
-                stats->window_end1 = ap.getStart1() + ap.getSequence1().size() + deletions1 - shift_end1;
-            }
-            if (ap.isPairedEnd()) {
-                it_cigar = ap.getCigar2().begin();
-                int deletions2 = 0;
-                int shift2 = 0;
-                int shift_end2 = 0;
-                int read_begin2 = 1;
-                for (; it_cigar != ap.getCigar2().end(); ++it_cigar) {
-                    if (it_cigar->Type == 'S') {
-                        if (read_begin1) {
-                            shift2 += it_cigar->Length;
-                            read_begin2 = 0;
-                        } else {
-                            shift_end2 += it_cigar->Length;
-                        }
-                    }
-                    if (it_cigar->Type == 'D') {
-                        deletions2 += it_cigar->Length;
-                    }
-                }
-                if (stats->window_start2 == -1 || int(ap.getStart2() + shift2) < stats->window_start2) {
-                    stats->window_start2 = ap.getStart2() + shift2;
-                }
-                if (stats->window_end2 == -1 || int(ap.getStart2() + ap.getSequence2().size() + deletions2 - shift_end2) > stats->window_end2) {
-                    stats->window_end2 = ap.getStart2() + ap.getSequence2().size() + deletions2 - shift_end2;
-                }
+            if (stats->window_end2 == -1 || int(ap.getStart2() + ap.getSequence2().size() + deletions2 - shift_end2) > stats->window_end2) {
+                stats->window_end2 = ap.getStart2() + ap.getSequence2().size() + deletions2 - shift_end2;
             }
         }
-        this->single_count += single_end_count;
-        this->paired_count += paired_end_count;
+    }
+    this->single_count += single_end_count;
+    this->paired_count += paired_end_count;
         //2D array represents nucleotide distribution for super-read
-        int alignment_length1 = stats->window_end1 - stats->window_start1;
-        int alignment1[alignment_length1][5];
-        double phred1[alignment_length1][5];
-        for (int j = 0; j < alignment_length1; j++) {
-            for (int k = 0; k < 5; k++) {
-                alignment1[j][k] = 0;
-                phred1[j][k] = 0;
-            }
+    int alignment_length1 = stats->window_end1 - stats->window_start1;
+    int alignment1[alignment_length1][5];
+    double phred1[alignment_length1][5];
+    for (int j = 0; j < alignment_length1; j++) {
+        for (int k = 0; k < 5; k++) {
+            alignment1[j][k] = 0;
+            phred1[j][k] = 0;
         }
-        if (DEBUG) cerr << "computing alignment, length: " << alignment_length1 << endl;
+    }
+    if (DEBUG) cerr << "computing alignment, length: " << alignment_length1 << endl;
         //For each read pair, save the first read in alignment
-        it = pairs.begin();
-        for (; it != pairs.end(); ++it) {
-            const AlignmentRecord& ap_alignment = **it;
-            //        if (std::find(duplicates.begin(), duplicates.end(), ap_alignment.getName())!=duplicates.end()) {
-            //            continue;
-            //        }
-            vector<BamTools::CigarOp>::const_iterator it_cigar = ap_alignment.getCigar1().begin();
+    //map<string,vector<int>> insertion_map;
+    it = pairs.begin();
+    for (; it != pairs.end(); ++it) {
+        const AlignmentRecord& ap_alignment = **it;
+        vector<BamTools::CigarOp>::const_iterator it_cigar = ap_alignment.getCigar1().begin();
 
-            int alignment_index = ap_alignment.getStart1() - stats->window_start1;
-            int sequence_index = 0;
+        int alignment_index = ap_alignment.getStart1() - stats->window_start1;
+        int sequence_index = 0;
 
-            for (; it_cigar != ap_alignment.getCigar1().end(); ++it_cigar) {
-                int cigar_length = it_cigar->Length;
-                if (it_cigar->Type == 'S') {
-                    sequence_index += cigar_length;
-                }
-                if (it_cigar->Type == 'D') {
+        for (; it_cigar != ap_alignment.getCigar1().end(); ++it_cigar) {
+            int cigar_length = it_cigar->Length;
+            if (it_cigar->Type == 'S') {
+                sequence_index += cigar_length;
+            }
+            if (it_cigar->Type == 'D') {
+                if (cigar_length % 3 != 0 && merge) {
+                    alignment_index+=cigar_length;
+                } else {
                     for (int k = 0; k < cigar_length; k++) {
                         alignment1[alignment_index++][4]++;
                     }
                 }
+            }
+            if (it_cigar->Type == 'I' || it_cigar->Type == 'M') {
+                if (it_cigar->Type == 'I' && cigar_length % 3 != 0 && merge) {
+                    //cerr << "TRIPPING LAICA BAWS:\t" << cigar_length << endl;
+
+                    //alignment_index+=cigar_length;
+                    sequence_index+=cigar_length;
+                } else {
+                    for (int k = 0; k < cigar_length; k++) {
+                        int base = shortenBase(ap_alignment.getSequence1()[sequence_index++]);
+
+                        assert(alignment_index < alignment_length1);
+                        if (base != -1) {
+                            phred1[alignment_index][base] += ap_alignment.getSequence1().qualityCorrectLog(sequence_index - 1);
+                            alignment1[alignment_index][base]++;
+                        } else {
+                        }
+                        alignment_index++;
+                    }
+                }
+            }
+        }
+    }
+    if (DEBUG) {
+        for (int k = 0; k < 5; k++) {
+            for (int j = 0; j < alignment_length1; j++) {
+                cerr << alignment1[j][k] << "\t";
+            }
+            cerr << endl;
+        }
+        cerr << "\n" << endl;
+    }
+
+        //Compute maximum coverage
+    stats->maximum_coverage1 = 0;
+    int coverage1[alignment_length1];
+    for (int j = 0; j < alignment_length1; j++) {
+        int sum = 0;
+        for (int k = 0; k < 5; k++) {
+            sum += alignment1[j][k];
+        }
+        coverage1[j] = sum;
+        if (sum > stats->maximum_coverage1) {
+            stats->maximum_coverage1 = sum;
+        }
+    }
+
+    int min_coverage_local1 = stats->maximum_coverage1 < min_coverage ? 1 : min_coverage;
+
+        //Majority vote for super-read assembly
+    bool prefix1 = 1;
+    int end1 = 0;
+    for (int j = alignment_length1 - 1; j >= 0; j--) {
+        if (coverage1[j] >= min_coverage_local1) {
+            end1 = j;
+            stats->window_end1 -= alignment_length1 - j;
+            break;
+        }
+    }
+
+    for (int j = 0; j < alignment_length1; j++) {
+        if (j > end1) { break; }
+
+        if (prefix1) {
+            if (coverage1[j] >= min_coverage_local1) {
+                prefix1 = 0;
+                stats->window_start1 += j;
+            } else {
+                continue;
+            }
+        }
+
+        int local_max = 0;
+        int local_base = -1;
+
+        for (int k = 0; k < 5; k++) {
+            if (alignment1[j][k] > local_max) {
+                local_max = alignment1[j][k];
+                local_base = k;
+            }
+            //cerr << "\t" << alignment1[j][k];
+        }
+        //cerr << "\t" << expandBase(local_base) << endl;
+        if (local_base < 4) {
+            char base = expandBase(local_base);
+            if (base != 'N') {
+                stats->consensus_string1 += base;
+                int p = 33 + round(-10 * log10(pow(10, phred1[j][local_base])));
+                if (p > 126) {
+                    p = 126;
+                } else if (p < 33) {
+                    p = 126;
+                }
+                stats->phred_string1 += p;
+
+                stats->coverage_string1 += ('0' + floor(local_max * 10 / stats->maximum_coverage1));
+            } else {
+                stats->window_end1--;
+            }
+        } else if (local_base == 4) {
+            stats->window_end1--;
+        }
+    }
+
+        //same stuff as for first read, this time for second read
+    if (paired_end_count > 0) {
+        int alignment_length2 = stats->window_end2 - stats->window_start2+1;
+        int alignment2[alignment_length2][5];
+        double phred2[alignment_length2][5];
+        for (int j = 0; j < alignment_length2; j++) {
+            for (int k = 0; k < 5; k++) {
+                alignment2[j][k] = 0;
+                phred2[j][k] = 0;
+            }
+        }
+        if (DEBUG) cerr << "computing alignment, length: " << alignment_length2 << endl;
+        it = pairs.begin();
+        for (; it != pairs.end(); ++it) {
+            const AlignmentRecord& ap_alignment = **it;
+            if (ap_alignment.isSingleEnd()) continue;
+            vector<BamTools::CigarOp>::const_iterator it_cigar = ap_alignment.getCigar2().begin();
+
+            int alignment_index = ap_alignment.getStart2() - stats->window_start2;
+            int sequence_index = 0;
+
+            for (; it_cigar != ap_alignment.getCigar2().end(); ++it_cigar) {
+                if (DEBUG) cerr << "   " << sequence_index << "\t" << alignment_index << "\t" << ap_alignment.getName() << endl;
+                if (DEBUG) cerr << ap_alignment.getSequence2() << endl;
+                if (DEBUG) cerr << it_cigar->Length << it_cigar->Type << endl;
+                int cigar_length = it_cigar->Length;
+                if (it_cigar->Type == 'S') {
+                    sequence_index += cigar_length;
+                    if (DEBUG) cerr << "S: " << sequence_index << "\t" << alignment_index << endl;
+                }
+                if (it_cigar->Type == 'D') {
+                    for (int k = 0; k < cigar_length; k++) {
+                        alignment2[alignment_index++][4]++;
+                    }
+                    if (DEBUG) cerr << "D: " << sequence_index << "\t" << alignment_index << endl;
+                }
                 if (it_cigar->Type == 'I' || it_cigar->Type == 'M') {
                     if (it_cigar->Type == 'I' && cigar_length == 1 && merge) {
-                        //                        cerr << "TRIPPING LAICA BAWS" << endl;
+                            //                            cerr << "TRIPPING LAICA BAWS" << endl;
                         alignment_index++;
                     } else {
                         for (int k = 0; k < cigar_length; k++) {
-                            int base = shortenBase(ap_alignment.getSequence1()[sequence_index++]);
+                            if (DEBUG) cerr << "MI:" << sequence_index << "\t" << alignment_index << "\t" << alignment_length2 << endl;
+                            int base = shortenBase(ap_alignment.getSequence2()[sequence_index++]);
+                            if (DEBUG) cerr << base << endl;
 
-                            assert(alignment_index < alignment_length1);
+                            assert(alignment_index < alignment_length2);
                             if (base != -1) {
-                                phred1[alignment_index][base] += ap_alignment.getSequence1().qualityCorrectLog(sequence_index - 1);
-                                alignment1[alignment_index][base]++;
+                                phred2[alignment_index][base] += ap_alignment.getSequence2().qualityCorrectLog(sequence_index - 1);
+                                alignment2[alignment_index][base]++;
                             } else {
-//                                cerr << "w00000t" << endl;
-//                                problem = 1;
+//                                    cerr << "w000t2" << endl;
+//                                    problem = 1;
                             }
+
                             alignment_index++;
                         }
+                        if (DEBUG) cerr << "MI done:" << sequence_index << "\t" << alignment_index << endl;
                     }
                 }
             }
         }
         if (DEBUG) {
             for (int k = 0; k < 5; k++) {
-                for (int j = 0; j < alignment_length1; j++) {
-                    cerr << alignment1[j][k] << "\t";
+                for (int j = 0; j < alignment_length2; j++) {
+                    cerr << alignment2[j][k] << "\t";
                 }
                 cerr << endl;
             }
             cerr << "\n" << endl;
         }
 
-        //Compute maximum coverage
-        stats->maximum_coverage1 = 0;
-        int coverage1[alignment_length1];
-        for (int j = 0; j < alignment_length1; j++) {
+            //Compute maximum coverage
+        stats->maximum_coverage2 = 0;
+        int coverage2[alignment_length2];
+        for (int j = 0; j < alignment_length2; j++) {
             int sum = 0;
             for (int k = 0; k < 5; k++) {
-                sum += alignment1[j][k];
+                sum += alignment2[j][k];
             }
-            coverage1[j] = sum;
-            if (sum > stats->maximum_coverage1) {
-                stats->maximum_coverage1 = sum;
+            coverage2[j] = sum;
+            if (sum > stats->maximum_coverage2) {
+                stats->maximum_coverage2 = sum;
             }
         }
 
-        int min_coverage_local1 = stats->maximum_coverage1 < min_coverage ? 1 : min_coverage;
+        int min_coverage_local2 = stats->maximum_coverage2 < min_coverage ? 1 : min_coverage;
 
-        //Majority vote for super-read assembly
-        bool prefix1 = 1;
-        int end1 = 0;
-        for (int j = alignment_length1 - 1; j >= 0; j--) {
-            if (coverage1[j] >= min_coverage_local1) {
-                end1 = j;
-                stats->window_end1 -= alignment_length1 - j;
+        bool prefix2 = 1;
+        int end2 = 0;
+        for (int j = alignment_length2 - 1; j >= 0; j--) {
+            if (coverage2[j] >= min_coverage_local2) {
+                end2 = j;
+                stats->window_end2 -= alignment_length2 - j;
                 break;
             }
         }
 
-        for (int j = 0; j < alignment_length1; j++) {
-            if (j == end1) break;
+        for (int j = 0; j < alignment_length2; j++) {
+            if (j > end2) break;
 
-            if (prefix1) {
-                if (coverage1[j] >= min_coverage_local1) {
-                    prefix1 = 0;
-                    stats->window_start1 += j;
+            if (prefix2) {
+                if (coverage2[j] >= min_coverage_local2) {
+                    prefix2 = 0;
+                    stats->window_start2 += j;
                 } else {
                     continue;
                 }
@@ -292,208 +450,55 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
             int local_base = -1;
 
             for (int k = 0; k < 5; k++) {
-                if (alignment1[j][k] > local_max) {
-                    local_max = alignment1[j][k];
+                if (alignment2[j][k] > local_max) {
+                    local_max = alignment2[j][k];
                     local_base = k;
                 }
             }
-            if (local_base < 4) {
 
-                //            if (local_base == -1) {
-                //                cerr << "BREAK: " << j << " " << alignment_length1 << endl;
-                //
-                //                it = pairs.begin();
-                //                for (; it != pairs.end(); ++it) {
-                //                    const AlignmentRecord& ap_alignment = **it;
-                //                    cerr << ap_alignment.getStart1() - stats->window_start1 << " " << ap_alignment.getEnd1() - stats->window_start1 << endl;
-                //                }
-                //                cerr << "---" << endl;
-                //                stats->window_end1 - (alignment_length1 - j - 1);
-                //                break;
-                //            }
+            if (local_base < 4) {
+                    //                if (local_base == -1) {
+                    //                    stats->window_end2 - (alignment_length2 - j - 1);
+                    //                    break;
+                    //                }
                 char base = expandBase(local_base);
                 if (base != 'N') {
-                    stats->consensus_string1 += base;
-                    int p = 33 + round(-10 * log10(pow(10, phred1[j][local_base])));
+                    stats->consensus_string2 += base;
+                    int p = 33 + round(-10 * log10(pow(10, phred2[j][local_base])));
                     if (p > 126) {
                         p = 126;
                     } else if (p < 33) {
                         p = 126;
                     }
-                    stats->phred_string1 += p;
-
-                    stats->coverage_string1 += ('0' + floor(local_max * 10 / stats->maximum_coverage1));
+                    stats->phred_string2 += p;
+                    stats->coverage_string2 += ('0' + floor(local_max * 10 / stats->maximum_coverage2));
                 } else {
-                    stats->window_end1--;
-                }
-            } else if (local_base == 4) {
-                stats->window_end1--;
-            }
-        }
-
-        //same stuff as for first read, this time for second read
-        if (paired_end_count > 0) {
-            int alignment_length2 = stats->window_end2 - stats->window_start2;
-            int alignment2[alignment_length2][5];
-            double phred2[alignment_length2][5];
-            for (int j = 0; j < alignment_length2; j++) {
-                for (int k = 0; k < 5; k++) {
-                    alignment2[j][k] = 0;
-                    phred2[j][k] = 0;
-                }
-            }
-            if (DEBUG) cerr << "computing alignment, length: " << alignment_length2 << endl;
-            it = pairs.begin();
-            for (; it != pairs.end(); ++it) {
-                const AlignmentRecord& ap_alignment = **it;
-                if (ap_alignment.isSingleEnd()) continue;
-                vector<BamTools::CigarOp>::const_iterator it_cigar = ap_alignment.getCigar2().begin();
-
-                int alignment_index = ap_alignment.getStart2() - stats->window_start2;
-                int sequence_index = 0;
-
-                for (; it_cigar != ap_alignment.getCigar2().end(); ++it_cigar) {
-                    if (DEBUG) cerr << "   " << sequence_index << "\t" << alignment_index << "\t" << ap_alignment.getName() << endl;
-                    if (DEBUG) cerr << ap_alignment.getSequence2() << endl;
-                    if (DEBUG) cerr << it_cigar->Length << it_cigar->Type << endl;
-                    int cigar_length = it_cigar->Length;
-                    if (it_cigar->Type == 'S') {
-                        sequence_index += cigar_length;
-                        if (DEBUG) cerr << "S: " << sequence_index << "\t" << alignment_index << endl;
-                    }
-                    if (it_cigar->Type == 'D') {
-                        for (int k = 0; k < cigar_length; k++) {
-                            alignment2[alignment_index++][4]++;
-                        }
-                        if (DEBUG) cerr << "D: " << sequence_index << "\t" << alignment_index << endl;
-                    }
-                    if (it_cigar->Type == 'I' || it_cigar->Type == 'M') {
-                        if (it_cigar->Type == 'I' && cigar_length == 1 && merge) {
-                            //                            cerr << "TRIPPING LAICA BAWS" << endl;
-                            alignment_index++;
-                        } else {
-                            for (int k = 0; k < cigar_length; k++) {
-                                if (DEBUG) cerr << "MI:" << sequence_index << "\t" << alignment_index << "\t" << alignment_length2 << endl;
-                                int base = shortenBase(ap_alignment.getSequence2()[sequence_index++]);
-                                if (DEBUG) cerr << base << endl;
-
-                                assert(alignment_index < alignment_length2);
-                                if (base != -1) {
-                                    phred2[alignment_index][base] += ap_alignment.getSequence2().qualityCorrectLog(sequence_index - 1);
-                                    alignment2[alignment_index][base]++;
-                                } else {
-//                                    cerr << "w000t2" << endl;
-//                                    problem = 1;
-                                }
-
-                                alignment_index++;
-                            }
-                            if (DEBUG) cerr << "MI done:" << sequence_index << "\t" << alignment_index << endl;
-                        }
-                    }
-                }
-            }
-            if (DEBUG) {
-                for (int k = 0; k < 5; k++) {
-                    for (int j = 0; j < alignment_length2; j++) {
-                        cerr << alignment2[j][k] << "\t";
-                    }
-                    cerr << endl;
-                }
-                cerr << "\n" << endl;
-            }
-
-            //Compute maximum coverage
-            stats->maximum_coverage2 = 0;
-            int coverage2[alignment_length2];
-            for (int j = 0; j < alignment_length2; j++) {
-                int sum = 0;
-                for (int k = 0; k < 5; k++) {
-                    sum += alignment2[j][k];
-                }
-                coverage2[j] = sum;
-                if (sum > stats->maximum_coverage2) {
-                    stats->maximum_coverage2 = sum;
-                }
-            }
-
-            int min_coverage_local2 = stats->maximum_coverage2 < min_coverage ? 1 : min_coverage;
-
-            bool prefix2 = 1;
-            int end2 = 0;
-            for (int j = alignment_length2 - 1; j >= 0; j--) {
-                if (coverage2[j] >= min_coverage_local2) {
-                    end2 = j;
-                    stats->window_end2 -= alignment_length2 - j;
-                    break;
-                }
-            }
-
-            for (int j = 0; j < alignment_length2; j++) {
-                if (j == end2) break;
-
-                if (prefix2) {
-                    if (coverage2[j] >= min_coverage_local2) {
-                        prefix2 = 0;
-                        stats->window_start2 += j;
-                    } else {
-                        continue;
-                    }
-                }
-
-                int local_max = 0;
-                int local_base = -1;
-
-                for (int k = 0; k < 5; k++) {
-                    if (alignment2[j][k] > local_max) {
-                        local_max = alignment2[j][k];
-                        local_base = k;
-                    }
-                }
-                if (local_base < 4) {
-                    //                if (local_base == -1) {
-                    //                    stats->window_end2 - (alignment_length2 - j - 1);
-                    //                    break;
-                    //                }
-                    char base = expandBase(local_base);
-                    if (base != 'N') {
-                        stats->consensus_string2 += base;
-                        int p = 33 + round(-10 * log10(pow(10, phred2[j][local_base])));
-                        if (p > 126) {
-                            p = 126;
-                        } else if (p < 33) {
-                            p = 126;
-                        }
-                        stats->phred_string2 += p;
-                        stats->coverage_string2 += ('0' + floor(local_max * 10 / stats->maximum_coverage2));
-                    } else {
-                        stats->window_end2--;
-                    }
-                } else if (local_base == 4) {
                     stats->window_end2--;
                 }
+            } else if (local_base == 4) {
+                stats->window_end2--;
             }
         }
-        if (problem || overlapSize(stats)) {
-            stats->window_end1 == -1;
-            stats->window_start1 == -1;
-            stats->window_end2 == -1;
-            stats->window_start1 == -1;
-            stats->consensus_string1 = "";
-            stats->consensus_string2 = "";
-            stats->phred_string1 = "";
-            stats->phred_string2 = "";
-            stats->clique_number = 0;
-            this->single_count -= single_end_count;
-            this->paired_count -= paired_end_count;
-            merge = 0;
-            problem = 0;
-            cerr << endl << "PROBLEM" << endl;
-            continue;
-        }
-        if (!merge)
-            cerr << stats->window_start1 << " " << merge << "|" << endl;
-    } while (work);
+    }
+    if (problem || overlapSize(stats)) {
+        stats->window_end1 == -1;
+        stats->window_start1 == -1;
+        stats->window_end2 == -1;
+        stats->window_start1 == -1;
+        stats->consensus_string1 = "";
+        stats->consensus_string2 = "";
+        stats->phred_string1 = "";
+        stats->phred_string2 = "";
+        stats->clique_number = 0;
+        this->single_count -= single_end_count;
+        this->paired_count -= paired_end_count;
+        merge = 0;
+        problem = 0;
+        cerr << endl << "PROBLEM" << endl;
+            //continue;
+    }
+    if (!merge)
+        cerr << stats->window_start1 << " " << merge << "|" << endl;
 }
 
 bool CliqueWriter::overlapSize(clique_stats_t* stats) const {
@@ -707,38 +712,38 @@ string CliqueWriter::equalStrings(string s1, string s2) const {
 char CliqueWriter::expandBase(int shortBase) {
     switch (shortBase) {
         case 0:
-            return 'A';
+        return 'A';
         case 1:
-            return 'C';
+        return 'C';
         case 2:
-            return 'G';
+        return 'G';
         case 3:
-            return 'T';
+        return 'T';
         case 4:
-            return '-';
+        return '-';
         default:
-            return 'N';
+        return 'N';
     }
 }
 
 int CliqueWriter::shortenBase(char base) {
     switch (base) {
         case 65:
-            return 0;
+        return 0;
         case 67:
-            return 1;
+        return 1;
         case 71:
-            return 2;
+        return 2;
         case 84:
-            return 3;
+        return 3;
         case 45:
-            return 4;
+        return 4;
         case 78:
-            return -1;
+        return -1;
         default:
-            cerr << "Not aware of base: " << base << endl;
-            exit(0);
-            break;
+        cerr << "Not aware of base: " << base << endl;
+        exit(0);
+        break;
     }
 }
 
@@ -833,13 +838,13 @@ void CliqueWriter::add(std::auto_ptr<Clique> clique) {
     }
     switch (stats.variation.getType()) {
         case Variation::INSERTION:
-            total_insertion_cliques += 1;
-            break;
+        total_insertion_cliques += 1;
+        break;
         case Variation::DELETION:
-            total_deletion_cliques += 1;
-            break;
+        total_deletion_cliques += 1;
+        break;
         default:
-            break;
+        break;
     }
     total_count += 1;
     bool passed_fdr = stats.pvalue_corr <= fdr_threshold;
@@ -928,23 +933,23 @@ void CliqueWriter::finish() {
     for (size_t i = 0; i < clique_list.size(); ++i) {
         switch (clique_list[i].variation.getType()) {
             case Variation::INSERTION:
-                insertion_count += 1;
-                clique_list[i].fdr_level = clique_list[i].pvalue_corr * total_insertion_cliques / insertion_count;
-                if (clique_list[i].fdr_level <= fdr_threshold) {
-                    significant_ins_count = i + 1;
-                    clique_list[i].is_significant = true;
-                }
-                break;
+            insertion_count += 1;
+            clique_list[i].fdr_level = clique_list[i].pvalue_corr * total_insertion_cliques / insertion_count;
+            if (clique_list[i].fdr_level <= fdr_threshold) {
+                significant_ins_count = i + 1;
+                clique_list[i].is_significant = true;
+            }
+            break;
             case Variation::DELETION:
-                deletion_count += 1;
-                clique_list[i].fdr_level = clique_list[i].pvalue_corr * total_deletion_cliques / deletion_count;
-                if (clique_list[i].fdr_level <= fdr_threshold) {
-                    significant_del_count = i + 1;
-                    clique_list[i].is_significant = true;
-                }
-                break;
+            deletion_count += 1;
+            clique_list[i].fdr_level = clique_list[i].pvalue_corr * total_deletion_cliques / deletion_count;
+            if (clique_list[i].fdr_level <= fdr_threshold) {
+                significant_del_count = i + 1;
+                clique_list[i].is_significant = true;
+            }
+            break;
             default:
-                assert(false);
+            assert(false);
         }
     }
     for (size_t i = 0; i < clique_list.size(); ++i) {

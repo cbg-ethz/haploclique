@@ -21,7 +21,7 @@
 #include <stdlib.h> 
 #include <map>
 #include <algorithm>
-#include <bits/stl_vector.h>
+#include <vector>
 #include <boost/algorithm/string.hpp>
 #include <boost/tokenizer.hpp>
 
@@ -32,13 +32,12 @@ using namespace boost;
 
 const double QuasispeciesEdgeCalculator::FRAME_SHIFT_WEIGHT = 0.01;
 
-QuasispeciesEdgeCalculator::QuasispeciesEdgeCalculator(double Q, double edge_quasi_cutoff, double overlap, bool frameshift_merge, outer_map& allel_frequencies, outer_outer_map& allel_frequencies_insertion_map) {
+QuasispeciesEdgeCalculator::QuasispeciesEdgeCalculator(double Q, double edge_quasi_cutoff, double overlap, bool frameshift_merge, map<int, double>& simpson_map) {
     this->Q = Q;
     this->EDGE_QUASI_CUTOFF = edge_quasi_cutoff;
     this->MIN_OVERLAP = overlap;
     this->FRAMESHIFT_MERGE = frameshift_merge;
-    this->ALLEL_FREQUENCIES = allel_frequencies;
-    this->ALLEL_FREQUENCIES_INSERTIONS = allel_frequencies_insertion_map;
+    this->SIMPSON_MAP = simpson_map;
 }
 
 QuasispeciesEdgeCalculator::~QuasispeciesEdgeCalculator() {
@@ -49,11 +48,22 @@ void QuasispeciesEdgeCalculator::getPartnerLengthRange(const AlignmentRecord& ap
 }
 
 bool QuasispeciesEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const AlignmentRecord & ap2) const {
+    if (ap1.getName().compare(ap2.getName()) == 0) {
+        return 1;
+    }
+    //cerr << ap1.getName() << "\t" << ap2.getName() << "\t"; 
     double a = computeOverlap(ap1, ap2);
+    //cerr << "done" << endl;
     //    bool x = a > EDGE_QUASI_CUTOFF;
     //    if (a > 0.98)
     //    cerr << a << " " << EDGE_QUASI_CUTOFF << " " << x << endl;
+
     return a > EDGE_QUASI_CUTOFF;
+}
+
+std::string QuasispeciesEdgeCalculator::tail(std::string const& source, size_t const length) const {
+  if (length >= source.size()) { return source; }
+  return source.substr(source.size() - length);
 }
 
 double QuasispeciesEdgeCalculator::computeOverlap(const AlignmentRecord & ap1, const AlignmentRecord & ap2) const {
@@ -476,19 +486,13 @@ QuasispeciesEdgeCalculator::overlap_result QuasispeciesEdgeCalculator::singleOve
     double overlap_probability = 1.0;
     char alphabet[] = {'A', 'C', 'G', 'T'};
     double hamming = 0;
-    //    cerr << "======" << endl;
     int total_size = 0;
+    if (offset1 >= sequence1.size() || offset2 >= sequence2.size()) {
+        return result;
+    }
     for (int prefix = 1, run = 1, run2 = 1, compute_overlap = 0, j_overlap = 0, jm = 0, jm2 = 0, shift = 0, shift_del = 0, shift_ins = 0, insertion_index = 0, j = 0, j_cigar = 0, shift2 = 0, shift_del2 = 0, shift_ins2 = 0, insertion_index2 = 0, j2 = 0, j_cigar2 = 0;;) {
         int jump_single = 0;
         int jump_single2 = 0;
-        //        std::vector<std::string> words1;
-        //        std::vector<std::string> words2;
-        //        string n1 = ap1.getName();
-        //        string n2 = ap2.getName();
-        //        boost::split(words1, n1, boost::is_any_of(","), boost::token_compress_on);
-        //        boost::split(words2, n2, boost::is_any_of(","), boost::token_compress_on);
-
-        //        cerr << words1[1] << " | " << words2[1] << " |o1 " << offset1 << " |o2 " << offset2 << " |j1 " << j << " |j1-shift " << j - shift << endl;
         if ((j - shift == offset1 || offset1 == 0) && prefix) {
             run = 0;
         }
@@ -542,14 +546,21 @@ QuasispeciesEdgeCalculator::overlap_result QuasispeciesEdgeCalculator::singleOve
                 }
             } else if ((cigar1[j_cigar] != "D" && cigar2[j_cigar2] == "D")
                     || (cigar1[j_cigar] == "D" && cigar2[j_cigar2] != "D")) {
-                return result;
+                if (j_cigar + 1 < cigar1.size() && j_cigar2 + 1 < cigar2.size()
+                        && j_cigar - 1 >= 0 && j_cigar2 - 1 >= 0) {
+                    if (cigar1[j_cigar - 1] == "M" && cigar2[j_cigar2 - 1] == "M"
+                            && cigar1[j_cigar + 1] == "M" && cigar2[j_cigar2 + 1] == "M") {
+                                               // cerr << "YO  BITCH" << endl;;
+                    }
+                } else {
+                    return result;
+                }
             } else if ((cigar1[j_cigar] == "D" && cigar2[j_cigar2] == "D") || cigar1[j_cigar] == "S" || cigar2[j_cigar2] == "S") {
             }
         }
         if (j < sequence1.size() && run && !jump_single) {
             int j_global = j - shift - shift_ins + shift_del + s1 - 1;
             if (cigar1[j_cigar] == "I") {
-                //                if (sequence1[j] != 'N') assert(this->ALLEL_FREQUENCIES_INSERTIONS.at(j_global).at(insertion_index).at(sequence1[j]) > 0);
                 insertion_index++;
                 shift_ins++;
                 j++;
@@ -557,15 +568,9 @@ QuasispeciesEdgeCalculator::overlap_result QuasispeciesEdgeCalculator::singleOve
                 insertion_index = 0;
                 if (cigar1[j_cigar] == "M") {
                     if (j - shift < offset1 || j - shift > offset1 + overlap) {
-                        if (this->ALLEL_FREQUENCIES.begin() != this->ALLEL_FREQUENCIES.end()
-                                && this->ALLEL_FREQUENCIES.find(j_global) != this->ALLEL_FREQUENCIES.end()) {
-                            double sum = 0;
-                            sum += pow(this->ALLEL_FREQUENCIES.at(j_global).at('A'), 2);
-                            sum += pow(this->ALLEL_FREQUENCIES.at(j_global).at('C'), 2);
-                            sum += pow(this->ALLEL_FREQUENCIES.at(j_global).at('G'), 2);
-                            sum += pow(this->ALLEL_FREQUENCIES.at(j_global).at('T'), 2);
-                            sum += pow(this->ALLEL_FREQUENCIES.at(j_global).at('-'), 2);
-                            overlap_probability *= sum;
+                        if (this->SIMPSON_MAP.begin() != this->SIMPSON_MAP.end()
+                                && this->SIMPSON_MAP.find(j_global) != this->SIMPSON_MAP.end()) {
+                            overlap_probability *= this->SIMPSON_MAP.at(j_global);
                         }
                         jm++;
                     }
@@ -583,7 +588,6 @@ QuasispeciesEdgeCalculator::overlap_result QuasispeciesEdgeCalculator::singleOve
         if (j2 < sequence2.size() && run2 && !jump_single2) {
             int j_global = j2 - shift2 - shift_ins2 + shift_del2 + s2 - 1;
             if (cigar2[j_cigar2] == "I") {
-                //                if (sequence2[j2] != 'N') assert(this->ALLEL_FREQUENCIES_INSERTIONS.at(j_global).at(insertion_index).at(sequence2[j]) > 0);
                 insertion_index2++;
                 shift_ins2++;
                 j2++;
@@ -591,15 +595,9 @@ QuasispeciesEdgeCalculator::overlap_result QuasispeciesEdgeCalculator::singleOve
                 insertion_index2 = 0;
                 if (cigar2[j_cigar2] == "M") {
                     if (j2 - shift2 < offset2 || j2 - shift2 > offset2 + overlap) {
-                        if (this->ALLEL_FREQUENCIES.begin() != this->ALLEL_FREQUENCIES.end()
-                                && this->ALLEL_FREQUENCIES.find(j_global) != this->ALLEL_FREQUENCIES.end()) {
-                            double sum = 0;
-                            sum += pow(this->ALLEL_FREQUENCIES.at(j_global).at('A'), 2);
-                            sum += pow(this->ALLEL_FREQUENCIES.at(j_global).at('C'), 2);
-                            sum += pow(this->ALLEL_FREQUENCIES.at(j_global).at('G'), 2);
-                            sum += pow(this->ALLEL_FREQUENCIES.at(j_global).at('T'), 2);
-                            sum += pow(this->ALLEL_FREQUENCIES.at(j_global).at('-'), 2);
-                            overlap_probability *= sum;
+                        if (this->SIMPSON_MAP.begin() != this->SIMPSON_MAP.end()
+                                && this->SIMPSON_MAP.find(j_global) != this->SIMPSON_MAP.end()) {
+                            overlap_probability *= this->SIMPSON_MAP.at(j_global);
                         }
                         jm2++;
                     }
@@ -617,7 +615,6 @@ QuasispeciesEdgeCalculator::overlap_result QuasispeciesEdgeCalculator::singleOve
         if (j == sequence1.size() && j2 == sequence2.size()) {
             break;
         }
-        //        cerr << "p: " << overlap_probability << endl;
         total_size++;
     }
 

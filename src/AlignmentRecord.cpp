@@ -27,6 +27,7 @@
 using namespace std;
 
 AlignmentRecord::AlignmentRecord(const string& line, ReadGroups* read_groups) {
+	this->line = line;
 	typedef boost::tokenizer<boost::char_separator<char> > tokenizer_t;
 	boost::char_separator<char> separator(" \t");
 	tokenizer_t tokenizer(line,separator);
@@ -228,4 +229,8 @@ bool AlignmentRecord::isSingleEnd() const {
 
 bool AlignmentRecord::isPairedEnd() const {
 	return !single_end;
+}
+
+std::string AlignmentRecord::getLine() const {
+	return this->line;
 }

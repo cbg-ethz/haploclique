@@ -26,18 +26,13 @@ using namespace std;
 
 class QuasispeciesEdgeCalculator : public EdgeCalculator {
 private:
-    
-    typedef std::map<char, double> inner_map;
-    typedef std::map<int, inner_map> outer_map;
-    typedef std::map<int, outer_map> outer_outer_map;
 
     double MIN_OVERLAP;
     static const double FRAME_SHIFT_WEIGHT;
     double Q;
     double EDGE_QUASI_CUTOFF;
     bool FRAMESHIFT_MERGE;
-    outer_map ALLEL_FREQUENCIES;
-    outer_outer_map ALLEL_FREQUENCIES_INSERTIONS;
+    map<int, double> SIMPSON_MAP;
 
     typedef struct overlap_result {
         double probability;
@@ -50,8 +45,9 @@ private:
     double computeOverlap(const AlignmentRecord & ap1, const AlignmentRecord & ap2) const;
     QuasispeciesEdgeCalculator::overlap_result singleOverlap(const AlignmentRecord & ap1, const AlignmentRecord & ap2, int strain1, int strain2) const;
     int overlapSize(int e1, int e2, int s1, int s2) const;
+    string tail(std::string const& source, size_t const length) const;
 public:
-    QuasispeciesEdgeCalculator(double Q, double edge_quasi_cutoff, double overlap, bool frameshift_merge, outer_map& allel_frequencies, outer_outer_map& allel_frequencies_insertion_map);
+    QuasispeciesEdgeCalculator(double Q, double edge_quasi_cutoff, double overlap, bool frameshift_merge, map<int, double>& simpson_map);
     virtual ~QuasispeciesEdgeCalculator();
 
     /** Decides whether an edge is to be drawn between the two given nodes. */

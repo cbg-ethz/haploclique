@@ -18,9 +18,10 @@ with open(sys.argv[1]) as f:
 for lines in sys.stdin:
     if len(lines) > 0:
         split = lines.split(" ")
-        sys.stdout.write(split[0])
-        sys.stdout.write("-+-")
-        sys.stdout.write(clique_name[split[0]])
-        for i in xrange(1,len(split)):
-            sys.stdout.write(" ")
-            sys.stdout.write(split[i])
+        if split[0].startswith("Clique"):
+            sys.stdout.write(split[0])
+            sys.stdout.write("-+-")
+            sys.stdout.write(clique_name[split[0]])
+            for i in xrange(1,len(split)):
+                sys.stdout.write(" ")
+                sys.stdout.write(split[i])

@@ -138,6 +138,10 @@ private:
         }
     } clique_stats_t;
 
+    typedef struct {
+        std::vector<int> alignment;
+    } insertion;
+
     /** Comparator type comparing cliques according to their corrected p-value. */
     typedef struct {
 

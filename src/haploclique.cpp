@@ -30,7 +30,6 @@
 #include <boost/algorithm/string.hpp>
 
 #include <bamtools/api/BamReader.h>
-#include <bits/stl_vector.h>
 
 #include "AlignmentRecord.h"
 #include "QuasispeciesEdgeCalculator.h"
@@ -48,11 +47,11 @@
 #include "ReadSetGroupWiseZTester.h"
 #include "GaussianEdgeCalculator.h"
 
-using namespace std;
-using namespace boost;
-namespace po = boost::program_options;
+ using namespace std;
+ using namespace boost;
+ namespace po = boost::program_options;
 
-void usage(const char* name, const po::options_description& options_desc) {
+ void usage(const char* name, const po::options_description& options_desc) {
     cerr << "Usage: " << name << " [options]" << endl;
     cerr << endl;
     cerr << "<distribution-file> file with assumed internal segment length distribution." << endl;
@@ -120,25 +119,25 @@ int main(int argc, char* argv[]) {
 
     po::options_description options_desc("Allowed options");
     options_desc.add_options()
-            ("verbose,v", po::value<bool>(&verbose)->zero_tokens(), "Be verbose: output additional statistics for each variation.")
-            ("min_aln_weight,w", po::value<double>(&min_aln_weight)->default_value(0.0016), "Minimum weight of alignment pairs to be considered.")
-            ("max_insert_length,l", po::value<double>(&max_insert_length)->default_value(50000), "Maximum insert length of alignments to be considered (0=unlimited).")
-            ("max_coverage,c", po::value<int>(&max_coverage)->default_value(200), "Maximum allowed coverage. If exceeded, violating reads are ignored. The number of such ignored reads is printed to stderr (0=unlimited).")
-            ("write_edges,e", po::value<string>(&edge_filename)->default_value(""), "Write edges to file of given name.")
-            ("fdr,f", po::value<double>(&fdr)->default_value(0.1), "False discovery rate (FDR).")
-            ("all,a", "Output all cliques instead of only the significant ones. Cliques are not sorted and last column (FDR) is not computed.")
-            ("output_reads,r", po::value<string>(&reads_output_filename)->default_value(""), "Output reads belonging to at least one significant clique to the given filename (along with their assignment to significant cliques.")
-            ("output_coverage,C", po::value<string>(&coverage_output_filename)->default_value(""), "Output the coverage with considered insert segments along the chromosome (one line per position) to the given filename.")
-            ("edge_quasi_cutoff,q", po::value<double>(&edge_quasi_cutoff)->default_value(0.9), "End compatibility probability cutoff for quasispecies reconstruction.")
-            ("random_overlap_probability,Q", po::value<double>(&Q)->default_value(0.9), "Probability that two random reads are equal at the same position.")
-            ("frame_shift_merge,m", po::value<bool>(&frameshift_merge)->zero_tokens(), "Reads will be clustered if one has single nucleotide deletions.")
-            ("min_overlap,o", po::value<double>(&overlap)->default_value(0.6), "Minimum relative overlap between reads.")
-            ("super_read_min_coverage,s", po::value<int>(&super_read_min_coverage)->default_value(2), "Minimum coverage for super-read assembly.")
-            ("allel_frequencies,A", po::value<string>(&allel_frequencies_path)->default_value(""), "Minimum coverage for super-read assembly.")
-            ("call_indels,I", po::value<string>(&indel_output_file)->default_value(""), "Call indels from cliques. In this mode, the \"classical CLEVER\" edge criterion is used in addition to the new one. Filename to write indels to must be given as parameter.")
-            ("mean_and_sd_filename,M", po::value<string>(&mean_and_sd_filename)->default_value(""), "Name of file with mean and standard deviation of insert size distribution (only required if option -I is used).")
-            ("indel_edge_sig_level,p", po::value<double>(&indel_edge_sig_level)->default_value(0.2), "Significance level for \"indel\" edges criterion, see option -I (the lower the level, the more edges will be present).")
-            ;
+    ("verbose,v", po::value<bool>(&verbose)->zero_tokens(), "Be verbose: output additional statistics for each variation.")
+    ("min_aln_weight,w", po::value<double>(&min_aln_weight)->default_value(0.0016), "Minimum weight of alignment pairs to be considered.")
+    ("max_insert_length,l", po::value<double>(&max_insert_length)->default_value(50000), "Maximum insert length of alignments to be considered (0=unlimited).")
+    ("max_coverage,c", po::value<int>(&max_coverage)->default_value(200), "Maximum allowed coverage. If exceeded, violating reads are ignored. The number of such ignored reads is printed to stderr (0=unlimited).")
+    ("write_edges,e", po::value<string>(&edge_filename)->default_value(""), "Write edges to file of given name.")
+    ("fdr,f", po::value<double>(&fdr)->default_value(0.1), "False discovery rate (FDR).")
+    ("all,a", "Output all cliques instead of only the significant ones. Cliques are not sorted and last column (FDR) is not computed.")
+    ("output_reads,r", po::value<string>(&reads_output_filename)->default_value(""), "Output reads belonging to at least one significant clique to the given filename (along with their assignment to significant cliques.")
+    ("output_coverage,C", po::value<string>(&coverage_output_filename)->default_value(""), "Output the coverage with considered insert segments along the chromosome (one line per position) to the given filename.")
+    ("edge_quasi_cutoff,q", po::value<double>(&edge_quasi_cutoff)->default_value(0.9), "End compatibility probability cutoff for quasispecies reconstruction.")
+    ("random_overlap_probability,Q", po::value<double>(&Q)->default_value(0.9), "Probability that two random reads are equal at the same position.")
+    ("frame_shift_merge,m", po::value<bool>(&frameshift_merge)->zero_tokens(), "Reads will be clustered if one has single nucleotide deletions.")
+    ("min_overlap,o", po::value<double>(&overlap)->default_value(0.6), "Minimum relative overlap between reads.")
+    ("super_read_min_coverage,s", po::value<int>(&super_read_min_coverage)->default_value(2), "Minimum coverage for super-read assembly.")
+    ("allel_frequencies,A", po::value<string>(&allel_frequencies_path)->default_value(""), "Minimum coverage for super-read assembly.")
+    ("call_indels,I", po::value<string>(&indel_output_file)->default_value(""), "Call indels from cliques. In this mode, the \"classical CLEVER\" edge criterion is used in addition to the new one. Filename to write indels to must be given as parameter.")
+    ("mean_and_sd_filename,M", po::value<string>(&mean_and_sd_filename)->default_value(""), "Name of file with mean and standard deviation of insert size distribution (only required if option -I is used).")
+    ("indel_edge_sig_level,p", po::value<double>(&indel_edge_sig_level)->default_value(0.2), "Significance level for \"indel\" edges criterion, see option -I (the lower the level, the more edges will be present).")
+    ;
 
     if (isatty(fileno(stdin))) {
         usage(argv[0], options_desc);
@@ -164,14 +163,11 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    //read allel frequency distributions
-    typedef std::map<char, double> inner_map;
-    typedef std::map<int, inner_map> outer_map;
-    typedef std::map<int, outer_map> outer_outer_map;
+//read allel frequency distributions
 
-    outer_map allel_frequencies_map;
-    outer_outer_map allel_frequencies_insertion_map;
-
+    std::map<int, double> simpson_map;
+    //cerr << "PARSE PRIOR";
+    cerr.flush();
     if (allel_frequencies_path.size() > 0) {
         ifstream ia(allel_frequencies_path.c_str());
         string ia_line;
@@ -183,49 +179,13 @@ int main(int argc, char* argv[]) {
             std::vector<std::string> insertion_words;
             boost::split(insertion_words, words[0], boost::is_any_of("\\."), boost::token_compress_on);
             if (insertion_words.size() > 1) {
-                allel_frequencies_insertion_map.insert(make_pair(atoi(insertion_words[0].c_str()), outer_map()));
-                allel_frequencies_insertion_map[atoi(insertion_words[0].c_str())].insert(make_pair(atoi(insertion_words[1].c_str()), inner_map()));
-                allel_frequencies_insertion_map[atoi(insertion_words[0].c_str())][atoi(insertion_words[1].c_str())].insert(make_pair('A', atof(words[1].c_str())));
-                allel_frequencies_insertion_map[atoi(insertion_words[0].c_str())][atoi(insertion_words[1].c_str())].insert(make_pair('C', atof(words[2].c_str())));
-                allel_frequencies_insertion_map[atoi(insertion_words[0].c_str())][atoi(insertion_words[1].c_str())].insert(make_pair('G', atof(words[3].c_str())));
-                allel_frequencies_insertion_map[atoi(insertion_words[0].c_str())][atoi(insertion_words[1].c_str())].insert(make_pair('T', atof(words[4].c_str())));
-                if (words.size() != 5) {
-                    cerr << "SAF failed" << endl;
-                }
             } else {
-                allel_frequencies_map.insert(make_pair(atoi(words[0].c_str()), inner_map()));
-                allel_frequencies_map[atoi(words[0].c_str())].insert(make_pair('A', atof(words[1].c_str())));
-                allel_frequencies_map[atoi(words[0].c_str())].insert(make_pair('C', atof(words[2].c_str())));
-                allel_frequencies_map[atoi(words[0].c_str())].insert(make_pair('G', atof(words[3].c_str())));
-                allel_frequencies_map[atoi(words[0].c_str())].insert(make_pair('T', atof(words[4].c_str())));
-                allel_frequencies_map[atoi(words[0].c_str())].insert(make_pair('-', atof(words[5].c_str())));
-                if (words.size() != 6) {
-                    cerr << "SAF failed" << endl;
-                }
+                simpson_map[atoi(words[0].c_str())] = pow(atof(words[1].c_str()),2)+pow(atof(words[2].c_str()),2)+pow(atof(words[3].c_str()),2)+pow(atof(words[4].c_str()),2)+pow(atof(words[5].c_str()),2);
+                //cerr << simpson_map[atoi(words[0].c_str())] << endl;
             }
         }
     }
-
-    //        for (auto& kv : allel_frequencies_insertion_map) {
-    //            cerr << kv.first << ":" << endl;
-    //            for (auto& kv2 : kv.second) {
-    //                cerr << "#" << kv2.first;
-    //                for (auto& kv3 : kv2.second) {
-    //                    cerr << "\t" << kv3.second;
-    //                }
-    //                cerr << endl;
-    //            }
-    //            cerr << endl;
-    //        }
-
-    //        for (auto& kv : allel_frequencies_map) {
-    //            cerr << kv.first;
-    //            for (auto& kv2 : kv.second) {
-    //                cerr << "\t" << kv2.second;
-    //            }
-    //            cerr << endl;
-    //        }
-    //    return 1;
+    //cerr << "PARSE PRIOR: done" << endl;
 
     clock_t clock_start = clock();
     EdgeCalculator* edge_calculator = 0;
@@ -234,7 +194,7 @@ int main(int argc, char* argv[]) {
     VariationCaller* variation_caller = 0;
     ReadGroups* read_groups = 0;
     auto_ptr<vector<mean_and_stddev_t> > readgroup_params(0);
-    edge_calculator = new QuasispeciesEdgeCalculator(Q, edge_quasi_cutoff, overlap, frameshift_merge, allel_frequencies_map, allel_frequencies_insertion_map);
+    edge_calculator = new QuasispeciesEdgeCalculator(Q, edge_quasi_cutoff, overlap, frameshift_merge, simpson_map);
     if (call_indels) {
         double insert_mean = -1.0;
         double insert_stddev = -1.0;
@@ -272,7 +232,7 @@ int main(int argc, char* argv[]) {
     if (coverage_output_filename.size() > 0) {
         coverage_writer = new CoverageWriter(coverage_output_filename);
     }
-    
+
     size_t last_pos = 0;
     int n = 0;
     string line;
@@ -281,6 +241,10 @@ int main(int argc, char* argv[]) {
     size_t skipped_by_coverage = 0;
     size_t valid_alignments = 0;
     size_t total_alignments = 0;
+    //cerr << "STATUS";
+    //cerr.flush();
+    ofstream skipped;
+    skipped.open ("skipped.prior");
     while (getline(cin, line)) {
         n += 1;
         total_alignments += 1;
@@ -299,18 +263,21 @@ int main(int argc, char* argv[]) {
             auto_ptr<AlignmentRecord> alignment_autoptr(new AlignmentRecord(ap));
             if (ap.isPairedEnd() && (max_insert_length > 0)) {
                 if (alignment_autoptr->getInsertLength() > max_insert_length) {
-                    //skipped_by_length += 1;
-                    //continue;
+                //skipped_by_length += 1;
+                //continue;
                 }
             }
-            if (alignment_autoptr->getWeight() < min_aln_weight) {
-                // cout << "Skipping alignment (weight): "  << alignment_autoptr->getName() << " weight: " << alignment_autoptr->getWeight() << endl;
+            /*if (alignment_autoptr->getWeight() < min_aln_weight) {
+            // cout << "Skipping alignment (weight): "  << alignment_autoptr->getName() << " weight: " << alignment_autoptr->getWeight() << endl;
+                skipped << line;
                 skipped_by_weight += 1;
                 continue;
-            }
+            }*/
             if (max_coverage > 0) {
                 if (clique_finder.getCoverageMonitor().probeAlignment(*alignment_autoptr) > (size_t) max_coverage) {
-                    // cout << "Skipping alignment (coverage): "  << alignment_autoptr->getName()  << endl;
+                // cout << "Skipping alignment (coverage): "  << alignment_autoptr->getName()  << endl;
+                    skipped << line;
+                    skipped << "\n";
                     skipped_by_coverage += 1;
                     continue;
                 }
@@ -323,19 +290,14 @@ int main(int argc, char* argv[]) {
             cerr << "Error parsing input, offending line: " << n << endl;
             return 1;
         }
+        //cerr << "\rSTATUS: " << total_alignments;
+        //cerr.flush();
     }
     clique_finder.finish();
     clique_writer.finish();
-
-
-    /*cerr << "Paired reads: " << clique_writer.getPairedCount() << endl;
-    cerr << "Single reads: " << clique_writer.getSingleCount() << endl;
-    cerr << "Total alignments: " << total_alignments << endl;
-    cerr << "Valid alignments: " << valid_alignments << endl;
-    cerr << "Alignments with too low weight (skipped): " << skipped_by_weight << endl;
-    cerr << "Alignments with too large insert length (skipped): " << skipped_by_length << endl;*/
-    cerr << "Skipped reads:\t\t" << skipped_by_coverage << endl;
-    cerr << "Cliques:\t\t" << clique_writer.getTotalCount() << endl;
+    //cerr << endl;
+    
+    skipped.close();
 
     if (indel_os != 0) {
         indel_os->close();
@@ -356,6 +318,6 @@ int main(int argc, char* argv[]) {
         delete coverage_writer;
     }
     double cpu_time = (double) (clock() - clock_start) / CLOCKS_PER_SEC;
-    cerr << "CPU time:\t\t" << round(cpu_time) << endl;
+    cerr << "Skipped/Cliques/CPU time:\t" << skipped_by_coverage << "/" << clique_writer.getPairedCount() + clique_writer.getSingleCount() << "/" << round(cpu_time) << endl;
     return 0;
 }

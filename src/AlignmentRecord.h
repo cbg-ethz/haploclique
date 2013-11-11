@@ -51,6 +51,7 @@ private:
 	double aln_pair_prob_ins_length;
 	alignment_id_t id;
 	bool single_end;
+	std::string line;
 public:
 	/** Parse an alignment pair from a line. If no read_group information is available, 
 	  * parameter read_groups can be 0. */
@@ -104,6 +105,7 @@ public:
 	void setID(alignment_id_t id);
 	bool isSingleEnd() const;
 	bool isPairedEnd() const;
+	std::string getLine() const;
 };
 
 #endif /* ALIGNMENTRECORD_H_ */
