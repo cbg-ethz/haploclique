@@ -20,6 +20,8 @@ OPTIONS:
    -e      Continue assembly
    -z      Split size
    -g      No parallelization
+   -w      Do not re-use singletons
+   -n      Do not use alignment prior
 
 UPDATE:    http://bit.ly/haploclique
 EOF
@@ -38,7 +40,9 @@ SHUFFLE=0
 CONTINUE=0
 SPLITSIZE=200
 NOPARALLEL=0
-while getopts “a:h:r:q:o:pt:c:s:euz:g” OPTION
+NOSINGLETONS=0
+NOPRIOR=0
+while getopts “a:h:r:q:o:pt:c:s:euz:gwn” OPTION
 do
      case $OPTION in
          h)
@@ -85,6 +89,12 @@ do
          g)
              NOPARALLEL=1
              ;;
+         w)
+             NOSINGLETONS=1
+             ;;
+         n)
+             NOPRIOR=1
+             ;;
          ?)
              usage
              exit
@@ -105,6 +115,7 @@ echo $HS > .HS.parameter
 echo ../$REF > .REF.parameter
 echo $PACBIO > .PACBIO.parameter
 echo $INDELFIXER > .INDELFIXER.parameter
+echo $NOPRIOR > .NOPRIOR.parameter
 
 function initial() {
     samtools view -uf 1 $ALIGNMENT > paired.bam 2> /dev/null
@@ -242,8 +253,14 @@ function computeParallelSingle() {
     HO=`cat ../.HO.parameter`
     HC=`cat ../.HC.parameter`
     HS=`cat ../.HS.parameter`
+    NOPRIOR=`cat ../.NOPRIOR.parameter`
     #echo -e "Parameter q o c s:\t\t${HQ} ${HO} ${HC} ${HS}"
-    cat alignment.prior | sort -k6,6 -g | haploclique -A ../support/allel_distribution_phred_weighted.txt -c $HC -s $HS -q $HQ -o $HO -a > data_clique.fastq;
+
+    if [[ $NOPRIOR == 1 ]];then
+        cat alignment.prior | sort -k6,6 -g | haploclique -c $HC -s $HS -q $HQ -o $HO -a > data_clique.fastq;
+    else
+        cat alignment.prior | sort -k6,6 -g | haploclique -A ../support/allel_distribution_phred_weighted.txt -c $HC -s $HS -q $HQ -o $HO -a > data_clique.fastq;
+    fi
     haploclique-postprocess.py < data_clique.fastq
     rm -rf data_clique.fastq support
 
@@ -288,8 +305,10 @@ fi
 
 if [[ $NOPARALLEL == 0 ]]; then
     for i in $(seq 1 ${ITERATIONS}); do
-        mv alignment.prior old.prior
-        cat old.prior singles.prior > alignment.prior
+        if [[ $NOSINGLETONS == 0 ]]; then
+            mv alignment.prior old.prior
+            cat old.prior singles.prior > alignment.prior
+        fi
         rm -rf singles.prior old.prior data* trash* *-e x*
         if [[ $SHUFFLE == 1 ]]; then
             cat alignment.prior | awk 'BEGIN{srand();}{print rand()"\t"$0}' | sort -k1 -n | cut -f2- | split -l $SPLITSIZE
@@ -300,7 +319,9 @@ if [[ $NOPARALLEL == 0 ]]; then
         fi
 
         parallel computeParallelSingle {} ::: x*-dir
-        cat x*/singles.prior | sort -u -t" " -k1,1 > singles.prior
+        if [[ $NOSINGLETONS == 0 ]]; then
+            cat x*/singles.prior | sort -u -t" " -k1,1 > singles.prior
+        fi
         cat x*/data_cliques_paired_R1.fastq > data_cliques_paired_R1.fastq
         cat x*/data_cliques_paired_R2.fastq > data_cliques_paired_R2.fastq
         cat x*/data_cliques_single.fastq > data_cliques_single.fastq

@@ -1,7 +1,7 @@
 /* Copyright 2012 Tobias Marschall
- * 
+ *
  * This file is part of HaploClique.
- * 
+ *
  * HaploClique is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -18,7 +18,7 @@
 
 #include <math.h>
 #include <boost/math/distributions/normal.hpp>
-#include <stdlib.h> 
+#include <stdlib.h>
 #include <map>
 #include <algorithm>
 #include <vector>
@@ -51,14 +51,7 @@ bool QuasispeciesEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const 
     if (ap1.getName().compare(ap2.getName()) == 0) {
         return 1;
     }
-    //cerr << ap1.getName() << "\t" << ap2.getName() << "\t"; 
-    double a = computeOverlap(ap1, ap2);
-    //cerr << "done" << endl;
-    //    bool x = a > EDGE_QUASI_CUTOFF;
-    //    if (a > 0.98)
-    //    cerr << a << " " << EDGE_QUASI_CUTOFF << " " << x << endl;
-
-    return a > EDGE_QUASI_CUTOFF;
+    return computeOverlap(ap1, ap2) > EDGE_QUASI_CUTOFF;
 }
 
 std::string QuasispeciesEdgeCalculator::tail(std::string const& source, size_t const length) const {
@@ -69,6 +62,7 @@ std::string QuasispeciesEdgeCalculator::tail(std::string const& source, size_t c
 double QuasispeciesEdgeCalculator::computeOverlap(const AlignmentRecord & ap1, const AlignmentRecord & ap2) const {
 
     double hamming = 0;
+    // cerr << ap1.isSingleEnd() <<"|"<< ap2.isSingleEnd() << endl;
     if (ap1.isSingleEnd() && ap2.isSingleEnd()) {
         int read_size1 = min(ap1.getEnd1() - ap1.getStart1(), ap2.getEnd1() - ap2.getStart1());
         float overlap_size1 = -1;
@@ -101,7 +95,9 @@ double QuasispeciesEdgeCalculator::computeOverlap(const AlignmentRecord & ap1, c
                 overlap_size1 = (float) overlapSize(ap1.getEnd1(), ap2.getEnd1(), ap1.getStart1(), ap2.getStart1());
                 overlap_size2 = (float) overlapSize(ap1.getEnd1(), ap2.getEnd2(), ap1.getStart1(), ap2.getStart2());
             }
-            if (overlap_size1 >= MIN_OVERLAP && overlap_size2 >= MIN_OVERLAP) {
+            // cerr << ap1.getStart1() << " " << ap1.getEnd1() << " " << ap2.getStart1() << " " << ap2.getEnd1() << " " << ap2.getStart2() << " " << ap2.getEnd2() << endl;
+            // cerr << overlap_size1 << " " << overlap_size2 << endl;
+            if ((overlap_size1 >= MIN_OVERLAP && overlap_size2 >= MIN_OVERLAP) || overlap_size1+overlap_size2 >= MIN_OVERLAP) {
                 overlap_result r1 = singleOverlap(ap1, ap2, 1, 1);
                 p = r1.probability;
                 hamming += r1.hamming;
@@ -113,24 +109,25 @@ double QuasispeciesEdgeCalculator::computeOverlap(const AlignmentRecord & ap1, c
                 p = pow(p, 1.0 / (max(ap1.getEnd1(), ap2.getEnd1()) - min(ap1.getStart1(), ap2.getStart1()) + max(ap1.getEnd1(), ap2.getEnd2()) - min(ap1.getStart1(), ap2.getStart2())));
                 return p;
             }
-            //            else if (overlap_size1 >= MIN_OVERLAP && overlapSize(ap1.getEnd1(), ap2.getEnd1(), ap1.getStart1(), ap2.getStart1()) > 50) {
-            //                overlap_result r = singleOverlap(ap1, ap2, 1, 1);
-            //                p = r.probability;
-            //                p = pow(p, 1.0 / (max(ap1.getEnd1(), ap2.getEnd1()) - min(ap1.getStart1(), ap2.getStart1())));
-            //                //                p *= xlr.at(0);
-            //                //                hamming += xlr.at(1);
-            //                //                p = pow(p, 1.0 / overlap_size1);
-            //                return p;
-            //            } else if (overlap_size2 >= MIN_OVERLAP && overlapSize(ap1.getEnd1(), ap2.getEnd2(), ap1.getStart1(), ap2.getStart2()) > 50) {
-            //                overlap_result r = singleOverlap(ap1, ap2, 1, 2);
-            //                p = r.probability;
-            //                p = pow(p, 1.0 / (max(ap1.getEnd1(), ap2.getEnd2()) - min(ap1.getStart1(), ap2.getStart2())));
-            //                //                p *= xlr.at(0);
-            //                //                hamming += xlr.at(1);
-            //                //                p = pow(p, 1.0 / overlap_size2);
-            //                //if (p > 0.99) cerr << p << "\t" << hamming << endl;
-            //                return p;
-            //            }
+           //  else if (overlap_size1 >= MIN_OVERLAP) {
+           //     overlap_result r = singleOverlap(ap1, ap2, 1, 1);
+           //     p = r.probability;
+           //     p = pow(p, 1.0 / (max(ap1.getEnd1(), ap2.getEnd1()) - min(ap1.getStart1(), ap2.getStart1())));
+           //     //                p *= xlr.at(0);
+           //     //                hamming += xlr.at(1);
+           //     //                p = pow(p, 1.0 / overlap_size1);
+           //     return p;
+           // }
+           // else if (overlap_size2 >= MIN_OVERLAP) {
+           //     overlap_result r = singleOverlap(ap1, ap2, 1, 2);
+           //     p = r.probability;
+           //     p = pow(p, 1.0 / (max(ap1.getEnd1(), ap2.getEnd2()) - min(ap1.getStart1(), ap2.getStart2())));
+           //     //                p *= xlr.at(0);
+           //     //                hamming += xlr.at(1);
+           //     //                p = pow(p, 1.0 / overlap_size2);
+           //     //if (p > 0.99) cerr << p << "\t" << hamming << endl;
+           //     return p;
+           // }
             return 0;
         } else {
             double p = 1.0;
@@ -146,8 +143,10 @@ double QuasispeciesEdgeCalculator::computeOverlap(const AlignmentRecord & ap1, c
                 overlap_size1 = (float) overlapSize(ap1.getEnd1(), ap2.getEnd1(), ap1.getStart1(), ap2.getStart1());
                 overlap_size2 = (float) overlapSize(ap1.getEnd2(), ap2.getEnd1(), ap1.getStart2(), ap2.getStart1());
             }
-
-            if (overlap_size1 >= MIN_OVERLAP && overlap_size2 >= MIN_OVERLAP) {
+            // cerr << ap1.getStart1() << " " << ap1.getEnd1() << " " << ap1.getStart2() << " " << ap1.getEnd2() << " " << ap2.getStart1() << " " << ap2.getEnd1() << endl;
+            // cerr << overlap_size1 << " " << overlap_size2 << endl;
+            if ((overlap_size1 >= MIN_OVERLAP && overlap_size2 >= MIN_OVERLAP) || overlap_size1+overlap_size2 >= MIN_OVERLAP) {
+                // cerr << "did" << endl;
                 overlap_result r1 = singleOverlap(ap1, ap2, 1, 1);
                 p *= r1.probability;
                 hamming += r1.hamming;
@@ -157,6 +156,7 @@ double QuasispeciesEdgeCalculator::computeOverlap(const AlignmentRecord & ap1, c
                 //                p = pow(p, 1.0 / (overlap_size1 + overlap_size2));
                 //if (p > 0.99) cerr << p << "\t" << hamming << endl;
                 p = pow(p, 1.0 / (max(ap1.getEnd1(), ap2.getEnd1()) - min(ap1.getStart1(), ap2.getStart1()) + max(ap1.getEnd2(), ap2.getEnd1()) - min(ap1.getStart2(), ap2.getStart1())));
+                // cerr << "P:" << p << "," << r1.probability << "," << r2.probability << endl;
                 return p;
             }
             //            else if (overlap_size1 >= MIN_OVERLAP && overlapSize(ap1.getEnd2(), ap2.getEnd1(), ap1.getStart2(), ap2.getStart1()) > 50 ) {
@@ -205,49 +205,15 @@ double QuasispeciesEdgeCalculator::computeOverlap(const AlignmentRecord & ap1, c
             return 0;
         }
 
-
-        //        std::vector<std::string> words1;
-        //        std::vector<std::string> words2;
-        //        string n1 = ap1.getName();
-        //        string n2 = ap2.getName();
-        //        boost::split(words1, n1, boost::is_any_of(","), boost::token_compress_on);
-        //        boost::split(words2, n2, boost::is_any_of(","), boost::token_compress_on);
-        //        std::sort(words1.begin(), words1.end());
-        //        std::sort(words2.begin(), words2.end());
-        //        std::vector<std::string> v(words1.size() + words2.size());
-        //
-        //        std::vector<std::string>::iterator it;
-        //        it = std::set_intersection(words1.begin(), words1.end(), words2.begin(), words2.end(), v.begin());
-        //        v.resize(it - v.begin());
-        //
-        //        if (v.size() >= 5) {
-        ////            cerr << "intersection " << v.size() << endl;
-        //            return 1;
-        //        }
-
         overlap_result r1 = singleOverlap(ap1, ap2, 1, 1);
         overlap_result r2 = singleOverlap(ap1, ap2, 2, 2);
 
         double p = r1.probability * r2.probability;
 
-        //        int read_size3 = min(ap1.getEnd2() - ap1.getStart2(), ap2.getEnd1() - ap2.getStart1());
-        //        float overlap_size2 = (float) overlapSize(ap1.getEnd2(), ap2.getEnd1(), ap1.getStart2(), ap2.getStart1()) / (float) read_size3;
-        //        if (overlap_size3 > 0) {
-        //            
-        //        }
-
         p = pow(p, 1.0 / (max(ap1.getEnd1(), ap2.getEnd1()) - min(ap1.getStart1(), ap2.getStart1()) + max(ap1.getEnd2(), ap2.getEnd2()) - min(ap1.getStart2(), ap2.getStart2())));
 
-        //        std::vector<std::string> words1;
-        //        std::vector<std::string> words2;
-        //        string n1 = ap1.getName();
-        //        string n2 = ap2.getName();
-        //        boost::split(words1, n1, boost::is_any_of(","), boost::token_compress_on);
-        //        boost::split(words2, n2, boost::is_any_of(","), boost::token_compress_on);
-        //        cerr << overlap_size1 << " " << words1[1] << " " << r1.probability << " | " << overlap_size2 << " " << words2[1] << " " << r2.probability << " | " << (max(ap1.getEnd1(), ap2.getEnd1()) - min(ap1.getStart1(), ap2.getStart1()) + max(ap1.getEnd2(), ap2.getEnd2()) - min(ap1.getStart2(), ap2.getStart2())) << " : " << r1.size << " : " << r2.size << " = " << p << endl;
-        //        cerr << ap1.getEnd1() << " " <<  ap2.getEnd1() << " "  << ap1.getStart1() << " " << ap2.getStart1() << endl;
         hamming = r1.hamming + r2.hamming;
-        //        if (p >= EDGE_QUASI_CUTOFF) cerr << (hamming / (overlap_size1 + overlap_size2)) << endl;
+
         return p;
     }
 
@@ -279,7 +245,7 @@ int QuasispeciesEdgeCalculator::overlapSize(int e1, int e2, int s1, int s2) cons
         // ----    AND   --
         //   ----  AND ------
         if (s1 < s2) {
-            // ---- 
+            // ----
             //   ----
             return e1 - s2;
         } else {
@@ -402,7 +368,7 @@ QuasispeciesEdgeCalculator::overlap_result QuasispeciesEdgeCalculator::singleOve
     }
 
     // ====
-    // compute overlap 
+    // compute overlap
     int x_l1 = e1 - s1;
     int x_l2 = e2 - s2;
 
@@ -443,7 +409,7 @@ QuasispeciesEdgeCalculator::overlap_result QuasispeciesEdgeCalculator::singleOve
         // ----    AND   --
         //   ----  AND ------
         if (s1 < s2) {
-            // ---- 
+            // ----
             //   ----
             overlap = e1 - s2;
             offset1 = x_l1 - overlap;
@@ -473,6 +439,7 @@ QuasispeciesEdgeCalculator::overlap_result QuasispeciesEdgeCalculator::singleOve
             offset2 = 0;
         }
     }
+    // cerr << "single overlap: " << overlap << endl;
     if (overlap < MIN_OVERLAP) {
         return result;
     }
@@ -488,9 +455,21 @@ QuasispeciesEdgeCalculator::overlap_result QuasispeciesEdgeCalculator::singleOve
     double hamming = 0;
     int total_size = 0;
     if (offset1 >= sequence1.size() || offset2 >= sequence2.size()) {
+        // cerr << "out of here" << endl;
         return result;
     }
-    for (int prefix = 1, run = 1, run2 = 1, compute_overlap = 0, j_overlap = 0, jm = 0, jm2 = 0, shift = 0, shift_del = 0, shift_ins = 0, insertion_index = 0, j = 0, j_cigar = 0, shift2 = 0, shift_del2 = 0, shift_ins2 = 0, insertion_index2 = 0, j2 = 0, j_cigar2 = 0;;) {
+    /*if (offset1 > 0) {
+        offset1 -= 1;
+    }
+    if (offset2 > 0) {
+        offset2 -= 1;
+    }*/
+    // cerr << offset1 << " offset " << offset2 << endl;
+    for (int j_compare = 0, j2_compare = 0, prefix = 1, run = 1, run2 = 1, compute_overlap = 0, j_overlap = 0, jm = 0, jm2 = 0, shift = 0, shift_del = 0, shift_del_prefix = 0, shift_ins = 0, insertion_index = 0, j = 0, j_cigar = 0, shift2 = 0, shift_del2 = 0, shift_del_prefix2 = 0, shift_ins2 = 0, insertion_index2 = 0, j2 = 0, j_cigar2 = 0;;) {
+        if (j == sequence1.size() || j2 == sequence2.size()) {
+            break;
+        }
+        // cerr << "j1:" << j << " " << sequence1[j]<< "\t" << "j2:" << j2 << " " << sequence2[j2] << endl;
         int jump_single = 0;
         int jump_single2 = 0;
         if ((j - shift == offset1 || offset1 == 0) && prefix) {
@@ -511,21 +490,25 @@ QuasispeciesEdgeCalculator::overlap_result QuasispeciesEdgeCalculator::singleOve
             //            cerr << "overlap" << endl;
             prefix = 0;
             if ((cigar1[j_cigar] == "M" && cigar2[j_cigar2] == "M") || (cigar1[j_cigar] == "I" && cigar2[j_cigar2] == "I")) {
-                double q_x1 = sequence1.qualityCorrect(j);
-                double q_x2 = sequence2.qualityCorrect(j2);
+                int j_tmp = j - shift_del_prefix;
+                int j2_tmp = j2 - shift_del_prefix2;
+
+                double q_x1 = sequence1.qualityCorrect(j_tmp);
+                double q_x2 = sequence2.qualityCorrect(j2_tmp);
                 assert(q_x1 <= 1 && q_x2 <= 1);
                 double sum = 0.0;
                 for (int x = 0; x < 4; x++) {
                     //                    cerr << q_x1 << " : " << q_x2 << endl;
-                    double p_aj_x = sequence1[j] == alphabet[x] ? q_x1 : (1.0 - q_x1) / 3.0;
-                    double p_bj_x = sequence2[j2] == alphabet[x] ? q_x2 : (1.0 - q_x2) / 3.0;
+                    double p_aj_x = sequence1[j_tmp] == alphabet[x] ? q_x1 : (1.0 - q_x1) / 3.0;
+                    double p_bj_x = sequence2[j2_tmp] == alphabet[x] ? q_x2 : (1.0 - q_x2) / 3.0;
                     sum = sum + (p_aj_x * p_bj_x);
                 }
                 assert(sum <= 1);
-                if (sequence1[j] != sequence2[j2]) {
+                if (sequence1[j_tmp] != sequence2[j2_tmp]) {
                     hamming++;
                 }
                 //                cerr << sum << " ";
+                //cerr << sequence1[j] << " " << sequence2[j2] << " " << sum << endl;
                 overlap_probability *= sum;
                 j_overlap++;
             } else if ((cigar1[j_cigar] != "I" && cigar2[j_cigar2] == "I")
@@ -541,6 +524,7 @@ QuasispeciesEdgeCalculator::overlap_result QuasispeciesEdgeCalculator::singleOve
                             jump_single = 1;
                         }
                     } else {
+                        // cerr << "INSERTION" << endl;
                         return result;
                     }
                 }
@@ -553,6 +537,7 @@ QuasispeciesEdgeCalculator::overlap_result QuasispeciesEdgeCalculator::singleOve
                                                // cerr << "YO  BITCH" << endl;;
                     }
                 } else {
+                    // cerr << "DELETION" << endl;
                     return result;
                 }
             } else if ((cigar1[j_cigar] == "D" && cigar2[j_cigar2] == "D") || cigar1[j_cigar] == "S" || cigar2[j_cigar2] == "S") {
@@ -576,6 +561,7 @@ QuasispeciesEdgeCalculator::overlap_result QuasispeciesEdgeCalculator::singleOve
                     }
                     j++;
                 } else if (cigar1[j_cigar] == "D") {
+                    if (prefix) shift_del_prefix++;
                     shift_del++;
                     if (jm < offset1) offset_deletion1_++;
                 } else if (cigar1[j_cigar] == "S") {
@@ -603,6 +589,7 @@ QuasispeciesEdgeCalculator::overlap_result QuasispeciesEdgeCalculator::singleOve
                     }
                     j2++;
                 } else if (cigar2[j_cigar2] == "D") {
+                    if (prefix) shift_del_prefix2++;
                     shift_del2++;
                     if (jm2 < offset2) offset_deletion2_++;
                 } else if (cigar2[j_cigar2] == "S") {
