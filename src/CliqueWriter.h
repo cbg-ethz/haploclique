@@ -209,6 +209,7 @@ private:
     int clique_count;
     int paired_count;
     int single_count;
+    bool FRAMESHIFT_MERGE;
 
     void writeReadlist();
     void callVariation(const std::vector<const AlignmentRecord*>& pairs, size_t coverage, clique_stats_t* stats);
@@ -217,7 +218,7 @@ private:
     bool overlapSize(clique_stats_t* stats) const;
     std::string equalStrings(std::string s1, std::string s2) const;
 public:
-    CliqueWriter(std::ostream& os, VariationCaller* variation_caller, std::ostream* indel_os, const ReadGroups* read_groups, bool multisample, bool output_all, double fdr_threshold, bool verbose, int min_coverage);
+    CliqueWriter(std::ostream& os, VariationCaller* variation_caller, std::ostream* indel_os, const ReadGroups* read_groups, bool multisample, bool output_all, double fdr_threshold, bool verbose, int min_coverage, bool frameshift_merge);
     virtual ~CliqueWriter();
     virtual void enableReadListOutput(std::ostream& os);
     virtual void add(std::auto_ptr<Clique> clique);

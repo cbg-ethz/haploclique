@@ -130,7 +130,7 @@ int main(int argc, char* argv[]) {
     ("output_coverage,C", po::value<string>(&coverage_output_filename)->default_value(""), "Output the coverage with considered insert segments along the chromosome (one line per position) to the given filename.")
     ("edge_quasi_cutoff,q", po::value<double>(&edge_quasi_cutoff)->default_value(0.9), "End compatibility probability cutoff for quasispecies reconstruction.")
     ("random_overlap_probability,Q", po::value<double>(&Q)->default_value(0.9), "Probability that two random reads are equal at the same position.")
-    ("frame_shift_merge,m", po::value<bool>(&frameshift_merge)->zero_tokens(), "Reads will be clustered if one has single nucleotide deletions.")
+    ("frame_shift_merge,m", po::value<bool>(&frameshift_merge)->zero_tokens(), "Reads will be clustered if one has single nucleotide deletions and insertions. Use for PacBio data sets.")
     ("min_overlap,o", po::value<double>(&overlap)->default_value(0.6), "Minimum relative overlap between reads.")
     ("super_read_min_coverage,s", po::value<int>(&super_read_min_coverage)->default_value(2), "Minimum coverage for super-read assembly.")
     ("allel_frequencies,A", po::value<string>(&allel_frequencies_path)->default_value(""), "Minimum coverage for super-read assembly.")
@@ -211,7 +211,7 @@ int main(int argc, char* argv[]) {
     if (call_indels) {
         indel_os = new ofstream(indel_output_file.c_str());
     }
-    CliqueWriter clique_writer(cout, variation_caller, indel_os, read_groups, false, output_all, fdr, verbose, super_read_min_coverage);
+    CliqueWriter clique_writer(cout, variation_caller, indel_os, read_groups, false, output_all, fdr, verbose, super_read_min_coverage, frameshift_merge);
     CliqueFinder clique_finder(*edge_calculator, clique_writer, read_groups);
     if (indel_edge_calculator != 0) {
         clique_finder.setSecondEdgeCalculator(indel_edge_calculator);
@@ -241,8 +241,8 @@ int main(int argc, char* argv[]) {
     size_t skipped_by_coverage = 0;
     size_t valid_alignments = 0;
     size_t total_alignments = 0;
-    //cerr << "STATUS";
-    //cerr.flush();
+    cerr << "STATUS";
+    cerr.flush();
     ofstream skipped;
     skipped.open ("skipped.prior");
     while (getline(cin, line)) {
@@ -290,12 +290,12 @@ int main(int argc, char* argv[]) {
             cerr << "Error parsing input, offending line: " << n << endl;
             return 1;
         }
-        //cerr << "\rSTATUS: " << total_alignments;
-        //cerr.flush();
+        cerr << "\rSTATUS: " << total_alignments;
+        cerr.flush();
     }
     clique_finder.finish();
     clique_writer.finish();
-    //cerr << endl;
+    cerr << endl;
     
     skipped.close();
 

@@ -28,7 +28,7 @@
  using namespace std;
  using namespace boost;
 
- CliqueWriter::CliqueWriter(ostream& os, VariationCaller* variation_caller, std::ostream* indel_os, const ReadGroups* read_groups, bool multisample, bool output_all, double fdr_threshold, bool verbose, int min_coverage) : os(os), variation_caller(variation_caller), read_groups(read_groups) {
+ CliqueWriter::CliqueWriter(ostream& os, VariationCaller* variation_caller, std::ostream* indel_os, const ReadGroups* read_groups, bool multisample, bool output_all, double fdr_threshold, bool verbose, int min_coverage, bool frameshift_merge) : os(os), variation_caller(variation_caller), read_groups(read_groups) {
     this->indel_os = indel_os;
     this->significant_ins_count = -1;
     this->significant_del_count = -1;
@@ -48,6 +48,7 @@
     this->min_coverage = min_coverage;
     this->single_count = 0;
     this->paired_count = 0;
+    this->FRAMESHIFT_MERGE=frameshift_merge;
 }
 
 CliqueWriter::~CliqueWriter() {
@@ -70,7 +71,7 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
 //    cerr << endl << "CALL VARIATION " << pairs.size() << endl;
     //cerr.flush();
     bool DEBUG = 0;
-    bool merge = 1;
+    bool merge = this->FRAMESHIFT_MERGE;
     bool problem = 0;
     assert(stats != 0);
     VariationCaller::additional_stats_t vc_stats;
@@ -87,7 +88,7 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
     stats->diff = vc_stats.diff;
     stats->total_weight = vc_stats.total_weight;
     stats->coverage = coverage;
-    stats->pvalue_corr = min(1.0, stats->variation.getPValue() * pow(2.0, static_cast<int> (stats->coverage)));
+    stats->pvalue_corr = min(1.0, stats->variation.getPValue() * pow(1.2, static_cast<int> (stats->coverage)));
         // assume every clique to be not significant until the final FDR control
     stats->is_significant = false;
 
@@ -143,7 +144,7 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
         } else {
             paired_end_count += 1;
         }
-        
+
             //cerr << ap.getName() << "\t";
         vector<BamTools::CigarOp>::const_iterator it_cigar = ap.getCigar1().begin();
         int deletions1 = 0;
@@ -225,7 +226,7 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
                 sequence_index += cigar_length;
             }
             if (it_cigar->Type == 'D') {
-                if (cigar_length % 3 != 0 && merge) {
+                if (merge && cigar_length % 3 != 0) {
                     alignment_index+=cigar_length;
                 } else {
                     for (int k = 0; k < cigar_length; k++) {
@@ -497,8 +498,7 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
         cerr << endl << "PROBLEM" << endl;
             //continue;
     }
-    if (!merge)
-        cerr << stats->window_start1 << " " << merge << "|" << endl;
+    //if (!merge) cerr << stats->window_start1 << " " << merge << "|" << endl;
 }
 
 bool CliqueWriter::overlapSize(clique_stats_t* stats) const {
@@ -596,36 +596,22 @@ bool CliqueWriter::overlapSize(clique_stats_t* stats) const {
                 //   ----
                 // ----
 
-                int offset = 0;
-                bool fixing = 1;
-                int tries = 0;
-                do {
-                    if (e1 - s2 >= 1) {
-                        if (stats->consensus_string1[e2 - s1 - 1 + offset ] != stats->consensus_string1[stats->consensus_string2.size() - 1]) {
-                            //                            cerr << stats->consensus_string2[e1 - s2 - 1 + offset ] << " " << stats->consensus_string2[e1 - s2 - 2 + offset ] << endl;
-                            //                            cerr << stats->consensus_string1[stats->consensus_string1.size() - 1] << " " << stats->consensus_string1[stats->consensus_string1.size() - 2] << endl;
-                            offset++;
-                            fixing = 1;
-                        } else {
-                            fixing = 0;
-                        }
-                    } else {
-                        fixing = 0;
+                string cons = equalStrings(stats->consensus_string2, stats->consensus_string1);
+                if (cons.size() > 0) {
+                    for (int i = stats->consensus_string1.size()-(cons.size() - stats->consensus_string2.size()); i < stats->consensus_string1.size(); i++) {
+                        stats->phred_string2 += stats->phred_string1.at(i);
                     }
-                    if (tries > 1) {
-                        cerr << "ERROR OVERLAP2" << endl;
-                        cerr << stats->consensus_string2 << endl;
-                        cerr << stats->consensus_string1 << endl;
-                        cerr << e2 - s1 << endl;
-                        offset = 0;
-                        break;
+                    stats->phred_string1 = stats->phred_string2;
+                    stats->consensus_string1 = cons;
+                    stats->window_start1 = stats->window_start2;
+                    stats->window_end1 = stats->window_start1 + cons.size();
+                    if (stats->phred_string1.size() != cons.size()) {
+                        cerr << stats->phred_string1.size() << " " << cons.size() << endl;
                     }
-                    tries++;
-                } while (fixing);
-
-                stats->consensus_string1 = stats->consensus_string2 + stats->consensus_string1.substr(e2 - s1 + offset);
-                stats->phred_string1 = stats->phred_string2 + stats->phred_string1.substr(e2 - s1 + offset);
-                stats->window_start1 = stats->window_start2;
+                    assert(stats->phred_string1.size() == cons.size());
+                } else {
+                    
+                }
             } else {
                 // ------
                 //   --

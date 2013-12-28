@@ -1,0 +1,85 @@
+#! /usr/bin/env sh
+usage()
+{
+cat << EOF
+
+USAGE:     haploclique-assembly-auto options...
+
+OPTIONS:
+   -h      Show this message
+   -r      Path to the reference genome (required)
+   -i      Path to the alignment in BAM format (required)
+   -l      Whole genome coverage is below 1000x
+   -a      PacBio amplicon mode
+
+UPDATE:    http://bit.ly/haploclique
+EOF
+}
+
+REF=
+ALIGNMENT=
+LOW=0
+AMPLICON=0
+while getopts “h:r:i:la” OPTION
+do
+     case $OPTION in
+         h)
+             usage
+             exit 1
+             ;;
+         a)
+             AMPLICON=1
+             ;;
+         r)
+             REF=$OPTARG
+             ;;
+         i)
+             ALIGNMENT=$OPTARG
+             ;;
+         l)
+             LOW=1
+             ;;
+         ?)
+             usage
+             exit
+             ;;
+     esac
+done
+
+if [[ -z $REF ]] || [[ -z $ALIGNMENT ]]
+then
+     usage
+     exit 1
+fi
+
+if [[ $AMPLICON == 1 ]] && [[ $LOW == 1 ]]
+then
+	echo "Amplicon mode -a cannot be used with -l"
+	exit 1
+fi
+
+if [[ $LOW == 1 ]] && [[ $AMPLICON == 0 ]] 
+then
+	haploclique-assembly -r $REF -c 1000 -z 250 -a $ALIGNMENT -t 5
+	haploclique-assembly -r $REF -c 1000 -z 500 -a $ALIGNMENT -e -t 2
+	haploclique-assembly -r $REF -c 1000 -z 500 -a $ALIGNMENT -o 0.8 -q 0.99 -t 2 -e
+	haploclique-assembly -r $REF -c 1000 -z 500 -a $ALIGNMENT -o 0.7 -q 0.99 -t 2 -e
+	haploclique-assembly -r $REF -c 1000 -z 500 -a $ALIGNMENT -o 0.6 -q 0.99 -t 2 -e
+	haploclique-assembly -r $REF -c 1000 -z 250 -a $ALIGNMENT -o 0.8 -q 0.999 -t 2 -e -n
+	haploclique-assembly -r $REF -c 1000 -z 250 -a $ALIGNMENT -o 0.7 -q 0.999 -t 2 -e -n
+	haploclique-assembly -r $REF -c 1000 -z 250 -a $ALIGNMENT -o 0.6 -q 0.999 -t 2 -e -n
+else 
+	haploclique-assembly -r $REF -c 1000 -z 250 -a $ALIGNMENT -t 5 -o 0.9 -j 0.9
+	haploclique-assembly -r $REF -c 1000 -z 500 -a $ALIGNMENT -e -t 2  -o 0.9 -j 0.9
+	haploclique-assembly -r $REF -c 1000 -z 500 -a $ALIGNMENT -o 0.8 -q 0.99 -t 2 -e -j 0.9
+	haploclique-assembly -r $REF -c 1000 -z 500 -a $ALIGNMENT -o 0.7 -q 0.99 -t 2 -e -j 0.9
+	haploclique-assembly -r $REF -c 1000 -z 500 -a $ALIGNMENT -o 0.6 -q 0.99 -t 2 -e -j 0.9
+	haploclique-assembly -r $REF -c 1000 -z 250 -a $ALIGNMENT -o 0.8 -q 0.999 -t 2 -e -n -j 0.9
+	haploclique-assembly -r $REF -c 1000 -z 250 -a $ALIGNMENT -o 0.7 -q 0.999 -t 2 -e -n -j 0.9
+	haploclique-assembly -r $REF -c 1000 -z 250 -a $ALIGNMENT -o 0.6 -q 0.999 -t 2 -e -n -j 0.9
+fi
+
+if [[ $AMPLICON == 1 ]]
+then
+
+fi
