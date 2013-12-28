@@ -8,9 +8,9 @@ Our approach can be used to:
 ## CURRENT STATUS
 <b>This is a work in progress project. The core algorithm is fully functionality, but some helper-scripts are in still in work.</b>
  - [x] Local reconstruction
- - [x] Global assembly > 1000x
- - [ ] Local reconstruction with coverage > 1000x
- - [ ] InDel prediction
+ - [ ] Global assembly > 1000x
+ - [x] Local reconstruction with coverage > 1000x
+ - [x] InDel prediction
 
 ## INSTALL
 ###Dependencies
@@ -43,10 +43,9 @@ make install
 
 ## USAGE
 HaploClique takes a BAM alignment as input for error-correction:  
- - `haploclique-local reference.fasta alignment.bam` 
+ - `haploclique-assembly -r reference.fasta -a alignment.bam` 
 
-To assemble global haplotypes after local reconstruction (performs 50 iterations):
- - `haploclique-assembly reference.fasta`
+Instructions for quasispecies assembly will follow soon and latest upon publication.
 
 The reconstructed haplotypes are saved as:  
  - __data_cliques_paired_R1.fastq__
