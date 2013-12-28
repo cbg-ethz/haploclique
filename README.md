@@ -6,25 +6,25 @@ Our approach can be used to:
  - detect large deletions and insertions from paired-end data.
 
 ## CURRENT STATUS
-<b>This is a work in progress project and the goal is to make it a one click solution. </b>
+<b>This is a work in progress project. The core algorithm is fully functionality, but some helper-scripts are in still in work.</b>
  - [x] Local reconstruction
- - [x] Global assembly
- - [ ] Support data sets with coverage > 1000x
+ - [x] Global assembly > 1000x
+ - [ ] Local reconstruction with coverage > 1000x
  - [ ] InDel prediction
 
 ## INSTALL
 ###Dependencies
-Download [saf](https://github.com/armintoepfer/seqalfixer/releases/) and export its parent directory as $SAF enviroment variable.  
-HaploClique depends on [boost](http://www.boost.org/) and [cmake](http://www.cmake.org/). You can install them with a package manager of your choice.
+Download [saf](https://github.com/armintoepfer/seqalfixer/releases/) and [InDelFixer](https://github.com/armintoepfer/InDelFixer/releases) and export its parent directory as $SAF enviroment variable.  
+HaploClique depends on [boost](http://www.boost.org/), [gnu parallel](http://www.gnu.org/software/parallel/), and [cmake](http://www.cmake.org/). You can install them with a package manager of your choice.
 
 Ubuntu:  
 ```
-apt-get install libncurses5-dev cmake libboost-all-dev git build-essential zlib1g-dev
+apt-get install libncurses5-dev cmake libboost-all-dev git build-essential zlib1g-dev parallel
 ```
 
-OSX wit [macports](http://www.macports.org/):
+OSX, please XCode and its command line tools, and with [macports](http://www.macports.org/):
 ```
-port install cmake boost
+port install cmake boost parallel
 ```
 
 ###HaploClique
