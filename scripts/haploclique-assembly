@@ -385,7 +385,7 @@ if [[ $NOPARALLEL == 0 ]]; then
             # done
             cat x*/singles.prior | sort -u -t" " -k1,1 > singles.prior
         fi
-        if [[ $NOSKIPPING == 0 ]]; then
+        if [[ $NOSKIPPING == 0 ]] && [[ -s skipped.prior ]]; then
             echo "SKIPPED"
             echo $HY > .HQ.parameter
             echo $HJ > .HO.parameter
@@ -423,14 +423,14 @@ if [[ $NOPARALLEL == 0 ]]; then
             cat x*/data_cliques_single.fastq >> data_cliques_single.fastq
             cat x*/data_clique_to_reads.tsv >> data_clique_to_reads.tsv
             cat data_cliques_* | awk 'BEGIN {l = 0} {if (NR%4==2 && l < length($0)) l = length($0)} END {printf("Max read length:\t\t%.0f bp\n",l)}'
-            assemble
-            cat x*/skipped.prior >> skipped.prior
-            cat skipped.prior >> alignment.prior
-            sed -i -e '/^$/d;s/@Clique/@Clique_/g' alignment.prior
+            #assemble
+            #cat x*/skipped.prior >> skipped.prior
+            #cat skipped.prior >> alignment.prior
+            #sed -i -e '/^$/d;s/@Clique/@Clique_/g' alignment.prior
         fi
         #cat data_cliques_* | awk '{if (NR%4==2) { l += length($0);i++}} END {printf("Mean/max read length:\t\t%.0f/",l/i)}'
-        rm -rf x*
-        echo "===="
+        #rm -rf x*
+        #echo "===="
         CONTINUE=1
     done
 else

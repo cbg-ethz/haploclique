@@ -14,8 +14,8 @@ with open(sys.argv[1]) as f:
         clique_name[split[0]] = split[1]
         csv = split[1].split(",")
         for c in csv:
-            if "-" in c:
-                single = c.split("-")
+            if "-|-" in c:
+                single = c.split("-|-")
                 if not single[1] in counts:
                     counts[single[1]] = 0
                 counts[single[1]] += int(single[0])
@@ -38,7 +38,7 @@ for lines in sys.stdin:
             split[0] = split[0].rstrip()
             csv = clique_name[split[0]].split(",")
             for c in csv:
-                if "-" in c:
+                if "-|-" in c:
                     single = c.split("-")
                     if int(single[0]) == counts[single[1]]:
                         counter += int(single[0])
@@ -50,7 +50,7 @@ for lines in sys.stdin:
                     out.write(",")
             if counter > 0:
                 out.write(str(counter))
-                out.write("-")
+                out.write("-|-")
                 out.write(split[0])
                 out.write(",")
             sys.stdout.write(out.getvalue()[0:-1])
