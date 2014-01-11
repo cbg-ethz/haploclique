@@ -209,6 +209,7 @@ private:
     int clique_count;
     int paired_count;
     int single_count;
+    int single_skipped_count;
     bool FRAMESHIFT_MERGE;
 
     void writeReadlist();
@@ -234,6 +235,10 @@ public:
 
     virtual int getSingleCount() {
         return single_count;
+    }
+
+    virtual int getSingleSkippedCount() {
+        return single_skipped_count;
     }
 
     friend std::ostream& operator<<(std::ostream& os, const clique_stats_t& stats);

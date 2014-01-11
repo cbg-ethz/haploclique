@@ -116,6 +116,7 @@ int main(int argc, char* argv[]) {
     string indel_edge_cutoff;
     double indel_edge_sig_level;
     string indel_output_file = "";
+    int time_limit;
 
     po::options_description options_desc("Allowed options");
     options_desc.add_options()
@@ -137,6 +138,7 @@ int main(int argc, char* argv[]) {
     ("call_indels,I", po::value<string>(&indel_output_file)->default_value(""), "Call indels from cliques. In this mode, the \"classical CLEVER\" edge criterion is used in addition to the new one. Filename to write indels to must be given as parameter.")
     ("mean_and_sd_filename,M", po::value<string>(&mean_and_sd_filename)->default_value(""), "Name of file with mean and standard deviation of insert size distribution (only required if option -I is used).")
     ("indel_edge_sig_level,p", po::value<double>(&indel_edge_sig_level)->default_value(0.2), "Significance level for \"indel\" edges criterion, see option -I (the lower the level, the more edges will be present).")
+    ("time_limit,t", po::value<int>(&time_limit)->default_value(10), "Time limit for computation. If exceeded, non processed reads will be written to skipped.")
     ;
 
     if (isatty(fileno(stdin))) {
@@ -273,8 +275,9 @@ int main(int argc, char* argv[]) {
                 skipped_by_weight += 1;
                 continue;
             }*/
-            if (max_coverage > 0) {
-                if (clique_finder.getCoverageMonitor().probeAlignment(*alignment_autoptr) > (size_t) max_coverage) {
+            bool time = ((double) (clock() - clock_start) / CLOCKS_PER_SEC / 60) > time_limit;
+            if (max_coverage > 0 || time) {
+                if (clique_finder.getCoverageMonitor().probeAlignment(*alignment_autoptr) > (size_t) max_coverage || time) {
                 // cout << "Skipping alignment (coverage): "  << alignment_autoptr->getName()  << endl;
                     skipped << line;
                     skipped << "\n";
@@ -318,6 +321,6 @@ int main(int argc, char* argv[]) {
         delete coverage_writer;
     }
     double cpu_time = (double) (clock() - clock_start) / CLOCKS_PER_SEC;
-    cerr << "Skipped/Cliques/CPU time:\t" << skipped_by_coverage << "/" << clique_writer.getPairedCount() + clique_writer.getSingleCount() << "/" << round(cpu_time) << endl;
+    cerr << "SkippedTime/SkippedSize/Cliques/CPU time:\t" << skipped_by_coverage << "/" << clique_writer.getSingleSkippedCount() << "/" << clique_writer.getPairedCount() + clique_writer.getSingleCount() << "/" << round(cpu_time) << endl;
     return 0;
 }

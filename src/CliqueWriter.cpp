@@ -48,6 +48,7 @@
     this->min_coverage = min_coverage;
     this->single_count = 0;
     this->paired_count = 0;
+    this->single_skipped_count = 0;
     this->FRAMESHIFT_MERGE=frameshift_merge;
 }
 
@@ -68,7 +69,7 @@ void CliqueWriter::enableReadListOutput(std::ostream& os) {
 }
 
 void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, size_t coverage, clique_stats_t* stats) {
-//    cerr << endl << "CALL VARIATION " << pairs.size() << endl;
+    //cerr << endl << "CALL VARIATION " << pairs.size() << endl;
     //cerr.flush();
     bool DEBUG = 0;
     bool merge = this->FRAMESHIFT_MERGE;
@@ -128,6 +129,7 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
             const AlignmentRecord& ap = **it;
             singles << ap.getLine() << "\n";
         }
+        this->single_skipped_count += 1;
         singles.close();
         return;
     }
@@ -139,12 +141,6 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
             //            duplicates.push_back(ap.getName());
             //            continue;
             //        }
-        if (ap.isSingleEnd()) {
-            single_end_count += 1;
-        } else {
-            paired_end_count += 1;
-        }
-
             //cerr << ap.getName() << "\t";
         vector<BamTools::CigarOp>::const_iterator it_cigar = ap.getCigar1().begin();
         int deletions1 = 0;
@@ -197,9 +193,7 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
             }
         }
     }
-    this->single_count += single_end_count;
-    this->paired_count += paired_end_count;
-        //2D array represents nucleotide distribution for super-read
+    //2D array represents nucleotide distribution for super-read
     int alignment_length1 = stats->window_end1 - stats->window_start1;
     int alignment1[alignment_length1][5];
     double phred1[alignment_length1][5];
@@ -210,7 +204,7 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
         }
     }
     if (DEBUG) cerr << "computing alignment, length: " << alignment_length1 << endl;
-        //For each read pair, save the first read in alignment
+    //For each read pair, save the first read in alignment
     //map<string,vector<int>> insertion_map;
     it = pairs.begin();
     for (; it != pairs.end(); ++it) {
@@ -339,6 +333,7 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
 
         //same stuff as for first read, this time for second read
     if (paired_end_count > 0) {
+        this->paired_count += 1;
         int alignment_length2 = stats->window_end2 - stats->window_start2+1;
         int alignment2[alignment_length2][5];
         double phred2[alignment_length2][5];
@@ -480,6 +475,8 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
                 stats->window_end2--;
             }
         }
+    } else {
+        this->single_count += 1;
     }
     if (problem || overlapSize(stats)) {
         stats->window_end1 == -1;
