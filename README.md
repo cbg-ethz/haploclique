@@ -1,35 +1,37 @@
-#HaploClique
+<h1 align="center">HaploClique</h1>
 We present a novel method to reconstruct the structure of a viral quasispecies from NGS data.
 Our approach can be used to:
  - reconstruct local error-corrected haplotypes and estimate their abundance
  - assemble full-length viral haplotypes
  - detect large deletions and insertions from paired-end data.
 
-## CURRENT STATUS
-<b>This is a work in progress project. The core algorithm is fully functionality, but some helper-scripts are in still in work.</b>
- - [x] Local reconstruction
- - [x] Global assembly > 1000x
- - [x] Local reconstruction with coverage > 1000x
- - [x] InDel prediction
- - [ ] Check explizit amplicon mode for PacBio data
+######Overview
+ - [Installation](https://github.com/armintoepfer/haploclique/edit/master/README.md#install)
+ - [Error correction](https://github.com/armintoepfer/haploclique/edit/master/README.md#error-correction)
+ - [Quasispecies assembly](https://github.com/armintoepfer/haploclique/edit/master/README.md#quasispecies-assembly-of-long-range-haplotypes)
+ - [Indel prediction](https://github.com/armintoepfer/haploclique/edit/master/README.md#structural-variation)
+ - [Contact](https://github.com/armintoepfer/haploclique/edit/master/README.md#contact)
 
-## INSTALL
-###Dependencies
+### INSTALL
+######Dependencies
 Download [ConsensusFixer](https://github.com/armintoepfer/ConsensusFixer/releases) and [InDelFixer](https://github.com/armintoepfer/InDelFixer/releases) and export its parent directory as $SAF enviroment variable.  
 HaploClique depends on [boost](http://www.boost.org/), [gnu parallel](http://www.gnu.org/software/parallel/), and [cmake](http://www.cmake.org/). You can install them with a package manager of your choice.
 
-Ubuntu:  
+######Ubuntu:  
 ```
 apt-get install libncurses5-dev cmake libboost-all-dev git build-essential zlib1g-dev parallel
 ```
 
-OSX 10.8.x, please XCode and its command line tools, and with [macports](http://www.macports.org/):
+######OSX 10.8.x:
+Please XCode and its command line tools, and with [macports](http://www.macports.org/):
 ```
 port install cmake boost parallel
 ```
 
-###HaploClique
+######Windows:
 HaploClique has not been tested on Windows. The scripts depend on the bash shell, awk, and sed.  
+
+######Installation routine:
 If you want to install HaploClique to a non-standard directory, change it with `cmake -DCMAKE_INSTALL_PREFIX=<prefix-path> ..`
 ```bash
 git clone https://github.com/armintoepfer/haploclique
@@ -42,16 +44,16 @@ make
 make install
 ```
 
-## USAGE
+### USAGE
 Please use HaploClique in an empty directory.
-### Error correction
+##### Error correction
 For error correction, HaploClique takes a BAM alignment and the reference as input:  
 `haploclique-assembly -r ../reference.fasta -a ../alignment.bam` 
 
 For ultra-deep next-generation sequencing data sets, please set the minimal overlap to 90%:
 `haploclique-assembly -r ../reference.fasta -a ../alignment.bam -o 0.9 -j 0.9` 
 
-All command-line options:
+######All command-line options:
 ```bash 
 USAGE:     haploclique-assembly options...
 
@@ -74,11 +76,11 @@ OPTIONS:
    -n      Do not use alignment prior
    -l      Only predict indels, no haplotypes
 ```
-### Quasispecies assembly of long-range haplotypes 
+#####Quasispecies assembly of long-range haplotypes 
 For quasispecies assembly, please use the helper script `haploclique-assembly-auto`:
 `haploclique-assembly-auto -r ../reference.fasta -i ../alignment.bam`
 
-All command-line options:
+######All command-line options:
 ```bash
 USAGE:     haploclique-assembly-auto options...
 
@@ -90,15 +92,16 @@ OPTIONS:
    -a      PacBio amplicon mode (Currently non-functional)
 ```
 
-### Structural variation
+#####Structural variation
 For the prediction of large insertion and deletions, please only use alignments in which *all reads are paired-end* and they are *not allowed to overlap*:  
-`haploclique-assembly -r ../reference.fasta -a ../alignment.bam -l`
+`haploclique-assembly -r ../reference.fasta -a ../alignment.bam -l`  
 The detected indels are saved as indels.vcf.
 
-## Contributions
+### Contributions
  [Armin Töpfer](http://www.bsse.ethz.ch/cbg/people/armintoepfer)  
  [Tobias Marschall](http://homepages.cwi.nl/~tm/)
-##Contact:
+ 
+###Contact
 ```
 Armin Töpfer
 armin.toepfer (at) gmail.com
