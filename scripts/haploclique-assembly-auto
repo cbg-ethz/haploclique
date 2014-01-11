@@ -79,7 +79,7 @@ else
 	haploclique-assembly -r $REF -c 1000 -z 250 -a $ALIGNMENT -o 0.6 -q 0.999 -t 2 -e -n -j 0.9
 fi
 
-if [[ $AMPLICON == 1 ]]
-then
+#if [[ $AMPLICON == 1 ]]
+#then
 
-fi
+#fi
