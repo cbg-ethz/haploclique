@@ -44,8 +44,8 @@ private:
     
     // survival function (aka complement cumulative distribution function of the standard normal distribution)
     double sf(double x) const;
-    double computeOverlap(const AlignmentRecord & ap1, const AlignmentRecord & ap2) const;
-    QuasispeciesEdgeCalculator::overlap_result singleOverlap(const AlignmentRecord & ap1, const AlignmentRecord & ap2, int strain1, int strain2, double MIN_OVERLAP) const;
+    double computeOverlap(const AlignmentRecord & ap1, const AlignmentRecord & ap2, const double cutoff) const;
+    QuasispeciesEdgeCalculator::overlap_result singleOverlap(const AlignmentRecord & ap1, const AlignmentRecord & ap2, int strain1, int strain2, double MIN_OVERLAP, const double cutoff) const;
     int overlapSize(int e1, int e2, int s1, int s2) const;
     string tail(std::string const& source, size_t const length) const;
 public:

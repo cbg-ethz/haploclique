@@ -60,32 +60,37 @@ fi
 
 if [[ $LOW == 1 ]] && [[ $AMPLICON == 0 ]] 
 then
-    haploclique-assembly -r $REF -c 1000 -z 250 -x 250 -i $ALIGNMENT
-    haploclique-assembly -r $REF -c 1000 -z 500 -x 300 -i $ALIGNMENT
-    haploclique-assembly -r $REF -c 1000 -z 500 -x 400 -i $ALIGNMENT
-    haploclique-assembly -r $REF -c 1000 -z 500 -x 500 -i $ALIGNMENT
-    haploclique-assembly -r $REF -c 1000 -z 750 -x 750 -i $ALIGNMENT
-    haploclique-assembly -r $REF -c 1000 -z 1000 -x 1000 -i $ALIGNMENT
-    haploclique-assembly -r $REF -c 1000 -z 1000 -i $ALIGNMENT -o 0.8 -q 0.99 -t 2 -n -w
-    haploclique-assembly -r $REF -c 1000 -z 1000 -i $ALIGNMENT -o 0.7 -q 0.99 -t 2 -n -w
-    haploclique-assembly -r $REF -c 1000 -z 1000 -i $ALIGNMENT -o 0.6 -q 0.99 -t 2 -n -w
-    haploclique-assembly -r $REF -c 2000 -G -i $ALIGNMENT -o 0.8 -q 0.999 -t 2 -n -w
-    haploclique-assembly -r $REF -c 2000 -G -i $ALIGNMENT -o 0.7 -q 0.999 -t 2 -n -w
-    haploclique-assembly -r $REF -c 2000 -G -i $ALIGNMENT -o 0.6 -q 0.999 -t 2 -n -w
-    haploclique-assembly -r $REF -c 2000 -G -i $ALIGNMENT -o 300 -q 0.999 -t 2 -n -w
-    haploclique-assembly -r $REF -c 2000 -G -i $ALIGNMENT -o 250 -q 0.999 -t 2 -n -w
-    haploclique-assembly -r $REF -c 2000 -G -i $ALIGNMENT -o 200 -q 0.999 -t 2 -n -w
+haploclique-assembly -r $REF -c 1000 -z 250 -x 250 -i $ALIGNMENT -t 2
+haploclique-assembly -r $REF -c 1000 -z 500 -x 300 -i $ALIGNMENT -t 2
+haploclique-assembly -r $REF -c 1000 -z 500 -x 400 -i $ALIGNMENT -t 2
+haploclique-assembly -r $REF -c 1000 -z 500 -x 500 -i $ALIGNMENT -t 2
+haploclique-assembly -r $REF -c 1000 -z 750 -x 750 -i $ALIGNMENT -t 2
+haploclique-assembly -r $REF -c 1000 -z 1000 -x 1000 -i $ALIGNMENT -t 7
+haploclique-assembly -r $REF -c 1000 -z 1000 -i $ALIGNMENT -o 0.8 -q 0.999 -t 2 -n -w -s 1
+haploclique-assembly -r $REF -c 1000 -z 1000 -i $ALIGNMENT -o 0.7 -q 0.999 -t 2 -n -w -s 1
+haploclique-assembly -r $REF -c 1000 -z 1000 -i $ALIGNMENT -o 0.6 -q 0.999 -t 2 -n -w -s 1
+haploclique-assembly -r $REF -c 2000 -z 1000 -i $ALIGNMENT -o 300 -q 0.999 -t 2 -n -w -s 1
+haploclique-assembly -r $REF -c 2000 -z 1000 -i $ALIGNMENT -o 250 -q 0.999 -t 2 -n -w -s 1
+haploclique-assembly -r $REF -c 2000 -z 1000 -i $ALIGNMENT -o 200 -q 0.999 -t 5 -n -w -s 1
+haploclique-assembly -r $REF -c 2000 -G -i $ALIGNMENT -o 0.8 -q 0.999 -t 2 -n -w -s 1
+haploclique-assembly -r $REF -c 2000 -G -i $ALIGNMENT -o 0.7 -q 0.999 -t 2 -n -w -s 1
+haploclique-assembly -r $REF -c 2000 -G -i $ALIGNMENT -o 0.6 -q 0.999 -t 2 -n -w -s 1
+haploclique-assembly -r $REF -c 2000 -G -i $ALIGNMENT -o 300 -q 0.999 -t 2 -n -w -s 1
+haploclique-assembly -r $REF -c 2000 -G -i $ALIGNMENT -o 250 -q 0.999 -t 2 -n -w -s 1
+haploclique-assembly -r $REF -c 2000 -G -i $ALIGNMENT -o 200 -q 0.999 -t 2 -n -w -s 1
 fi
 if [[ $LOW == 0 ]] && [[ $AMPLICON == 0 ]]
 then
 	haploclique-assembly -r $REF -c 1000 -z 250 -i $ALIGNMENT -t 5 -o 0.9 -j 0.9
 	haploclique-assembly -r $REF -c 1000 -z 500 -i $ALIGNMENT -t 2 -o 0.9 -j 0.9
-	haploclique-assembly -r $REF -c 1000 -z 500 -i $ALIGNMENT -o 0.8 -q 0.99 -t 2 -j 0.9
-	haploclique-assembly -r $REF -c 1000 -z 500 -i $ALIGNMENT -o 0.7 -q 0.99 -t 2 -j 0.9
-	haploclique-assembly -r $REF -c 1000 -z 500 -i $ALIGNMENT -o 0.6 -q 0.99 -t 2 -j 0.9
-	haploclique-assembly -r $REF -c 1000 -z 250 -i $ALIGNMENT -o 0.8 -q 0.999 -t 2 -n -j 0.9
-	haploclique-assembly -r $REF -c 1000 -z 250 -i $ALIGNMENT -o 0.7 -q 0.999 -t 2 -n -j 0.9
-	haploclique-assembly -r $REF -c 1000 -z 250 -i $ALIGNMENT -o 0.6 -q 0.999 -t 2 -n -j 0.9
+    haploclique-assembly -r $REF -c 1000 -z 250 -i $ALIGNMENT -o 0.8 -q 0.999 -t 2 -j 0.9 -n -w -s 1
+    haploclique-assembly -r $REF -c 1000 -z 500 -i $ALIGNMENT -o 0.8 -q 0.999 -t 2 -j 0.9 -n -w -s 1
+    haploclique-assembly -r $REF -c 1000 -z 500 -i $ALIGNMENT -o 0.7 -q 0.999 -t 2 -j 0.9 -n -w -s 1
+    haploclique-assembly -r $REF -c 1000 -z 500 -i $ALIGNMENT -o 0.6 -q 0.999 -t 2 -j 0.9 -n -w -s 1
+    haploclique-assembly -r $REF -c 1000 -z 500 -i $ALIGNMENT -o 500 -q 0.999 -t 2 -j 0.9 -n -w -s 1
+    haploclique-assembly -r $REF -c 1000 -z 500 -i $ALIGNMENT -o 400 -q 0.999 -t 2 -j 0.9 -n -w -s 1
+    haploclique-assembly -r $REF -c 1000 -z 500 -i $ALIGNMENT -o 300 -q 0.999 -t 2 -j 0.9 -n -w -s 1
+    haploclique-assembly -r $REF -c 1000 -z 500 -i $ALIGNMENT -o 200 -q 0.999 -t 2 -j 0.9 -n -w -s 1
 fi
 
 if [[ $AMPLICON == 1 ]]

@@ -64,7 +64,7 @@ bool QuasispeciesEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const 
     } else {
         cutoff = EDGE_QUASI_CUTOFF_SINGLE;
     }
-    return computeOverlap(ap1, ap2) > cutoff;
+    return computeOverlap(ap1, ap2, cutoff) > cutoff;
 }
 
 std::string QuasispeciesEdgeCalculator::tail(std::string const& source, size_t const length) const {
@@ -72,7 +72,7 @@ std::string QuasispeciesEdgeCalculator::tail(std::string const& source, size_t c
   return source.substr(source.size() - length);
 }
 
-double QuasispeciesEdgeCalculator::computeOverlap(const AlignmentRecord & ap1, const AlignmentRecord & ap2) const {
+double QuasispeciesEdgeCalculator::computeOverlap(const AlignmentRecord & ap1, const AlignmentRecord & ap2, const double cutoff) const {
 
     double MIN_OVERLAP = 0;
     if (ap1.getName().find("Clique") != std::string::npos
@@ -95,7 +95,7 @@ double QuasispeciesEdgeCalculator::computeOverlap(const AlignmentRecord & ap1, c
         if (overlap_size1 < MIN_OVERLAP) {
             return 0;
         }
-        overlap_result r = singleOverlap(ap1, ap2, 1, 1, MIN_OVERLAP);
+        overlap_result r = singleOverlap(ap1, ap2, 1, 1, MIN_OVERLAP, cutoff);
         double p = r.probability;
         hamming += r.hamming;
         //        p = pow(p, 1.0 / overlap_size1);
@@ -119,10 +119,10 @@ double QuasispeciesEdgeCalculator::computeOverlap(const AlignmentRecord & ap1, c
             // cerr << ap1.getStart1() << " " << ap1.getEnd1() << " " << ap2.getStart1() << " " << ap2.getEnd1() << " " << ap2.getStart2() << " " << ap2.getEnd2() << endl;
             // cerr << overlap_size1 << " " << overlap_size2 << endl;
             if ((overlap_size1 >= MIN_OVERLAP && overlap_size2 >= MIN_OVERLAP) || (overlap_size1+overlap_size2 >= MIN_OVERLAP && overlap_size1 > 0 && overlap_size2 > 0)) {
-                overlap_result r1 = singleOverlap(ap1, ap2, 1, 1, MIN_OVERLAP);
+                overlap_result r1 = singleOverlap(ap1, ap2, 1, 1, MIN_OVERLAP, cutoff);
                 p = r1.probability;
                 hamming += r1.hamming;
-                overlap_result r2 = singleOverlap(ap1, ap2, 1, 2, MIN_OVERLAP);
+                overlap_result r2 = singleOverlap(ap1, ap2, 1, 2, MIN_OVERLAP, cutoff);
                 p *= r2.probability;
                 hamming += r2.hamming;
                 //                p = pow(p, 1.0 / (overlap_size1 + overlap_size2));
@@ -168,10 +168,10 @@ double QuasispeciesEdgeCalculator::computeOverlap(const AlignmentRecord & ap1, c
             // cerr << overlap_size1 << " " << overlap_size2 << endl;
             if ((overlap_size1 >= MIN_OVERLAP && overlap_size2 >= MIN_OVERLAP) || (overlap_size1+overlap_size2 >= MIN_OVERLAP && overlap_size1 > 0 && overlap_size2 > 0)) {
                 // cerr << "did" << endl;
-                overlap_result r1 = singleOverlap(ap1, ap2, 1, 1, MIN_OVERLAP);
+                overlap_result r1 = singleOverlap(ap1, ap2, 1, 1, MIN_OVERLAP, cutoff);
                 p *= r1.probability;
                 hamming += r1.hamming;
-                overlap_result r2 = singleOverlap(ap1, ap2, 2, 1, MIN_OVERLAP);
+                overlap_result r2 = singleOverlap(ap1, ap2, 2, 1, MIN_OVERLAP, cutoff);
                 p *= r2.probability;
                 hamming += r2.hamming;
                 //                p = pow(p, 1.0 / (overlap_size1 + overlap_size2));
@@ -226,9 +226,9 @@ double QuasispeciesEdgeCalculator::computeOverlap(const AlignmentRecord & ap1, c
             return 0;
         }
 
-        overlap_result r1 = singleOverlap(ap1, ap2, 1, 1, MIN_OVERLAP);
+        overlap_result r1 = singleOverlap(ap1, ap2, 1, 1, MIN_OVERLAP, cutoff);
         //cerr << "1" << endl;
-        overlap_result r2 = singleOverlap(ap1, ap2, 2, 2, MIN_OVERLAP);
+        overlap_result r2 = singleOverlap(ap1, ap2, 2, 2, MIN_OVERLAP, cutoff);
         //cerr << "2" << endl;
         double p = r1.probability * r2.probability;
 
@@ -290,7 +290,7 @@ int QuasispeciesEdgeCalculator::overlapSize(int e1, int e2, int s1, int s2) cons
     }
 }
 
-QuasispeciesEdgeCalculator::overlap_result QuasispeciesEdgeCalculator::singleOverlap(const AlignmentRecord & ap1, const AlignmentRecord & ap2, int strain1, int strain2, double MIN_OVERLAP) const {
+QuasispeciesEdgeCalculator::overlap_result QuasispeciesEdgeCalculator::singleOverlap(const AlignmentRecord & ap1, const AlignmentRecord & ap2, int strain1, int strain2, double MIN_OVERLAP, const double cutoff) const {
 
     overlap_result result;
     result.hamming = 0;
@@ -489,7 +489,8 @@ QuasispeciesEdgeCalculator::overlap_result QuasispeciesEdgeCalculator::singleOve
     //cerr << offset1 << " offset " << offset2 << endl;
     bool perfect = 0;
     if (ap1.getName().find("Clique") != std::string::npos
-        && ap2.getName().find("Clique") != std::string::npos) {
+        && ap2.getName().find("Clique") != std::string::npos
+        && cutoff == 1.0) {
         perfect = 1;
     }
     for (int j_compare = 0, j2_compare = 0, prefix = 1, run = 1, run2 = 1, compute_overlap = 0, j_overlap = 0, jm = 0, jm2 = 0,
