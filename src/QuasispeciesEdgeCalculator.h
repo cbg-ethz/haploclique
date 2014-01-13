@@ -27,9 +27,11 @@ using namespace std;
 class QuasispeciesEdgeCalculator : public EdgeCalculator {
 private:
 
-    double MIN_OVERLAP;
+    double MIN_OVERLAP_CLIQUES;
+    double MIN_OVERLAP_SINGLE;
     static const double FRAME_SHIFT_WEIGHT;
     double Q;
+    double EDGE_QUASI_CUTOFF_SINGLE;
     double EDGE_QUASI_CUTOFF;
     bool FRAMESHIFT_MERGE;
     map<int, double> SIMPSON_MAP;
@@ -47,7 +49,7 @@ private:
     int overlapSize(int e1, int e2, int s1, int s2) const;
     string tail(std::string const& source, size_t const length) const;
 public:
-    QuasispeciesEdgeCalculator(double Q, double edge_quasi_cutoff, double overlap, bool frameshift_merge, map<int, double>& simpson_map);
+    QuasispeciesEdgeCalculator(double Q, double edge_quasi_cutoff, double overlap, bool frameshift_merge, map<int, double>& simpson_map, double edge_quasi_cutoff_single, double overlap_single);
     virtual ~QuasispeciesEdgeCalculator();
 
     /** Decides whether an edge is to be drawn between the two given nodes. */

@@ -53,4 +53,4 @@ endif()
 add_subdirectory(3rd-party/bamtools/src/bamtools/api)
 add_subdirectory(src)
 
-install(PROGRAMS scripts/haploclique-postprocess.py scripts/manipulate_alignment_prior.py scripts/haploclique-assembly scripts/haploclique-assembly-auto scripts/postprocess-predictions bwa/bwa samtools/samtools DESTINATION bin)
+install(PROGRAMS scripts/collapse_duplicates.py scripts/haploclique-postprocess.py scripts/manipulate_alignment_prior.py scripts/haploclique-assembly scripts/haploclique-assembly-auto scripts/postprocess-predictions bwa/bwa samtools/samtools DESTINATION bin)

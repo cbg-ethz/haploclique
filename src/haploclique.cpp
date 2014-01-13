@@ -106,9 +106,11 @@ int main(int argc, char* argv[]) {
     string reads_output_filename;
     string coverage_output_filename;
     bool verbose = false;
-    double edge_quasi_cutoff;
+    double edge_quasi_cutoff_cliques;
+    double edge_quasi_cutoff_single;
     double Q;
-    double overlap;
+    double overlap_cliques;
+    double overlap_single;
     bool frameshift_merge = false;
     int super_read_min_coverage;
     string allel_frequencies_path;
@@ -129,10 +131,12 @@ int main(int argc, char* argv[]) {
     ("all,a", "Output all cliques instead of only the significant ones. Cliques are not sorted and last column (FDR) is not computed.")
     ("output_reads,r", po::value<string>(&reads_output_filename)->default_value(""), "Output reads belonging to at least one significant clique to the given filename (along with their assignment to significant cliques.")
     ("output_coverage,C", po::value<string>(&coverage_output_filename)->default_value(""), "Output the coverage with considered insert segments along the chromosome (one line per position) to the given filename.")
-    ("edge_quasi_cutoff,q", po::value<double>(&edge_quasi_cutoff)->default_value(0.9), "End compatibility probability cutoff for quasispecies reconstruction.")
+    ("edge_quasi_cutoff_cliques,q", po::value<double>(&edge_quasi_cutoff_cliques)->default_value(0.99), "End compatibility probability cutoff between error-corrected reads for quasispecies reconstruction.")
+    ("edge_quasi_cutoff_single,g", po::value<double>(&edge_quasi_cutoff_single)->default_value(0.95), "End compatibility probability cutoff between raw<->raw and raw<->error-corrected reads for quasispecies reconstruction.")
     ("random_overlap_probability,Q", po::value<double>(&Q)->default_value(0.9), "Probability that two random reads are equal at the same position.")
     ("frame_shift_merge,m", po::value<bool>(&frameshift_merge)->zero_tokens(), "Reads will be clustered if one has single nucleotide deletions and insertions. Use for PacBio data sets.")
-    ("min_overlap,o", po::value<double>(&overlap)->default_value(0.6), "Minimum relative overlap between reads.")
+    ("min_overlap_cliques,o", po::value<double>(&overlap_cliques)->default_value(0.9), "Minimum relative overlap between error-corrected reads.")
+    ("min_overlap_single,j", po::value<double>(&overlap_single)->default_value(0.6), "Minimum relative overlap between raw<->raw and raw<->error-corrected reads.")
     ("super_read_min_coverage,s", po::value<int>(&super_read_min_coverage)->default_value(2), "Minimum coverage for super-read assembly.")
     ("allel_frequencies,A", po::value<string>(&allel_frequencies_path)->default_value(""), "Minimum coverage for super-read assembly.")
     ("call_indels,I", po::value<string>(&indel_output_file)->default_value(""), "Call indels from cliques. In this mode, the \"classical CLEVER\" edge criterion is used in addition to the new one. Filename to write indels to must be given as parameter.")
@@ -196,7 +200,7 @@ int main(int argc, char* argv[]) {
     VariationCaller* variation_caller = 0;
     ReadGroups* read_groups = 0;
     auto_ptr<vector<mean_and_stddev_t> > readgroup_params(0);
-    edge_calculator = new QuasispeciesEdgeCalculator(Q, edge_quasi_cutoff, overlap, frameshift_merge, simpson_map);
+    edge_calculator = new QuasispeciesEdgeCalculator(Q, edge_quasi_cutoff_cliques, overlap_cliques, frameshift_merge, simpson_map, edge_quasi_cutoff_single, overlap_single);
     if (call_indels) {
         double insert_mean = -1.0;
         double insert_stddev = -1.0;

@@ -32,10 +32,12 @@
 
  const double QuasispeciesEdgeCalculator::FRAME_SHIFT_WEIGHT = 0.01;
 
- QuasispeciesEdgeCalculator::QuasispeciesEdgeCalculator(double Q, double edge_quasi_cutoff, double overlap, bool frameshift_merge, map<int, double>& simpson_map) {
+ QuasispeciesEdgeCalculator::QuasispeciesEdgeCalculator(double Q, double edge_quasi_cutoff, double overlap, bool frameshift_merge, map<int, double>& simpson_map, double edge_quasi_cutoff_single, double overlap_single) {
     this->Q = Q;
     this->EDGE_QUASI_CUTOFF = edge_quasi_cutoff;
-    this->MIN_OVERLAP = overlap;
+    this->EDGE_QUASI_CUTOFF_SINGLE = edge_quasi_cutoff_single;
+    this->MIN_OVERLAP_CLIQUES = overlap;
+    this->MIN_OVERLAP_SINGLE = min_overlap_single
     this->FRAMESHIFT_MERGE = frameshift_merge;
     this->SIMPSON_MAP = simpson_map;
 }
@@ -51,7 +53,15 @@ bool QuasispeciesEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const 
     if (ap1.getName().compare(ap2.getName()) == 0) {
         return 1;
     }
-    return computeOverlap(ap1, ap2) > EDGE_QUASI_CUTOFF;
+    double cutoff = 0;
+
+    if (ap1.getName().find("Clique") != std::string::npos
+        && ap2.getName().find("Clique") != std::string::npos) {
+        cutoff = EDGE_QUASI_CUTOFF;
+    } else {
+        cutoff = EDGE_QUASI_CUTOFF_SINGLE;
+    }
+    return computeOverlap(ap1, ap2) > cutoff;
 }
 
 std::string QuasispeciesEdgeCalculator::tail(std::string const& source, size_t const length) const {
@@ -60,6 +70,14 @@ std::string QuasispeciesEdgeCalculator::tail(std::string const& source, size_t c
 }
 
 double QuasispeciesEdgeCalculator::computeOverlap(const AlignmentRecord & ap1, const AlignmentRecord & ap2) const {
+
+    double MIN_OVERLAP = 0;
+    if (ap1.getName().find("Clique") != std::string::npos
+        && ap2.getName().find("Clique") != std::string::npos) {
+        MIN_OVERLAP = MIN_OVERLAP_CLIQUES;
+    } else {
+        MIN_OVERLAP = MIN_OVERLAP_SINGLE;
+    }
 
     double hamming = 0;
 //    cerr << ap1.isSingleEnd() << ap1.getName() <<"|"<< ap2.isSingleEnd() << ap.getName() << endl;

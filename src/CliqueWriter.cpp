@@ -115,15 +115,27 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
             string bla = ap.getName();
             vector<string> fields;
             boost::split(fields, bla, is_any_of("-+-"));
-            for (int i = 1; i < fields.size(); i++) stats->readnames->push_back(fields[i]);
+            for (int i = 1; i < fields.size(); i++) {
+                string complex = fields[i];
+                if (complex.find("-|-") != std::string::npos) {
+                    vector<string> fields2;
+                    boost::split(fields2, complex, is_any_of("-|-"));
+                    stats->clique_size_weighted += atoi(fields2[0].c_str());
+                } else {
+                    stats->clique_size_weighted += 1;
+                }
+                stats->readnames->push_back(fields[i]);
+            }
                 //            cerr << fields[0] << "\t" << fields[1] << "\t" << fields[2] << "\t" << fields[3]  << "\t" << fields.size() << "\t" << bla << endl;
         } else {
                 //            cerr << "NOOOO" << endl;
             stats->readnames->push_back(ap.getName());
+            stats->clique_size_weighted += 1;
         }
     }
+    //cerr << stats->clique_size_weighted << "\t" << stats->readnames->size() << endl;
     it = pairs.begin();
-    if (stats->readnames->size() < min_coverage) {
+    if (stats->clique_size_weighted < min_coverage) {
         singles.open ("singles.prior", ios::out | ios::app);
         for (; it != pairs.end(); ++it) {
             const AlignmentRecord& ap = **it;
@@ -479,10 +491,10 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
         this->single_count += 1;
     }
     if (problem || overlapSize(stats)) {
-        stats->window_end1 == -1;
-        stats->window_start1 == -1;
-        stats->window_end2 == -1;
-        stats->window_start1 == -1;
+        stats->window_end1 = -1;
+        stats->window_start1 = -1;
+        stats->window_end2 = -1;
+        stats->window_start1 = -1;
         stats->consensus_string1 = "";
         stats->consensus_string2 = "";
         stats->phred_string1 = "";
@@ -951,7 +963,7 @@ void CliqueWriter::finish() {
 }
 
 ostream& operator<<(ostream& os, const CliqueWriter::clique_stats_t& stats) {
-    if (stats.readnames->size() >= stats.min_coverage_user) {
+    if (stats.clique_size_weighted >= stats.min_coverage_user) {
         if (stats.consensus_string1.size() > 0) {
             os << "@Clique1_" << stats.clique_number << "-+-" << stats.readnames->at(0);
             for (size_t i = 1; i < stats.readnames->size(); ++i) {

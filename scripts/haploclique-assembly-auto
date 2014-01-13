@@ -10,7 +10,7 @@ OPTIONS:
    -r      Path to the reference genome (required)
    -i      Path to the alignment in BAM format (required)
    -l      Whole genome coverage is below 1000x
-   -a      PacBio amplicon mode
+   -a      PacBio single amplicon mode
 
 UPDATE:    http://bit.ly/haploclique
 EOF
@@ -68,9 +68,11 @@ then
 	haploclique-assembly -r $REF -c 1000 -z 250 -a $ALIGNMENT -o 0.8 -q 0.999 -t 2 -e -n
 	haploclique-assembly -r $REF -c 1000 -z 250 -a $ALIGNMENT -o 0.7 -q 0.999 -t 2 -e -n
 	haploclique-assembly -r $REF -c 1000 -z 250 -a $ALIGNMENT -o 0.6 -q 0.999 -t 2 -e -n
-else 
+fi
+if [[ $LOW == 0 ]] && [[ $AMPLICON == 0 ]]
+then
 	haploclique-assembly -r $REF -c 1000 -z 250 -a $ALIGNMENT -t 5 -o 0.9 -j 0.9
-	haploclique-assembly -r $REF -c 1000 -z 500 -a $ALIGNMENT -e -t 2  -o 0.9 -j 0.9
+	haploclique-assembly -r $REF -c 1000 -z 500 -a $ALIGNMENT -e -t 2 -o 0.9 -j 0.9
 	haploclique-assembly -r $REF -c 1000 -z 500 -a $ALIGNMENT -o 0.8 -q 0.99 -t 2 -e -j 0.9
 	haploclique-assembly -r $REF -c 1000 -z 500 -a $ALIGNMENT -o 0.7 -q 0.99 -t 2 -e -j 0.9
 	haploclique-assembly -r $REF -c 1000 -z 500 -a $ALIGNMENT -o 0.6 -q 0.99 -t 2 -e -j 0.9
@@ -79,7 +81,11 @@ else
 	haploclique-assembly -r $REF -c 1000 -z 250 -a $ALIGNMENT -o 0.6 -q 0.999 -t 2 -e -n -j 0.9
 fi
 
-#if [[ $AMPLICON == 1 ]]
-#then
-
-#fi
+if [[ $AMPLICON == 1 ]]
+then
+#    haploclique-assembly -a $ALIGNMENT -r $REF -z 100 -p -c 1000 -e
+    haploclique-assembly -a $ALIGNMENT -r $REF -z 100 -p -c 1000 -x 200 -u -t 3
+    cat singles.prior >> alignment.prior
+    haploclique-assembly -a $ALIGNMENT -r $REF -g -e -p -q 0.95 -y 0.95
+    haploclique-assembly -a $ALIGNMENT -r $REF -g -e -p -t 2
+fi
