@@ -179,6 +179,7 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
             stats->window_end1 = ap.getStart1() + ap.getSequence1().size() + deletions1 - shift_end1;
         }
         if (ap.isPairedEnd()) {
+            paired_end_count++;
             it_cigar = ap.getCigar2().begin();
             int deletions2 = 0;
             int shift2 = 0;
