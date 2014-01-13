@@ -97,6 +97,11 @@ For the prediction of large insertion and deletions, please only use alignments 
 `haploclique-assembly -r ../reference.fasta -a ../alignment.bam -l`  
 The detected indels are saved as indels.vcf.
 
+###Ultra-deep next-generation sequencing data workflow
+<p align="center">
+  <img src="https://github.com/armintoepfer/haploclique/blob/master/haploclique_workflow.png?raw=true" alt="ConsensusFixer logo"/>
+</p>
+
 ### Contributions
  [Armin Töpfer](http://www.bsse.ethz.ch/cbg/people/armintoepfer)  
  [Tobias Marschall](http://homepages.cwi.nl/~tm/)
