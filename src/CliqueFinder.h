@@ -22,6 +22,7 @@
 #include <set>
 #include <list>
 #include <boost/unordered_map.hpp>
+ #include <boost/dynamic_bitset.hpp>
 
 #include "Clique.h"
 #include "CliqueCollector.h"
@@ -47,9 +48,49 @@ private:
     const EdgeCalculator *second_edge_calculator;
     CoverageMonitor coverage_monitor;
     alignment_id_t next_id;
+    bool no_sort;
     void reorganize_storage();
+
+    typedef struct {
+        bool operator()(const Clique* c0,const Clique* c1) const {
+            // __uint128_t bitInteger = 0;
+            // int size = c0->getAlignmentSet().size();
+            // for (int j = 0; j < size; j++) {
+            //      if (c0->getAlignmentSet()[j]) {
+            //         bitInteger |= (1 << j);
+            //      }
+            //  }
+            //std::cerr << "SORT " << c0->leftmostSegmentStart() << "\t" << c1->leftmostSegmentStart();
+            // if (c0->leftmostSegmentStart() < c1->leftmostSegmentStart()) {
+                // std::cerr << "\t" << "!" << std::endl;
+                // return 1;
+            // }
+            // int size = c0->getAlignmentSet().size();
+            // if (size != c1->getAlignmentSet().size()) {
+            //     throw "Bit vector are of different size.";
+            // }
+            // for (int i = 0; i < size; i++) {
+            //     if (c0->getAlignmentSet()[i] != c1->getAlignmentSet()[i]) {
+            //         if (c0->getAlignmentSet()[i] == 0) {
+            //             return 0;
+            //         } else {
+            //             return 1;
+            //         }
+            //     }
+            // }
+            // return 0;
+            return c0->getAlignmentSet() < c1->getAlignmentSet(); 
+        }
+    } clique_comp_t;
+
+    typedef struct {
+        bool operator()(const Clique* c0,const Clique* c1) const {
+            return c0->getAlignmentSet() == c1->getAlignmentSet(); 
+        }
+    } clique_equal_t;
+
 public:
-    CliqueFinder(const EdgeCalculator& edge_calculator, CliqueCollector& clique_collector, const ReadGroups* read_groups);
+    CliqueFinder(const EdgeCalculator& edge_calculator, CliqueCollector& clique_collector, const ReadGroups* read_groups, bool no_sort);
     virtual ~CliqueFinder();
     void addAlignment(std::auto_ptr<AlignmentRecord> ap);
     void finish();

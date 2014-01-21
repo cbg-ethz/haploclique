@@ -119,6 +119,7 @@ int main(int argc, char* argv[]) {
     double indel_edge_sig_level;
     string indel_output_file = "";
     int time_limit;
+    bool no_sort;
 
     po::options_description options_desc("Allowed options");
     options_desc.add_options()
@@ -143,6 +144,7 @@ int main(int argc, char* argv[]) {
     ("mean_and_sd_filename,M", po::value<string>(&mean_and_sd_filename)->default_value(""), "Name of file with mean and standard deviation of insert size distribution (only required if option -I is used).")
     ("indel_edge_sig_level,p", po::value<double>(&indel_edge_sig_level)->default_value(0.2), "Significance level for \"indel\" edges criterion, see option -I (the lower the level, the more edges will be present).")
     ("time_limit,t", po::value<int>(&time_limit)->default_value(10), "Time limit for computation. If exceeded, non processed reads will be written to skipped.")
+    ("no_sort,N", po::value<bool>(&no_sort)->zero_tokens(), "Do not sort new clique w.r.t. their bitsets.")
     ;
 
     if (isatty(fileno(stdin))) {
@@ -218,7 +220,7 @@ int main(int argc, char* argv[]) {
         indel_os = new ofstream(indel_output_file.c_str());
     }
     CliqueWriter clique_writer(cout, variation_caller, indel_os, read_groups, false, output_all, fdr, verbose, super_read_min_coverage, frameshift_merge);
-    CliqueFinder clique_finder(*edge_calculator, clique_writer, read_groups);
+    CliqueFinder clique_finder(*edge_calculator, clique_writer, read_groups, no_sort);
     if (indel_edge_calculator != 0) {
         clique_finder.setSecondEdgeCalculator(indel_edge_calculator);
     }

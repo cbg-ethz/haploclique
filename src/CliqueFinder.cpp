@@ -20,12 +20,17 @@
 #include <iostream>
 #include <vector>
 #include <boost/unordered_set.hpp>
+  #include <boost/dynamic_bitset.hpp>
+#include <ctime>
+#include <map>
 
 #include "CliqueFinder.h"
 
-using namespace std;
 
-CliqueFinder::CliqueFinder(const EdgeCalculator& edge_calculator, CliqueCollector& clique_collector, const ReadGroups* read_groups) : clique_collector(clique_collector), edge_calculator(edge_calculator), coverage_monitor(read_groups) {
+using namespace std;
+using namespace boost;
+
+CliqueFinder::CliqueFinder(const EdgeCalculator& edge_calculator, CliqueCollector& clique_collector, const ReadGroups* read_groups, bool no_sort) : clique_collector(clique_collector), edge_calculator(edge_calculator), coverage_monitor(read_groups) {
 	cliques = new clique_list_t();
 	capacity = alignment_set_t::bits_per_block;
 	alignments = new AlignmentRecord*[capacity];
@@ -33,6 +38,7 @@ CliqueFinder::CliqueFinder(const EdgeCalculator& edge_calculator, CliqueCollecto
 	alignment_count = 0;
 	edge_writer = 0;
 	second_edge_calculator = 0;
+	this->no_sort = no_sort;
 }
 
 CliqueFinder::~CliqueFinder() {
@@ -185,6 +191,12 @@ void CliqueFinder::addAlignment(std::auto_ptr<AlignmentRecord> alignment_autoptr
 	if (new_cliques.size() == 0) {
 		new_cliques.push_back(new Clique(*this, index, capacity));
 	}
+	// clock_t clock_start = clock();
+	int clique_size_old = new_cliques.size();
+	if (no_sort == 0) { 
+		sort(new_cliques.begin(), new_cliques.end(), clique_comp_t());
+		new_cliques.erase(std::unique(new_cliques.begin(), new_cliques.end(),clique_equal_t()), new_cliques.end());
+	} 
 	// check for subset relations and delete cliques that are subsets of others
 	for (size_t i=0; i<new_cliques.size(); ++i) {
 		if (new_cliques[i]==0) continue;
@@ -209,12 +221,16 @@ void CliqueFinder::addAlignment(std::auto_ptr<AlignmentRecord> alignment_autoptr
 			}
 		}
 	}
+	// double cpu_time = (double) (clock() - clock_start) / CLOCKS_PER_SEC;
+	// int clique_size_new = 0;
 	for (size_t i=0; i<new_cliques.size(); ++i) {
 		if (new_cliques[i]!=0) {
 			cliques->push_back(new_cliques[i]);
+			// clique_size_new++;
 		}
 	}
-	// cout << "  Active cliques: " << cliques->size() << ", active alignments: " << alignment_count << endl;
+
+	//cout << cliques->size() << "\t" << alignment_count << "\t" << clique_size_old << "\t" << clique_size_new << "\t" << cpu_time << "\t" << no_sort << endl;
 /*	cout << "  Current Alignments: ";
 	for (size_t i=0; i<alignment_count; ++i) {
 		cout << alignments[i]->getID() << " ";

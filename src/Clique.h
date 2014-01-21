@@ -37,6 +37,7 @@ private:
 	void init();
 	/** Debug function */
 	void printSet(std::ostream& os);
+
 public:
 	Clique(CliqueFinder& parent, size_t index, size_t capacity);
 	Clique(CliqueFinder& parent, std::auto_ptr<alignment_set_t> alignments);
