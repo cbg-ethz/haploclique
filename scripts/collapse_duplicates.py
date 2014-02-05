@@ -2,6 +2,19 @@
 import sys
 from cStringIO import StringIO
 
+def f5(seq, idfun=None): 
+   # order preserving
+   if idfun is None:
+       def idfun(x): return x
+   seen = {}
+   result = []
+   for item in seq:
+       marker = idfun(item)
+       if marker in seen: continue
+       seen[marker] = 1
+       result.append(item)
+   return result
+
 map = {}
 id = ""
 seq = ""
@@ -49,11 +62,17 @@ for key in map:
     for l in xrange(len(split[1])):
         fastq.write("~")
     fastq.write("\n")
-    ids.write(idSplit[0][1:]+"\t"+tab[idSplit[0][1:]])
+    duplicate_ids = []
+    for x in idSplit:
+        for y in tab[x[1:]].split(","):
+            duplicate_ids.append(y)
+    duplicate_ids = f5(duplicate_ids)
+    ids.write(idSplit[0][1:]+"\t"+duplicate_ids[0])
     tab.pop(idSplit[0][1:],None)
     for x in idSplit[1:]:
-        ids.write(","+tab[x[1:]])
         tab.pop(x[1:],None)
+    for x in duplicate_ids[1:]:
+        ids.write(","+x)
     ids.write("\n")
 
 for x in tab:

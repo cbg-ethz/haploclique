@@ -26,6 +26,7 @@ OPTIONS:
    -w      Do not re-use singletons
    -n      Do not use alignment prior
    -l      Only predict indels, no haplotypes
+   -m      Maximal time for max-clique enumeration
 
 UPDATE:    http://bit.ly/haploclique
 EOF
@@ -51,6 +52,7 @@ NOSINGLETONS=0
 NOSKIPPING=0
 NOPRIOR=0
 INDEL=0
+TIME=10000
 while getopts “ah:r:q:o:pt:c:s:euz:Gwng:j:i:lx:” OPTION
 do
      case $OPTION in
@@ -117,6 +119,9 @@ do
              INDEL=1
              NOSINGLETONS=1
              ;;
+         m)
+             TIME=$OPTARG
+             ;;
          ?)
              usage
              exit
@@ -145,11 +150,12 @@ echo $PACBIO > .PACBIO.parameter
 echo $INDELFIXER > .INDELFIXER.parameter
 echo $NOPRIOR > .NOPRIOR.parameter
 echo $INDEL > .INDEL.parameter
+echo $TIME > .TIME.parameter
 
 function initial() {
     samtools view -uf 1 $ALIGNMENT > paired.bam 2> /dev/null
     samtools view -uF 1 $ALIGNMENT > single.bam 2> /dev/null
-    java -jar $SAF/ConsensusFixer.jar -i $ALIGNMENT --stats -s 2>&1 > /dev/null
+    java -jar $SAF/ConsensusFixer.jar -i $ALIGNMENT --stats 2>&1 > /dev/null
     samtools sort -n single.bam single_sort 2> /dev/null > /dev/null
     samtools view single_sort.bam 2> /dev/null | head > single_sort.sam 2> /dev/null
     samtools view paired.bam 2> /dev/null | head > paired.sam 2> /dev/null
@@ -182,12 +188,13 @@ function assemble() {
     FORWARD=data_cliques_paired_R1.fastq
     BACKWARD=data_cliques_paired_R2.fastq
     SINGLE=data_cliques_single.fastq
-
+    CORES=`cat /proc/cpuinfo | grep processor | wc -l`
     function idf ()
     {
         java -Xmx4g -XX:+UseParallelGC -XX:NewRatio=9 -jar ~/Dropbox/QuasiAsterisk/InDelFixer/target/InDelFixer.jar $* 2>&1 > /dev/null
     }
     function alignMemPaired () {
+        CORES=`cat /proc/cpuinfo | grep processor | wc -l`
         if [ $INDELFIXER == 1 ]; then
             if [ $PACBIO == 1 ]; then
                 idf -i $1 -ir $3 -g $2 -pacbio 
@@ -200,14 +207,15 @@ function assemble() {
             bwa mem -t 79 $2 $1 $3 > aln.sam 2> /dev/null
         fi
         samtools faidx $2 2>&1 > /dev/null
-        samtools view -q 20 -F 4 -bt $REF.fai aln.sam > aln.bam 2> /dev/null
-        samtools sort aln.bam reads 2>&1 > /dev/null
+        samtools view -@ $CORES -q 20 -F 4 -bt $REF.fai aln.sam > aln.bam 2> /dev/null
+        samtools sort -@ $CORES -m 4G aln.bam reads 2>&1 > /dev/null
         rm aln* 2>&1 > /dev/null
         samtools view -uf 1 reads.bam > paired.bam 2> /dev/null
         samtools view -uF 1 reads.bam > single_1.bam 2> /dev/null
         rm reads.bam
     }
     function alignMemSingle () {
+        CORES=`cat /proc/cpuinfo | grep processor | wc -l`
         if [ $INDELFIXER == 1 ]; then
             if [ $PACBIO == 1 ]; then
                 idf -i $1 -g $2 -pacbio 
@@ -220,8 +228,8 @@ function assemble() {
             bwa mem -t 79 $2 $1 > aln.sam
         fi
         samtools faidx $2 2>&1 > /dev/null
-        samtools view -q 20 -F 4 -bt $REF.fai aln.sam > aln.bam 2> /dev/null
-        samtools sort aln.bam single_2 2>&1 > /dev/null
+        samtools view -@ $CORES -q 20 -F 4 -bt $REF.fai aln.sam > aln.bam 2> /dev/null
+        samtools sort -@ $CORES -m 4G aln.bam single_2 2>&1 > /dev/null
         rm aln* 2>&1 > /dev/null
     }
     if [[ -s $FORWARD ]] && [[ -s $BACKWARD ]]; then
@@ -243,26 +251,26 @@ function assemble() {
 
     if [[ -s single.bam ]] && [[  -s paired.bam ]]; then
         samtools merge reads_unsorted.bam single.bam paired.bam 2>&1 > /dev/null
-        samtools sort reads_unsorted.bam assembly 2>&1 > /dev/null
+        samtools sort -@ $CORES -m 4G reads_unsorted.bam assembly 2>&1 > /dev/null
         samtools index assembly.bam 2>&1 > /dev/null
 
-        java -jar $SAF/ConsensusFixer.jar -i assembly.bam --stats -s 2>&1 > /dev/null
+        java -jar $SAF/ConsensusFixer.jar -i assembly.bam --stats 2>&1 > /dev/null
     elif [[ -s single.bam ]]; then
-        samtools sort single.bam assembly 2>&1 > /dev/null
+        samtools sort -@ $CORES -m 4G single.bam assembly 2>&1 > /dev/null
         samtools index assembly.bam 2>&1 > /dev/null
 
-        java -jar $SAF/ConsensusFixer.jar -i assembly.bam --stats -s 2>&1 > /dev/null
+        java -jar $SAF/ConsensusFixer.jar -i assembly.bam --stats 2>&1 > /dev/null
     elif [[ -s paired.bam ]]; then
-        samtools sort paired.bam assembly 2>&1 > /dev/null
+        samtools sort -@ $CORES -m 4G paired.bam assembly 2>&1 > /dev/null
         samtools index assembly.bam 2>&1 > /dev/null
 
-        java -jar $SAF/ConsensusFixer.jar -i assembly.bam --stats -s 2>&1 > /dev/null
+        java -jar $SAF/ConsensusFixer.jar -i assembly.bam --stats 2>&1 > /dev/null
     fi
 
      rm -rf assembly*
 
     if [[ -s single.bam ]]; then
-        samtools sort -n single.bam single_sort 2>&1 > /dev/null
+        samtools sort -@ $CORES -m 4G -n single.bam single_sort 2>&1 > /dev/null
         samtools view single_sort.bam > single_sort.sam 2> /dev/null
     fi
     if [[  -s paired.bam ]]; then
@@ -294,19 +302,20 @@ function computeParallelSingle() {
     HS=`cat ../.HS.parameter`
     NOPRIOR=`cat ../.NOPRIOR.parameter`
     INDEL=`cat ../.INDEL.parameter`
+    TIME=`cat ../.TIME.parameter`
     #echo -e "Parameter q o c s:\t\t${HQ} ${HO} ${HC} ${HS}"
 
     if [ $INDEL == 0 ]; then
         if [[ $NOPRIOR == 1 ]];then
-            cat alignment.prior | sort -k6,6 -g | haploclique -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -a -m > data_clique.fastq;
+            cat alignment.prior | sort -k6,6 -g | time haploclique -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -t $TIME -a -m > data_clique.fastq;
         else
-            cat alignment.prior | sort -k6,6 -g | haploclique -A ../statistics.txt -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -a -m > data_clique.fastq;
+            cat alignment.prior | sort -k6,6 -g | time haploclique -A ../statistics.txt -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -t $TIME -a -m > data_clique.fastq;
         fi
     else
         if [[ $NOPRIOR == 1 ]];then
-            cat alignment.prior | sort -k6,6 -g | haploclique -M ../mean-sd -I indel.out -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -a -m > data_clique.fastq;
+            cat alignment.prior | sort -k6,6 -g | time haploclique -M ../mean-sd -I indel.out -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -t $TIME -a -m > data_clique.fastq;
         else
-            cat alignment.prior | sort -k6,6 -g | haploclique -M ../mean-sd -I indel.out -A ../statistics.txt -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -a -m > data_clique.fastq;
+            cat alignment.prior | sort -k6,6 -g | time haploclique -M ../mean-sd -I indel.out -A ../statistics.txt -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -t $TIME -a -m > data_clique.fastq;
         fi
     fi
     haploclique-postprocess.py < data_clique.fastq
@@ -330,23 +339,24 @@ function compute() {
     HS=`cat .HS.parameter`
     HG=`cat .HG.parameter`
     HJ=`cat .HJ.parameter`
+    TIME=`cat ../.TIME.parameter`
     #echo -e "Parameter q/o:\t\t${HQ}/${HO}"
     if [ $INDEL == 0 ]; then
         if [[ $NOPRIOR == 1 ]];then
-            cat alignment.prior | sort -k6,6 -g | haploclique -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -a -m > data_clique.fastq;
+            cat alignment.prior | sort -k6,6 -g | haploclique -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -t $TIME -a -m > data_clique.fastq;
         else
-            cat alignment.prior | sort -k6,6 -g | haploclique -A statistics.txt -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -a -m > data_clique.fastq;
+            cat alignment.prior | sort -k6,6 -g | haploclique -A statistics.txt -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -t $TIME -a -m > data_clique.fastq;
         fi
     else
         if [[ $NOPRIOR == 1 ]];then
-            cat alignment.prior | sort -k6,6 -g | haploclique -M mean-sd -I indel.out -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -a -m > data_clique.fastq;
+            cat alignment.prior | sort -k6,6 -g | haploclique -M mean-sd -I indel.out -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -t $TIME -a -m > data_clique.fastq;
         else
-            cat alignment.prior | sort -k6,6 -g | haploclique -M mean-sd -I indel.out -A statistics.txt -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -a -m > data_clique.fastq;
+            cat alignment.prior | sort -k6,6 -g | haploclique -M mean-sd -I indel.out -A statistics.txt -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -t $TIME -a -m > data_clique.fastq;
         fi
     fi
     #cat alignment.prior | sort -k6,6 -g | haploclique -A statistics.txt -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -a -m > data_clique.fastq;
     haploclique-postprocess.py < data_clique.fastq
-    #rm -rf data_clique.fastq support
+    rm -rf data_clique.fastq support
 
     sed -i -e '/^$/d;s/@Clique1/@Clique/g' data_cliques_paired_R1.fastq
     sed -i -e '/^$/d;s/@Clique2/@Clique/g' data_cliques_paired_R2.fastq

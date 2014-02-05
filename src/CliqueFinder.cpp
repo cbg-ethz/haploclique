@@ -23,7 +23,6 @@
   #include <boost/dynamic_bitset.hpp>
 #include <ctime>
 #include <map>
-
 #include "CliqueFinder.h"
 
 
@@ -191,9 +190,9 @@ void CliqueFinder::addAlignment(std::auto_ptr<AlignmentRecord> alignment_autoptr
 	if (new_cliques.size() == 0) {
 		new_cliques.push_back(new Clique(*this, index, capacity));
 	}
-	// clock_t clock_start = clock();
+	//clock_t clock_start = clock();
 	int clique_size_old = new_cliques.size();
-	if (no_sort == 0) { 
+	if (no_sort == 0) {
 		sort(new_cliques.begin(), new_cliques.end(), clique_comp_t());
 		new_cliques.erase(std::unique(new_cliques.begin(), new_cliques.end(),clique_equal_t()), new_cliques.end());
 	} 
@@ -221,12 +220,12 @@ void CliqueFinder::addAlignment(std::auto_ptr<AlignmentRecord> alignment_autoptr
 			}
 		}
 	}
-	// double cpu_time = (double) (clock() - clock_start) / CLOCKS_PER_SEC;
-	// int clique_size_new = 0;
+	//double cpu_time = (double) (clock() - clock_start) / CLOCKS_PER_SEC;
+	//int clique_size_new = 0;
 	for (size_t i=0; i<new_cliques.size(); ++i) {
 		if (new_cliques[i]!=0) {
 			cliques->push_back(new_cliques[i]);
-			// clique_size_new++;
+			//clique_size_new++;
 		}
 	}
 

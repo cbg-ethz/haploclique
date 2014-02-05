@@ -134,6 +134,7 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
         }
     }
     //cerr << stats->clique_size_weighted << "\t" << stats->readnames->size() << endl;
+    //cout << "#C\t" << stats->clique_size_weighted << endl;
     it = pairs.begin();
     if (stats->clique_size_weighted < min_coverage) {
         singles.open ("singles.prior", ios::out | ios::app);
