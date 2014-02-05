@@ -51,7 +51,7 @@ For error correction, HaploClique takes a BAM alignment and the reference as inp
 `haploclique-assembly -r ../reference.fasta -a ../alignment.bam` 
 
 For ultra-deep next-generation sequencing data sets, please set the minimal overlap to 90%:
-`haploclique-assembly -r ../reference.fasta -a ../alignment.bam -o 0.9 -j 0.9` 
+`haploclique-assembly -r ../reference.fasta -i ../alignment.bam -o 0.9 -j 0.9` 
 
 ######All command-line options:
 ```bash 
@@ -60,21 +60,25 @@ USAGE:     haploclique-assembly options...
 OPTIONS:
    -h      Show this message
    -r      Path to the reference genome (required)
-   -a      Path to the alignment in BAM format (required)
-   -q      Edge threshold
-   -o      Minimal relative overlap
+   -i      Path to the alignment in BAM format (required)
+   -q      Edge threshold for error-corrected reads
+   -g      Edge threshold for raw reads
+   -o      Minimal relative overlap for error-corrected reads
+   -j      Minimal relative overlap for raw reads
    -c      Maximal coverage
    -s      Minimal clique size
    -p      PacBio alignment with InDelFixer
-   -i      InDelFixer alignment
+   -a      InDelFixer alignment
    -t      Number of iterations
    -u      Shuffle in parallelization
    -e      Continue assembly
    -z      Split size
-   -g      No parallelization
+   -x      Split size for singletons
+   -G      No parallelization
    -w      Do not re-use singletons
    -n      Do not use alignment prior
    -l      Only predict indels, no haplotypes
+   -m      Maximal time for max-clique enumeration
 ```
 #####Quasispecies assembly of long-range haplotypes 
 For quasispecies assembly, please use the helper script `haploclique-assembly-auto`:
