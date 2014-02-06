@@ -2,36 +2,34 @@
 import sys
 from cStringIO import StringIO
 
-sequences_paired1 = StringIO()
-sequences_paired2 = StringIO()
-sequences_single = StringIO()
-
 firstClique = False
 fastq = 0
 
-out = StringIO()
 name = ""
 seq = ""
 found = 0
 buffer_lines = StringIO()
 
-readnames = {}
+#readnames = {}
 countlist = []
 
-clique_to_reads = StringIO()
+fr1 = open("data_cliques_paired_R1.fastq",'w')
+fr2 = open("data_cliques_paired_R2.fastq",'w')
+fs = open("data_cliques_single.fastq",'w')
+fc = open("data_clique_to_reads.tsv", 'w')
 
 for lines in sys.stdin:
     if len(lines) > 0:
         if lines.startswith("@Clique1_"):
             if firstClique:
-                sequences_single.write(buffer_lines.getvalue())
+                fs.write(buffer_lines.getvalue())
                 buffer_lines = StringIO()
             else:
-                sequences_paired2.write(buffer_lines.getvalue())
+                fr2.write(buffer_lines.getvalue())
                 buffer_lines = StringIO()
             splits = lines[1:-1].split("-+-")
-            clique_to_reads.write(splits[0].replace("Clique1","Clique"))
-            clique_to_reads.write("\t");
+            fc.write(splits[0].replace("Clique1","Clique"))
+            fc.write("\t");
 
             readSplit = splits[1].split(",")
             readCount = {}
@@ -48,29 +46,29 @@ for lines in sys.stdin:
                     readCount[name_tmp] += count_tmp
                 else:
                     readCount[name_tmp] = count_tmp
-                if name_tmp in readnames:
-                    readnames[name_tmp] += count_tmp
-                else:
-                    readnames[name_tmp] = count_tmp
+                #if name_tmp in readnames:
+                #    readnames[name_tmp] += count_tmp
+                #else:
+                #    readnames[name_tmp] = count_tmp
             start = 1
             for r in readCount:
                 if r != "1" and r != "":
                     if (start == 0):
-                        clique_to_reads.write(",")
+                        fc.write(",")
                     else:
                         start = 0
-                    clique_to_reads.write(str(readCount[r]))
-                    clique_to_reads.write("-")
-                    clique_to_reads.write(r)
-            clique_to_reads.write("\n")
+                    fc.write(str(readCount[r]))
+                    fc.write("-")
+                    fc.write(r)
+            fc.write("\n")
 
-            countlist.append(readCount)
+            #countlist.append(readCount)
 
             name = lines
             firstClique = True
             fastq+=1
         elif lines.startswith("@Clique2_"):
-            sequences_paired1.write(buffer_lines.getvalue())
+            fr1.write(buffer_lines.getvalue())
             buffer_lines = StringIO()
             name = lines
             firstClique = False
@@ -100,36 +98,36 @@ for lines in sys.stdin:
             buffer_lines.write(lines)
 
 if firstClique:
-    sequences_single.write(buffer_lines.getvalue())
+    fs.write(buffer_lines.getvalue())
     buffer_lines = StringIO()
 else:
-    sequences_paired2.write(buffer_lines.getvalue())
+    fr2.write(buffer_lines.getvalue())
     buffer_lines = StringIO()
 
-f = open("data_cliques_paired_R1.fastq",'w')
-f.write(sequences_paired1.getvalue())
-f.close()
-f = open("data_cliques_paired_R2.fastq",'w')
-f.write(sequences_paired2.getvalue())
-f.close()
-f = open("data_cliques_single.fastq",'w')
-f.write(sequences_single.getvalue())
-f.close()
+#f = open("data_cliques_paired_R1.fastq",'w')
+#f.write(sequences_paired1.getvalue())
+fr1.close()
+#f = open("data_cliques_paired_R2.fastq",'w')
+#f.write(sequences_paired2.getvalue())
+fr2.close()
+#f = open("data_cliques_single.fastq",'w')
+#f.write(sequences_single.getvalue())
+fs.close()
 
-count_buffer = {}
-for genome in sys.argv[1:]:
-    count_buffer[genome] = StringIO()
+#count_buffer = {}
+#for genome in sys.argv[1:]:
+#    count_buffer[genome] = StringIO()
 
-for singleDict in countlist:
-    for genome in sys.argv[1:]:
-        count = 0.0
-        for read in singleDict:
-            if genome in read:
-                count += singleDict[read]/float(readnames[read])
+#for singleDict in countlist:
+#    for genome in sys.argv[1:]:
+#        count = 0.0
+#        for read in singleDict:
+#            if genome in read:
+#                count += singleDict[read]/float(readnames[read])
                 #print(singleDict[read],readnames[read])
-        count_buffer[genome].write(str(count))
-        count_buffer[genome].write("\n")
+#        count_buffer[genome].write(str(count))
+#        count_buffer[genome].write("\n")
 
-f = open("data_clique_to_reads.tsv", 'w')
-f.write(clique_to_reads.getvalue())
-f.close()
+
+#f.write(clique_to_reads.getvalue())
+fc.close()
