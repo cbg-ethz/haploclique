@@ -116,14 +116,14 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
             vector<string> fields;
             boost::split(fields, bla, is_any_of("-+-"));
             for (int i = 1; i < fields.size(); i++) {
-                string complex = fields[i];
-                if (complex.find("-|-") != std::string::npos) {
-                    vector<string> fields2;
-                    boost::split(fields2, complex, is_any_of("-|-"));
-                    stats->clique_size_weighted += atoi(fields2[0].c_str());
-                } else {
+                // string complex = fields[i];
+                // if (complex.find("-|-") != std::string::npos) {
+                //     vector<string> fields2;
+                //     boost::split(fields2, complex, is_any_of("-|-"));
+                //     stats->clique_size_weighted += atoi(fields2[0].c_str());
+                // } else {
                     stats->clique_size_weighted += 1;
-                }
+                //}
                 stats->readnames->push_back(fields[i]);
             }
                 //            cerr << fields[0] << "\t" << fields[1] << "\t" << fields[2] << "\t" << fields[3]  << "\t" << fields.size() << "\t" << bla << endl;

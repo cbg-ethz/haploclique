@@ -53,7 +53,7 @@ NOSKIPPING=0
 NOPRIOR=0
 INDEL=0
 TIME=10000
-while getopts “ah:r:q:o:pt:c:s:euz:Gwng:j:i:lx:” OPTION
+while getopts “ah:r:q:o:pt:c:s:euz:Gwng:j:i:lx:m:” OPTION
 do
      case $OPTION in
          h)
@@ -319,17 +319,7 @@ function computeParallelSingle() {
         fi
     fi
     haploclique-postprocess.py < data_clique.fastq
-    #rm -rf data_clique.fastq support
-
-    sed -i -e '/^$/d;s/@Clique1/@Clique'"$1"'/g' data_cliques_paired_R1.fastq
-    sed -i -e '/^$/d;s/@Clique2/@Clique'"$1"'/g' data_cliques_paired_R2.fastq
-    awk 'BEGIN {FS=""} {if (NR%4 == 2) { for (i = NF; i >= 1; i = i - 1) { if ($i == "A") { printf "T"; } else if ($i == "C") { printf "G";} else if ($i == "G") { printf "C";} else if ($i == "T") { printf "A";} else if ($i == "N") { printf "N";} } print ""; } else print $0 }' data_cliques_paired_R2.fastq > tmp.fastq
-    rm data_cliques_paired_R2.fastq
-    mv tmp.fastq data_cliques_paired_R2.fastq
-    sed -i -e '/^$/d;s/@Clique1/@Clique'"$1"'/g' data_cliques_single.fastq
-    sed -i -e '/^$/d;s/Clique/Clique'"$1"'/g' data_clique_to_reads.tsv
-    collapse_duplicates.py
-    rm -rf *-e
+    rm -rf data_clique.fastq support
 }
 
 function compute() {
@@ -339,7 +329,7 @@ function compute() {
     HS=`cat .HS.parameter`
     HG=`cat .HG.parameter`
     HJ=`cat .HJ.parameter`
-    TIME=`cat ../.TIME.parameter`
+    TIME=`cat .TIME.parameter`
     #echo -e "Parameter q/o:\t\t${HQ}/${HO}"
     if [ $INDEL == 0 ]; then
         if [[ $NOPRIOR == 1 ]];then
@@ -354,18 +344,9 @@ function compute() {
             cat alignment.prior | sort -k6,6 -g | haploclique -M mean-sd -I indel.out -A statistics.txt -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -t $TIME -a -m > data_clique.fastq;
         fi
     fi
-    #cat alignment.prior | sort -k6,6 -g | haploclique -A statistics.txt -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -a -m > data_clique.fastq;
+
     haploclique-postprocess.py < data_clique.fastq
     rm -rf data_clique.fastq support
-
-    sed -i -e '/^$/d;s/@Clique1/@Clique/g' data_cliques_paired_R1.fastq
-    sed -i -e '/^$/d;s/@Clique2/@Clique/g' data_cliques_paired_R2.fastq
-    awk 'BEGIN {FS=""} {if (NR%4 == 2) { for (i = NF; i >= 1; i = i - 1) { if ($i == "A") { printf "T"; } else if ($i == "C") { printf "G";} else if ($i == "G") { printf "C";} else if ($i == "T") { printf "A";} else if ($i == "N") { printf "N";} } print ""; } else print $0 }' data_cliques_paired_R2.fastq > tmp.fastq
-    rm data_cliques_paired_R2.fastq
-    mv tmp.fastq data_cliques_paired_R2.fastq
-    sed -i -e '/^$/d;s/@Clique1/@Clique/g' data_cliques_single.fastq
-    collapse_duplicates.py
-    rm -rf *-e
 }
 
 export -f computeParallelSingle
@@ -397,7 +378,7 @@ if [[ $NOPARALLEL == 0 ]]; then
             cat x*/data_cliques_paired_R2.fastq >> data_cliques_paired_R2.fastq
             cat x*/data_cliques_single.fastq >> data_cliques_single.fastq
             cat x*/data_clique_to_reads.tsv >> data_clique_to_reads.tsv
-            sed -i -e '/^$/d;s/Clique/Clique_/g' data*
+            #sed -i -e '/^$/d;s/Clique/Clique_/g' data*
             #cat data_cliques_* | awk '{if (NR%4==2) { l += length($0);i++}} END {printf("Mean/max read length:\t\t%.0f/",l/i)}'
             cat data_cliques_* | awk 'BEGIN {l = 0} {if (NR%4==2 && l < length($0)) l = length($0)} END {printf("Max read length:\t\t%.0f bp\n",l)}'
             cat x*/singles.prior | sort -u -t" " -k1,1 | sort -k6,6 -g > alignment.prior 2> /dev/null
@@ -421,7 +402,7 @@ if [[ $NOPARALLEL == 0 ]]; then
             cat x*/data_cliques_paired_R2.fastq >> data_cliques_paired_R2.fastq
             cat x*/data_cliques_single.fastq >> data_cliques_single.fastq
             cat x*/data_clique_to_reads.tsv >> data_clique_to_reads.tsv
-            sed -i -e '/^$/d;s/Clique/Clique_/g' data*
+            #sed -i -e '/^$/d;s/Clique/Clique_/g' data*
             #cat data_cliques_* | awk '{if (NR%4==2) { l += length($0);i++}} END {printf("Mean/max read length:\t\t%.0f/",l/i)}'
             cat data_cliques_* | awk 'BEGIN {l = 0} {if (NR%4==2 && l < length($0)) l = length($0)} END {printf("Max read length:\t\t%.0f bp\n",l)}'
             cat x*/singles.prior | sort -u -t" " -k1,1 > singles.prior
@@ -453,7 +434,7 @@ if [[ $NOPARALLEL == 0 ]]; then
             assemble
             cat x*/skipped.prior >> skipped.prior
             cat skipped.prior >> alignment.prior
-            sed -i -e '/^$/d;s/@Clique/@Clique_/g' alignment.prior
+            #sed -i -e '/^$/d;s/@Clique/@Clique_/g' alignment.prior
         fi
         #cat data_cliques_* | awk '{if (NR%4==2) { l += length($0);i++}} END {printf("Mean/max read length:\t\t%.0f/",l/i)}'
         rm -rf x*
