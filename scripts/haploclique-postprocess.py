@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 import sys
 from cStringIO import StringIO
+from math import pow, log10
 
 prefix = ""
 if len(sys.argv) == 2:
@@ -10,6 +11,21 @@ firstClique = False
 buffer_lines = StringIO()
 
 map = {}
+
+def phredtodouble(s):
+    letters = list(s) 
+    letters = [pow(10,-1*float(ord(phred))/float(10)) for phred in letters] 
+    return letters
+
+def doubletophred(s):
+    letters = StringIO()
+    for x in s:
+        c = int(-10*log10(float(x)/float(k.count))+33)
+        if c > 126 or c < 33:
+            c = 126
+        letters.write(chr(c))
+    return letters.getvalue()
+
 
 def complement(s): 
     basecomplement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A', 'N': 'N', '-': '-'} 
@@ -42,6 +58,7 @@ class Storage:
     seq_2 = ""
     qual_2 = ""
     pos_2 = ""
+    count = 1
 
 key = ""
 entry = Storage()
@@ -62,6 +79,12 @@ for l in sys.stdin:
                 if key in map:
                     map[key].reads += entry.reads
                     map[key].reads = f5(map[key].reads)
+                    map[key].count += 1
+                    for x in xrange(len(map[key].qual_1)):
+                        map[key].qual_1[x]+=entry.qual_1[x]
+                    if len(map[key].qual_2) > 0:
+                        for x in xrange(len(map[key].qual_2)):
+                            map[key].qual_2[x]+=entry.qual_2[x]
                 else:
                     map[key] = entry
 
@@ -78,11 +101,11 @@ for l in sys.stdin:
             if firstClique:
                 if lineno%4 == 2: entry.seq_1 = l[0:-1]
                 if lineno%4 == 3: entry.pos_1 = l.split(" ")[0][1:]
-                if lineno%4 == 0: entry.qual_1 = l[0:-1]
+                if lineno%4 == 0: entry.qual_1 = phredtodouble(l[0:-1])
             else:
                 if lineno%4 == 2: entry.seq_2 = l[0:-1]
                 if lineno%4 == 3: entry.pos_2 = l.split(" ")[0][1:]
-                if lineno%4 == 0: entry.qual_2 = l[0:-1]
+                if lineno%4 == 0: entry.qual_2 = phredtodouble(l[0:-1])
 
 if firstClique:
     key = entry.pos_1+SEP+entry.seq_1
@@ -111,8 +134,7 @@ for x in map:
         fs.write("+")
         fs.write(k.pos_1)
         fs.write("\n")
-        for l in xrange(len(k.seq_1)):
-            fs.write("~")
+        fs.write(doubletophred(k.qual_1))
         fs.write("\n")
     else:
         fr1.write("@")
@@ -123,8 +145,7 @@ for x in map:
         fr1.write("+")
         fr1.write(k.pos_1)
         fr1.write("\n")
-        for l in xrange(len(k.seq_1)):
-            fr1.write("~")
+        fr1.write(doubletophred(k.qual_1))
         fr1.write("\n")
         fr2.write("@")
         fr2.write(k.id)
@@ -134,17 +155,17 @@ for x in map:
         fr2.write("+")
         fr2.write(k.pos_2)
         fr2.write("\n")
-        for l in xrange(len(k.seq_1)):
-            fr2.write("~")
+        fr2.write(doubletophred(k.qual_2))
         fr2.write("\n")
 
-    fc.write(k.id)
-    fc.write("\t")
-    fc.write(k.reads[0])
-    for r in k.reads[1:]:
-        fc.write(",")
-        fc.write(r)
-    fc.write("\n")
+    if len(k.reads) > 0:
+        fc.write(k.id)
+        fc.write("\t")
+        fc.write(k.reads[0])
+        for r in k.reads[1:]:
+            fc.write(",")
+            fc.write(r)
+        fc.write("\n")
 
 fr1.close()
 fr2.close()

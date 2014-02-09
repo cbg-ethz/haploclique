@@ -20,11 +20,10 @@
 #include <iostream>
 #include <vector>
 #include <boost/unordered_set.hpp>
-  #include <boost/dynamic_bitset.hpp>
+#include <boost/dynamic_bitset.hpp>
 #include <ctime>
 #include <map>
 #include "CliqueFinder.h"
-
 
 using namespace std;
 using namespace boost;

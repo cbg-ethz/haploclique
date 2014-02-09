@@ -307,19 +307,17 @@ function computeParallelSingle() {
 
     if [ $INDEL == 0 ]; then
         if [[ $NOPRIOR == 1 ]];then
-            cat alignment.prior | sort -k6,6 -g | time haploclique -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -t $TIME -a -m > data_clique.fastq;
+            cat alignment.prior | sort -k6,6 -g | time haploclique -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -t $TIME -a -m | haploclique-postprocess.py $1;
         else
-            cat alignment.prior | sort -k6,6 -g | time haploclique -A ../statistics.txt -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -t $TIME -a -m > data_clique.fastq;
+            cat alignment.prior | sort -k6,6 -g | time haploclique -A ../statistics.txt -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -t $TIME -a -m | haploclique-postprocess.py $1;
         fi
     else
         if [[ $NOPRIOR == 1 ]];then
-            cat alignment.prior | sort -k6,6 -g | time haploclique -M ../mean-sd -I indel.out -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -t $TIME -a -m > data_clique.fastq;
+            cat alignment.prior | sort -k6,6 -g | time haploclique -M ../mean-sd -I indel.out -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -t $TIME -a -m | haploclique-postprocess.py $1;
         else
-            cat alignment.prior | sort -k6,6 -g | time haploclique -M ../mean-sd -I indel.out -A ../statistics.txt -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -t $TIME -a -m > data_clique.fastq;
+            cat alignment.prior | sort -k6,6 -g | time haploclique -M ../mean-sd -I indel.out -A ../statistics.txt -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -t $TIME -a -m | haploclique-postprocess.py $1;
         fi
     fi
-    haploclique-postprocess.py < data_clique.fastq
-    rm -rf data_clique.fastq support
 }
 
 function compute() {
@@ -333,20 +331,17 @@ function compute() {
     #echo -e "Parameter q/o:\t\t${HQ}/${HO}"
     if [ $INDEL == 0 ]; then
         if [[ $NOPRIOR == 1 ]];then
-            cat alignment.prior | sort -k6,6 -g | haploclique -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -t $TIME -a -m > data_clique.fastq;
+            cat alignment.prior | sort -k6,6 -g | haploclique -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -t $TIME -a -m | haploclique-postprocess.py;
         else
-            cat alignment.prior | sort -k6,6 -g | haploclique -A statistics.txt -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -t $TIME -a -m > data_clique.fastq;
+            cat alignment.prior | sort -k6,6 -g | haploclique -A statistics.txt -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -t $TIME -a -m | haploclique-postprocess.py;
         fi
     else
         if [[ $NOPRIOR == 1 ]];then
-            cat alignment.prior | sort -k6,6 -g | haploclique -M mean-sd -I indel.out -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -t $TIME -a -m > data_clique.fastq;
+            cat alignment.prior | sort -k6,6 -g | haploclique -M mean-sd -I indel.out -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -t $TIME -a -m | haploclique-postprocess.py;
         else
-            cat alignment.prior | sort -k6,6 -g | haploclique -M mean-sd -I indel.out -A statistics.txt -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -t $TIME -a -m > data_clique.fastq;
+            cat alignment.prior | sort -k6,6 -g | haploclique -M mean-sd -I indel.out -A statistics.txt -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -t $TIME -a -m | haploclique-postprocess.py;
         fi
     fi
-
-    haploclique-postprocess.py < data_clique.fastq
-    rm -rf data_clique.fastq support
 }
 
 export -f computeParallelSingle
@@ -365,7 +360,7 @@ if [[ $NOPARALLEL == 0 ]]; then
             cat alignment.prior | awk 'BEGIN{srand();}{print rand()"\t"$0}' | sort -k1 -n | cut -f2- | split -l $SPLITSIZE -a 10
             for i in x*; do mkdir $i-dir; mv $i $i-dir/alignment.prior; rm $i; done
         else
-            split -a 10 -l $SPLITSIZE alignment.prior 
+            sort -k6,6 -g alignment.prior | split -a 10 -l $SPLITSIZE
             for i in x*; do mkdir $i-dir; mv $i $i-dir/alignment.prior;done
         fi
 
@@ -437,6 +432,10 @@ if [[ $NOPARALLEL == 0 ]]; then
             #sed -i -e '/^$/d;s/@Clique/@Clique_/g' alignment.prior
         fi
         #cat data_cliques_* | awk '{if (NR%4==2) { l += length($0);i++}} END {printf("Mean/max read length:\t\t%.0f/",l/i)}'
+        collapse_duplicates.py < alignment.prior
+        #cp alignment.prior alignment.prior_old
+        sort -k6,6 -g alignment.tmp > alignment.prior
+        rm alignment.tmp
         rm -rf x*
         echo "===="
         CONTINUE=1
@@ -456,6 +455,9 @@ else
             exit 1
         fi
         assemble
+        collapse_duplicates.py < alignment.prior
+        sort -k6,6 -g alignment.tmp > alignment.prior
+        rm alignment.tmp
         # cat data_cliques_* | awk '{if (NR%4==2) { l += length($0);i++}} END {printf("Mean/max read length:\t\t%.0f/",l/i)}'
         cat data_cliques_* | awk 'BEGIN {l = 0} {if (NR%4==2 && l < length($0)) l = length($0)} END {printf("Max read length:\t\t%.0f bp\n",l)}'
         cat skipped.prior >> alignment.prior

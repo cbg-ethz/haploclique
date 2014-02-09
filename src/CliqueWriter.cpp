@@ -22,6 +22,7 @@
 #include <boost/unordered_set.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/compare.hpp>
 #include "CliqueWriter.h"
 #include <sstream>
 
@@ -95,13 +96,6 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
 
     stats->readnames = new vector<std::string>();
 
-    vector<std::string> duplicates;
-        //Ignore cliques with less than 5 reads.
-        //We consider them as trash :)
-        //if (pairs.end() - pairs.begin() < min_coverage) return;
-
-        //Compute the borders of both super-reads
-        //and save them in stats
     vector<const AlignmentRecord*>::const_iterator it = pairs.begin();
     if (DEBUG) cerr << pairs.end() - pairs.begin() << "\t";
 
@@ -114,27 +108,21 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
         if (ap.getName().find("-+-") != std::string::npos) {
             string bla = ap.getName();
             vector<string> fields;
-            boost::split(fields, bla, is_any_of("-+-"));
-            for (int i = 1; i < fields.size(); i++) {
-                // string complex = fields[i];
-                // if (complex.find("-|-") != std::string::npos) {
-                //     vector<string> fields2;
-                //     boost::split(fields2, complex, is_any_of("-|-"));
-                //     stats->clique_size_weighted += atoi(fields2[0].c_str());
-                // } else {
-                    stats->clique_size_weighted += 1;
-                //}
-                stats->readnames->push_back(fields[i]);
+            boost::iter_split(fields, bla, first_finder("-+-", is_iequal()));
+            string complex = fields[1];
+            if (complex.find(",") != std::string::npos) {
+                vector<string> fields2;
+                boost::split(fields2, complex, is_any_of(","));
+                stats->clique_size_weighted += fields2.size();
+            } else {
+                
             }
-                //            cerr << fields[0] << "\t" << fields[1] << "\t" << fields[2] << "\t" << fields[3]  << "\t" << fields.size() << "\t" << bla << endl;
+            stats->readnames->push_back(fields[1]);
         } else {
-                //            cerr << "NOOOO" << endl;
             stats->readnames->push_back(ap.getName());
             stats->clique_size_weighted += 1;
         }
     }
-    //cerr << stats->clique_size_weighted << "\t" << stats->readnames->size() << endl;
-    //cout << "#C\t" << stats->clique_size_weighted << endl;
     it = pairs.begin();
     if (stats->clique_size_weighted < min_coverage) {
         singles.open ("singles.prior", ios::out | ios::app);
@@ -150,11 +138,6 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
     it = pairs.begin();
     for (; it != pairs.end(); ++it) {
         const AlignmentRecord& ap = **it;
-            //        if (std::find(stats->readnames->begin(), stats->readnames->end(), ap.getName())!=stats->readnames->end()) {
-            //            duplicates.push_back(ap.getName());
-            //            continue;
-            //        }
-            //cerr << ap.getName() << "\t";
         vector<BamTools::CigarOp>::const_iterator it_cigar = ap.getCigar1().begin();
         int deletions1 = 0;
         int shift1 = 0;
@@ -749,90 +732,9 @@ void CliqueWriter::add(std::auto_ptr<Clique> clique) {
     clique_stats_t stats;
     auto_ptr<vector<const AlignmentRecord*> > all_pairs = clique->getAllAlignments();
     assert(all_pairs->size() == clique->size());
-    if (!multisample) {
-        callVariation(*all_pairs, clique->totalCenterCoverage(), &stats);
-    } else {
-        // if read groups are available, run tests for all possible combinations of read groups.
-        auto_ptr<vector<size_t> > readgroup_wise_coverages = clique->readGroupWiseCoverage();
-        assert(readgroup_wise_coverages.get() != 0);
-        assert(readgroup_wise_coverages->size() == read_groups->size());
-        // create sample wise coverage counts by summing over read groups
-        auto_ptr<vector<size_t> > sample_wise_coverages(new vector<size_t>(read_groups->sampleCount(), 0));
-        for (size_t i = 0; i < readgroup_wise_coverages->size(); ++i) {
-            (*sample_wise_coverages)[read_groups->readGroupIndexToSampleIndex(i)] += readgroup_wise_coverages->at(i);
-        }
-        // compute number of non-empty subsets of samples
-        size_t n = (1 << read_groups->sampleCount()) - 1;
-        vector<clique_stats_t> subset_wise_clique_stats(n, clique_stats_t());
-        double best_pvalue = numeric_limits<double>::infinity();
-        size_t best_pvalue_index = 0;
-        std::vector<sample_subset_wise_stats_t> sample_subsset_wise_stats;
-        // for every sample, compute probabilty that all alignments are wrong
-        vector<double> sample_wrong_probs(read_groups->size(), 1.0);
-        for (size_t i = 0; i < all_pairs->size(); ++i) {
-            assert(all_pairs->at(i) != 0);
-            int rg = all_pairs->at(i)->getReadGroup();
-            assert(rg >= 0);
-            assert(rg < (int) read_groups->size());
-            int sample = read_groups->readGroupIndexToSampleIndex(rg);
-            assert(sample >= 0);
-            assert(sample < (int) read_groups->sampleCount());
-            sample_wrong_probs[sample] *= 1.0 - all_pairs->at(i)->getWeight();
-        }
-        // i is interpreted as a bitvector telling which read groups are active
-        for (size_t i = 1; i <= n; ++i) {
-            clique_stats_t* current_stats = &subset_wise_clique_stats[i - 1];
-            vector<const AlignmentRecord*> pairs;
-            for (size_t j = 0; j < all_pairs->size(); ++j) {
-                int rg = all_pairs->at(j)->getReadGroup();
-                assert(rg != -1);
-                int sample = read_groups->readGroupIndexToSampleIndex(rg);
-                assert(sample >= 0);
-                assert(sample < (int) read_groups->sampleCount());
-                if ((i & (1 << sample)) != 0) {
-                    pairs.push_back(all_pairs->at(j));
-                }
-            }
-            if (pairs.size() == 0) {
-                sample_subsset_wise_stats.push_back(sample_subset_wise_stats_t(-1.0, 0.0));
-                continue;
-            }
-            double p = 1.0;
-            size_t coverage = 0;
-            for (size_t j = 0; j < read_groups->sampleCount(); ++j) {
-                if ((i & (1 << j)) != 0) {
-                    coverage += sample_wise_coverages->at(j);
-                    p *= 1.0 - sample_wrong_probs[j];
-                } else {
-                    p *= sample_wrong_probs[j];
-                }
-            }
-            callVariation(pairs, coverage, current_stats);
-            if (current_stats->pvalue_corr < best_pvalue) {
-                best_pvalue = current_stats->pvalue_corr;
-                best_pvalue_index = i - 1;
-            }
-            sample_subsset_wise_stats.push_back(sample_subset_wise_stats_t(current_stats->pvalue_corr, p));
-        }
-        stats = subset_wise_clique_stats[best_pvalue_index];
-        stats.sample_subset_wise_stats.assign(sample_subsset_wise_stats.begin(), sample_subsset_wise_stats.end());
-        stats.best_sample_combination = best_pvalue_index + 1;
-        stats.sample_wise_stats.clear();
-        for (size_t i = 0; i < read_groups->sampleCount(); ++i) {
-            stats.sample_wise_stats.push_back(sample_wise_stats_t(sample_wise_coverages->at(i)));
-        }
-        // gather read group information
-        for (size_t i = 0; i < all_pairs->size(); ++i) {
-            assert(all_pairs->at(i) != 0);
-            int rg = all_pairs->at(i)->getReadGroup();
-            assert(rg >= 0);
-            assert(rg < (int) read_groups->size());
-            int sample = read_groups->readGroupIndexToSampleIndex(rg);
-            assert(sample >= 0);
-            assert(sample < (int) stats.sample_wise_stats.size());
-            stats.sample_wise_stats[sample].add(1, all_pairs->at(i)->getWeight());
-        }
-    }
+
+    callVariation(*all_pairs, clique->totalCenterCoverage(), &stats);
+
     switch (stats.variation.getType()) {
         case Variation::INSERTION:
         total_insertion_cliques += 1;
