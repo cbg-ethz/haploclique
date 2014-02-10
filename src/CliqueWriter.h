@@ -23,6 +23,7 @@
 #include <vector>
 #include <boost/bimap.hpp>
 #include <boost/unordered_map.hpp>
+#include <set>
 
 #include "CliqueCollector.h"
 #include "Variation.h"
@@ -167,6 +168,17 @@ private:
         }
     } readname_comparator_t;
 
+    typedef struct fastq_entry {
+        std::string name;
+        std::set<std::string>* read_names;
+        std::string seq_1;
+        int pos_1;
+        std::vector<std::string> phreds_1;
+        std::string seq_2;
+        int pos_2;
+        std::vector<std::string> phreds_2;
+    } fastq_entry;
+
     /** Type for bi-directional map from read names to read name indices. */
     typedef boost::bimap<std::string, size_t> readname_to_index_bimap_t;
 
@@ -213,6 +225,8 @@ private:
     int single_count;
     int single_skipped_count;
     bool FRAMESHIFT_MERGE;
+    std::map<std::string,fastq_entry> fastq_map;
+    std::string suffix;
 
     void writeReadlist();
     void callVariation(const std::vector<const AlignmentRecord*>& pairs, size_t coverage, clique_stats_t* stats);
@@ -220,8 +234,9 @@ private:
     char expandBase(int base);
     bool overlapSize(clique_stats_t* stats) const;
     std::string equalStrings(std::string s1, std::string s2) const;
+    void printout(int pos_1);
 public:
-    CliqueWriter(std::ostream& os, VariationCaller* variation_caller, std::ostream* indel_os, const ReadGroups* read_groups, bool multisample, bool output_all, double fdr_threshold, bool verbose, int min_coverage, bool frameshift_merge);
+    CliqueWriter(std::ostream& os, VariationCaller* variation_caller, std::ostream* indel_os, const ReadGroups* read_groups, bool multisample, bool output_all, double fdr_threshold, bool verbose, int min_coverage, bool frameshift_merge, std::string suffix);
     virtual ~CliqueWriter();
     virtual void enableReadListOutput(std::ostream& os);
     virtual void add(std::auto_ptr<Clique> clique);
@@ -241,6 +256,10 @@ public:
 
     virtual int getSingleSkippedCount() {
         return single_skipped_count;
+    }
+
+    virtual std::map<std::string,fastq_entry> getFastqMap() {
+        return fastq_map;
     }
 
     friend std::ostream& operator<<(std::ostream& os, const clique_stats_t& stats);

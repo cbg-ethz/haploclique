@@ -29,7 +29,7 @@
  using namespace std;
  using namespace boost;
 
- CliqueWriter::CliqueWriter(ostream& os, VariationCaller* variation_caller, std::ostream* indel_os, const ReadGroups* read_groups, bool multisample, bool output_all, double fdr_threshold, bool verbose, int min_coverage, bool frameshift_merge) : os(os), variation_caller(variation_caller), read_groups(read_groups) {
+ CliqueWriter::CliqueWriter(ostream& os, VariationCaller* variation_caller, std::ostream* indel_os, const ReadGroups* read_groups, bool multisample, bool output_all, double fdr_threshold, bool verbose, int min_coverage, bool frameshift_merge, std::string suffix) : os(os), variation_caller(variation_caller), read_groups(read_groups) {
     this->indel_os = indel_os;
     this->significant_ins_count = -1;
     this->significant_del_count = -1;
@@ -51,6 +51,10 @@
     this->paired_count = 0;
     this->single_skipped_count = 0;
     this->FRAMESHIFT_MERGE=frameshift_merge;
+    this->suffix = suffix;
+    if (!this->suffix.empty()) {
+        this->suffix += "_";
+    }
 }
 
 CliqueWriter::~CliqueWriter() {
@@ -105,33 +109,12 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
 
     for (; it != pairs.end(); ++it) {
         const AlignmentRecord& ap = **it;
-        if (ap.getName().find("-+-") != std::string::npos) {
-            string bla = ap.getName();
-            vector<string> fields;
-            boost::iter_split(fields, bla, first_finder("-+-", is_iequal()));
-            string complex = fields[1];
-            if (complex.find(",") != std::string::npos) {
-                vector<string> fields2;
-                boost::split(fields2, complex, is_any_of(","));
-                stats->clique_size_weighted += fields2.size();
-            } else {
-                
-            }
-            stats->readnames->push_back(fields[1]);
-        } else {
-            stats->readnames->push_back(ap.getName());
-            stats->clique_size_weighted += 1;
+        for (int x=0;x<ap.getReadNames().size();++x) {
+            stats->readnames->push_back(ap.getReadNames()[x]);    
         }
+        stats->clique_size_weighted += ap.getReadCount();
     }
-    it = pairs.begin();
     if (stats->clique_size_weighted < min_coverage) {
-        singles.open ("singles.prior", ios::out | ios::app);
-        for (; it != pairs.end(); ++it) {
-            const AlignmentRecord& ap = **it;
-            singles << ap.getLine() << "\n";
-        }
-        this->single_skipped_count += 1;
-        singles.close();
         return;
     }
     stats->clique_number = clique_count++;
@@ -257,7 +240,7 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
         cerr << "\n" << endl;
     }
 
-        //Compute maximum coverage
+    //Compute maximum coverage
     stats->maximum_coverage1 = 0;
     int coverage1[alignment_length1];
     for (int j = 0; j < alignment_length1; j++) {
@@ -318,8 +301,6 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
                     p = 126;
                 }
                 stats->phred_string1 += p;
-
-                stats->coverage_string1 += ('0' + floor(local_max * 10 / stats->maximum_coverage1));
             } else {
                 stats->window_end1--;
             }
@@ -464,7 +445,6 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
                         p = 126;
                     }
                     stats->phred_string2 += p;
-                    stats->coverage_string2 += ('0' + floor(local_max * 10 / stats->maximum_coverage2));
                 } else {
                     stats->window_end2--;
                 }
@@ -768,8 +748,43 @@ void CliqueWriter::add(std::auto_ptr<Clique> clique) {
             stats.reads->push_back(as);
         }
     }
+
+    if (stats.clique_size_weighted >= stats.min_coverage_user) {
+        std::string key;
+        key = boost::lexical_cast<std::string>(stats.window_start1)+stats.consensus_string1;
+        if (!stats.consensus_string2.empty()) {
+            key += boost::lexical_cast<std::string>(stats.window_start2)+stats.consensus_string2;
+        }
+        if (fastq_map.find(key) == fastq_map.end()) {
+            fastq_map[key] = fastq_entry();
+            fastq_map[key].name = boost::lexical_cast<std::string>(stats.clique_number);
+            fastq_map[key].read_names = new std::set<std::string>();
+            for (size_t i = 0; i < stats.readnames->size(); ++i) {
+                    fastq_map[key].read_names->insert(stats.readnames->at(i));
+            }
+            fastq_map[key].pos_1 = stats.window_start1;
+            fastq_map[key].seq_1 = stats.consensus_string1;
+            fastq_map[key].phreds_1.push_back(stats.phred_string1);
+            if (!stats.consensus_string2.empty()) {
+                fastq_map[key].pos_2 = stats.window_start2;
+                fastq_map[key].seq_2 = stats.consensus_string2;
+                fastq_map[key].phreds_2.push_back(stats.phred_string2);
+            }
+        } else {
+            for (size_t i = 0; i < stats.readnames->size(); ++i) {
+                fastq_map[key].read_names->insert(stats.readnames->at(i));
+            }
+            fastq_map[key].phreds_1.push_back(stats.phred_string1);
+            if (!stats.consensus_string2.empty()) {
+                fastq_map[key].phreds_2.push_back(stats.phred_string2);
+            }
+        }
+    }
+    if (stats.window_start1 > 0) {
+        printout(stats.window_start1);
+    }
     if (output_all) {
-        os << stats << endl;
+        //os << stats << endl;
         if (passed_fdr && (indel_os != 0)) {
             clique_list.push_back(stats);
         }
@@ -819,7 +834,85 @@ void CliqueWriter::writeReadlist() {
     }
 }
 
+void CliqueWriter::printout(int pos_1) {
+    ofstream fr1;
+    fr1.open ("data_cliques_paired_R1.fastq", ios::out | ios::app);
+    ofstream fr2;
+    fr2.open ("data_cliques_paired_R2.fastq", ios::out | ios::app);
+    ofstream fs;
+    fs.open ("data_cliques_single.fastq", ios::out | ios::app);
+    ofstream fc;
+    fc.open ("data_clique_to_reads.tsv", ios::out | ios::app);
+
+    std::map<std::string,fastq_entry>::iterator it;
+    it = fastq_map.begin();
+    for (;it!=fastq_map.end();) {
+        fastq_entry f;
+        f = it->second;
+        if (f.pos_1+10 < pos_1 || pos_1 == -1) {
+            if (f.read_names->size() >= this->min_coverage) {
+                ofstream* out1;
+                if (f.seq_2.empty()) {
+                    out1 = &fs;
+                } else {
+                    out1 = &fr1;
+                }
+                *out1 << "@Clique_" << this->suffix << f.name << endl;
+                std::set<std::string>::iterator set_it;
+                set_it = f.read_names->begin();
+                fc << "Clique_" << this->suffix << f.name << "\t" << *set_it;
+                ++set_it;
+                for (;set_it!=f.read_names->end();++set_it) {
+                     fc << "," << *set_it;
+                }
+                fc << endl;
+                *out1 << f.seq_1 << endl;
+                *out1 << "+" << f.pos_1 << endl;
+                *out1 << f.phreds_1[0] << endl;
+                if (!f.seq_2.empty()) {
+                    fr2 << "@Clique_" << this->suffix << f.name;
+                    fr2 << endl;
+                    int last = f.seq_2.size()-1;
+                    for(int i = last; i >= 0; --i) {
+                        switch(f.seq_2[i]) {
+                            case 'G':
+                                fr2 << 'C';
+                                break;
+                            case 'A':
+                                fr2 << 'T';
+                                break;
+                            case 'T':
+                                fr2 << 'A';
+                                break;
+                            case 'C':
+                                fr2 << 'G';
+                                break;
+                            case 'N':
+                                fr2 << 'N';
+                                break;
+                            default:
+                            cerr << "UNKNOWN BASE " << f.seq_2[i] << endl;
+                                break;
+                        }
+                    }
+                    fr2 << endl;
+                    fr2 << "+" << f.pos_2 << endl;
+                    fr2 << f.phreds_2[0] << endl;
+                }
+            }
+            fastq_map.erase(it++);
+        } else {
+            ++it;
+        }
+    }
+    fr1.close();
+    fr2.close();
+    fs.close();
+    fc.close();
+}
+
 void CliqueWriter::finish() {
+    printout(-1);
     finished = true;
     if (indel_os == 0) return;
     sort(clique_list.begin(), clique_list.end(), clique_stats_comp_t());
@@ -867,38 +960,6 @@ void CliqueWriter::finish() {
 }
 
 ostream& operator<<(ostream& os, const CliqueWriter::clique_stats_t& stats) {
-    if (stats.clique_size_weighted >= stats.min_coverage_user) {
-        if (stats.consensus_string1.size() > 0) {
-            os << "@Clique1_" << stats.clique_number << "-+-" << stats.readnames->at(0);
-            for (size_t i = 1; i < stats.readnames->size(); ++i) {
-                os << "," << stats.readnames->at(i);
-            }
-            os << endl;
-            os << stats.consensus_string1 << endl;
-            //start length size coverage reads
-            os << "+" << stats.window_start1 << " " << stats.window_end1 - stats.window_start1 << " " << stats.readnames->size() << " " << stats.coverage_string1 << endl;
-            os << stats.phred_string1 << endl;
-            if (stats.consensus_string2.size() > 0) {
-                os << "@Clique2_" << stats.clique_number << "-+-" << stats.readnames->at(0);
-                for (size_t i = 1; i < stats.readnames->size(); ++i) {
-                    os << "," << stats.readnames->at(i);
-                }
-                os << endl;
-                os << stats.consensus_string2 << endl;
-                os << "+" << stats.window_start2 << " " << stats.window_end2 - stats.window_start2 << " " << stats.readnames->size() << " " << stats.coverage_string2 << endl;
-                os << stats.phred_string2 << endl;
-            }
-        } else if (stats.consensus_string2.size() > 0) {
-            os << "@Clique1_" << stats.clique_number << "-+-" << stats.readnames->at(0);
-            for (size_t i = 1; i < stats.readnames->size(); ++i) {
-                os << "," << stats.readnames->at(i);
-            }
-            os << endl;
-            os << stats.consensus_string2 << endl;
-            os << "+" << stats.window_start2 << " " << stats.window_end2 - stats.window_start2 << " " << stats.readnames->size() << " " << stats.coverage_string2 << endl;
-            os << stats.phred_string2 << endl;
-        }
-
-    }
+    cerr << "Thou shall not make use of me" << endl;
     return os;
 }

@@ -52,6 +52,9 @@ private:
 	alignment_id_t id;
 	bool single_end;
 	std::string line;
+	std::vector<std::string> readNames;
+	int readCount;
+
 public:
 	/** Parse an alignment pair from a line. If no read_group information is available, 
 	  * parameter read_groups can be 0. */
@@ -106,6 +109,8 @@ public:
 	bool isSingleEnd() const;
 	bool isPairedEnd() const;
 	std::string getLine() const;
+	std::vector<std::string> getReadNames() const;
+	int getReadCount() const;
 };
 
 #endif /* ALIGNMENTRECORD_H_ */

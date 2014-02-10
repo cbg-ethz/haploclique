@@ -19,12 +19,16 @@
 #include <vector>
 #include <boost/tokenizer.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/compare.hpp>
 
 #include "BamHelper.h"
 
 #include "AlignmentRecord.h"
 
 using namespace std;
+using namespace boost;
 
 AlignmentRecord::AlignmentRecord(const string& line, ReadGroups* read_groups) {
 	this->line = line;
@@ -41,6 +45,24 @@ AlignmentRecord::AlignmentRecord(const string& line, ReadGroups* read_groups) {
 	}
 	try {
 		this->name = tokens[0];
+
+		if (this->name.find("-+-") != std::string::npos) {
+            vector<string> fields;
+            boost::iter_split(fields, this->name, first_finder("-+-", is_iequal()));
+            string complex = fields[1];
+            if (complex.find(",") != std::string::npos) {
+                vector<string> fields2;
+                boost::split(fields2, complex, is_any_of(","));
+                this->readCount += fields2.size();
+                for (int x=0; x<fields2.size();++x) {
+                	this->readNames.push_back(fields2[x]);
+                }
+            }
+        } else {
+        	this->readNames.push_back(this->name);
+            this->readCount = 1;
+        }
+
 		this->record_nr = boost::lexical_cast<int>(tokens[1]);
 		if (read_groups == 0) {
 			this->read_group = -1;
@@ -233,4 +255,12 @@ bool AlignmentRecord::isPairedEnd() const {
 
 std::string AlignmentRecord::getLine() const {
 	return this->line;
+}
+
+std::vector<std::string> AlignmentRecord::getReadNames() const {
+	return this->readNames;
+}
+
+int AlignmentRecord::getReadCount() const {
+	return this->readCount;
 }

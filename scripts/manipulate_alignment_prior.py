@@ -6,19 +6,11 @@ if len(sys.argv) == 1:
     print("Please provide the clique_to_reads.tsv file")
     sys.exit(0)
 
-counts = {}
 clique_name = {}
 with open(sys.argv[1]) as f:
     for line in f:
         split = line.rstrip().split("\t")
         clique_name[split[0]] = split[1]
-        csv = split[1].split(",")
-        for c in csv:
-            if "-|-" in c:
-                single = c.split("-|-")
-                if not single[1] in counts:
-                    counts[single[1]] = 0
-                counts[single[1]] += int(single[0])
 
 # for x in counts:
 #     print str(counts[x])+"\t"+x
@@ -33,28 +25,7 @@ for lines in sys.stdin:
         if split[0].startswith("Clique"):
             sys.stdout.write(split[0])
             sys.stdout.write("-+-")
-            out = StringIO()
-            counter = 0;
-            split[0] = split[0].rstrip()
-            csv = clique_name[split[0]].split(",")
-            for c in csv:
-                if "-|-" in c:
-                    single = c.split("-")
-                    if int(single[0]) == counts[single[1]]:
-                        counter += int(single[0])
-                    else:
-                        out.write(c)
-                        out.write(",")
-                else:
-                    out.write(c)
-                    out.write(",")
-            if counter > 0:
-                out.write(str(counter))
-                out.write("-|-")
-                out.write(split[0])
-                out.write(",")
-            sys.stdout.write(out.getvalue()[0:-1])
-            # sys.stdout.write(clique_name[split[0]])
+            sys.stdout.write(clique_name[split[0]])
             for i in xrange(1,len(split)):
                 sys.stdout.write(" ")
                 sys.stdout.write(split[i])

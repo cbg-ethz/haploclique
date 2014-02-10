@@ -120,6 +120,7 @@ int main(int argc, char* argv[]) {
     string indel_output_file = "";
     int time_limit;
     bool no_sort;
+    std::string suffix;
 
     po::options_description options_desc("Allowed options");
     options_desc.add_options()
@@ -145,6 +146,7 @@ int main(int argc, char* argv[]) {
     ("indel_edge_sig_level,p", po::value<double>(&indel_edge_sig_level)->default_value(0.2), "Significance level for \"indel\" edges criterion, see option -I (the lower the level, the more edges will be present).")
     ("time_limit,t", po::value<int>(&time_limit)->default_value(10), "Time limit for computation. If exceeded, non processed reads will be written to skipped.")
     ("no_sort,N", po::value<bool>(&no_sort)->zero_tokens(), "Do not sort new clique w.r.t. their bitsets.")
+    ("suffix,S", po::value<string>(&suffix)->default_value(""), "Suffix for clique names. Used for parallelization.")
     ;
 
     if (isatty(fileno(stdin))) {
@@ -219,7 +221,7 @@ int main(int argc, char* argv[]) {
     if (call_indels) {
         indel_os = new ofstream(indel_output_file.c_str());
     }
-    CliqueWriter clique_writer(cout, variation_caller, indel_os, read_groups, false, output_all, fdr, verbose, super_read_min_coverage, frameshift_merge);
+    CliqueWriter clique_writer(cout, variation_caller, indel_os, read_groups, false, output_all, fdr, verbose, super_read_min_coverage, frameshift_merge, suffix);
     CliqueFinder clique_finder(*edge_calculator, clique_writer, read_groups, no_sort);
     if (indel_edge_calculator != 0) {
         clique_finder.setSecondEdgeCalculator(indel_edge_calculator);
@@ -251,8 +253,6 @@ int main(int argc, char* argv[]) {
     size_t total_alignments = 0;
     cerr << "STATUS";
     cerr.flush();
-    ofstream skipped;
-    skipped.open ("skipped.prior");
     while (getline(cin, line)) {
         n += 1;
         total_alignments += 1;
@@ -285,8 +285,6 @@ int main(int argc, char* argv[]) {
             if (max_coverage > 0 || time) {
                 if (clique_finder.getCoverageMonitor().probeAlignment(*alignment_autoptr) > (size_t) max_coverage || time) {
                 // cout << "Skipping alignment (coverage): "  << alignment_autoptr->getName()  << endl;
-                    skipped << line;
-                    skipped << "\n";
                     skipped_by_coverage += 1;
                     continue;
                 }
@@ -305,8 +303,6 @@ int main(int argc, char* argv[]) {
     clique_finder.finish();
     clique_writer.finish();
     cerr << endl;
-    
-    skipped.close();
 
     if (indel_os != 0) {
         indel_os->close();
