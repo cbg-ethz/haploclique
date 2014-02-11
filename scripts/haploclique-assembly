@@ -27,6 +27,7 @@ OPTIONS:
    -n      Do not use alignment prior
    -l      Only predict indels, no haplotypes
    -m      Maximal time for max-clique enumeration
+   -P      Ignore single indels
 
 UPDATE:    http://bit.ly/haploclique
 EOF
@@ -53,7 +54,8 @@ NOSKIPPING=0
 NOPRIOR=0
 INDEL=0
 TIME=10000
-while getopts “ah:r:q:o:pt:c:s:euz:Gwng:j:i:lx:m:” OPTION
+INDELS=""
+while getopts “ah:r:q:o:pt:c:s:euz:Gwng:j:i:lx:m:P” OPTION
 do
      case $OPTION in
          h)
@@ -122,6 +124,9 @@ do
          m)
              TIME=$OPTARG
              ;;
+         P)
+             INDELS="-m"
+             ;;
          ?)
              usage
              exit
@@ -151,6 +156,7 @@ echo $INDELFIXER > .INDELFIXER.parameter
 echo $NOPRIOR > .NOPRIOR.parameter
 echo $INDEL > .INDEL.parameter
 echo $TIME > .TIME.parameter
+echo $INDELS > .INDELS.parameter
 
 function initial() {
     samtools view -uf 1 $ALIGNMENT > paired.bam 2> /dev/null
@@ -316,11 +322,12 @@ function computeParallelSingle() {
     NOPRIOR=`cat ../.NOPRIOR.parameter`
     INDEL=`cat ../.INDEL.parameter`
     TIME=`cat ../.TIME.parameter`
+    INDELS=`cat ../.INDELS.parameter`
     #echo -e "Parameter q o c s:\t\t${HQ} ${HO} ${HC} ${HS}"
 
     if [ $INDEL == 1 ]; then PI="-M ../mean-sd -I indel.out"; fi
     if [[ $NOPRIOR == 0 ]];then PA="-A ../statistics.txt"; fi
-    cat alignment.prior | sort -k6,6 -g | haploclique $PA $PI -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -t $TIME -a -S $1;
+    cat alignment.prior | sort -k6,6 -g | haploclique $PA $PI -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -t $TIME -a $INDELS -S $1;
     seek-singletons.py data_clique_to_reads.tsv < alignment.prior > singles.prior;
 }
 
@@ -332,10 +339,11 @@ function compute() {
     HG=`cat .HG.parameter`
     HJ=`cat .HJ.parameter`
     TIME=`cat .TIME.parameter`
+    INDELS=`cat .INDELS.parameter`
     #echo -e "Parameter q/o:\t\t${HQ}/${HO}"
     if [ $INDEL == 1 ]; then PI="-M mean-sd -I indel.out"; fi
     if [[ $NOPRIOR == 0 ]];then PA="-A statistics.txt"; fi
-    cat alignment.prior | sort -k6,6 -g | haploclique $PA $PI -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -t $TIME -a;
+    cat alignment.prior | sort -k6,6 -g | haploclique $PA $PI -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -t $TIME $INDELS -a;
     seek-singletons.py data_clique_to_reads.tsv < alignment.prior > singles.prior;
 }
 

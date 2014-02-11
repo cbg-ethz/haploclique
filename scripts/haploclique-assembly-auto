@@ -97,10 +97,10 @@ fi
 
 if [[ $AMPLICON == 1 ]]
 then
-    haploclique-assembly -i $ALIGNMENT -r $REF -z 50 -p -c 1000 -x 100
-    haploclique-assembly -i $ALIGNMENT -r $REF -z 100 -p -c 1000 -x 150 -u
-    haploclique-assembly -i $ALIGNMENT -r $REF -z 150 -p -c 1000 -x 200 -u
-    haploclique-assembly -i $ALIGNMENT -r $REF -z 200 -p -c 1000 -x 250 -u
+    haploclique-assembly -i $ALIGNMENT -r $REF -z 50 -p -c 1000 -x 100 -P
+    haploclique-assembly -i $ALIGNMENT -r $REF -z 100 -p -c 1000 -x 150 -u -P
+    haploclique-assembly -i $ALIGNMENT -r $REF -z 150 -p -c 1000 -x 200 -u -P
+    haploclique-assembly -i $ALIGNMENT -r $REF -z 200 -p -c 1000 -x 250 -u -P
     cat singles.prior >> alignment.prior
     haploclique-assembly -i $ALIGNMENT -r $REF -G -e -p -t 2
 fi
