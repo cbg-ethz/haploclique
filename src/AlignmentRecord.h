@@ -53,7 +53,7 @@ private:
 	bool single_end;
 	std::string line;
 	std::vector<std::string> readNames;
-	int readCount = 0;
+	int readCount;
 
 public:
 	/** Parse an alignment pair from a line. If no read_group information is available, 

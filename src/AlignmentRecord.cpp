@@ -45,7 +45,7 @@ AlignmentRecord::AlignmentRecord(const string& line, ReadGroups* read_groups) {
 	}
 	try {
 		this->name = tokens[0];
-
+		this->readCount = 0;
 		if (this->name.find("-+-") != std::string::npos) {
             vector<string> fields;
             boost::iter_split(fields, this->name, first_finder("-+-", is_iequal()));
