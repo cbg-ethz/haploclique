@@ -58,6 +58,7 @@ AlignmentRecord::AlignmentRecord(const string& line, ReadGroups* read_groups) {
                 	this->readNames.push_back(fields2[x]);
                 }
             }
+            sort(this->readNames.begin(), this->readNames.end());
         } else {
         	this->readNames.push_back(this->name);
             this->readCount = 1;

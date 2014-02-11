@@ -48,7 +48,6 @@ add_executable (haploclique
 	AlignmentRecord.cpp
 	ShortDnaSequence.cpp
 	CoverageMonitor.cpp
-	CoverageWriter.cpp
 	VariationCaller.cpp
 	SingleTrackCoverageMonitor.cpp
 	HistogramBasedDistribution.cpp

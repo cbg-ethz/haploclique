@@ -48,6 +48,7 @@ private:
     QuasispeciesEdgeCalculator::overlap_result singleOverlap(const AlignmentRecord & ap1, const AlignmentRecord & ap2, int strain1, int strain2, double MIN_OVERLAP, const double cutoff) const;
     int overlapSize(int e1, int e2, int s1, int s2) const;
     string tail(std::string const& source, size_t const length) const;
+    bool intersection(const AlignmentRecord & ap1, const AlignmentRecord & ap2) const;
 public:
     QuasispeciesEdgeCalculator(double Q, double edge_quasi_cutoff, double overlap, bool frameshift_merge, map<int, double>& simpson_map, double edge_quasi_cutoff_single, double overlap_single);
     virtual ~QuasispeciesEdgeCalculator();

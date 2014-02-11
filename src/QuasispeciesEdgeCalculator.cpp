@@ -53,6 +53,19 @@ bool QuasispeciesEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const 
     if (ap1.getName().compare(ap2.getName()) == 0) {
         return 1;
     }
+    // clock_t clock_start = clock();
+    
+    // double time2 = ((double) (clock() - clock_start) / CLOCKS_PER_SEC / 60);
+    // clock_start = clock();
+    // for (int i = 0; i < list_1.size();++i) {
+    //     for (int j = 0; j < list_2.size();++j) {
+    //         if (list_1[i].compare(list_2[j]) == 0) {
+    //             return 1;
+    //         }
+    //     }
+    // }
+    // cerr << "# " << time2-((double) (clock() - clock_start) / CLOCKS_PER_SEC / 60) << endl;
+
     double cutoff = 0;
 
     if (ap1.getName().find("Clique") != std::string::npos
@@ -70,6 +83,24 @@ bool QuasispeciesEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const 
 std::string QuasispeciesEdgeCalculator::tail(std::string const& source, size_t const length) const {
   if (length >= source.size()) { return source; }
   return source.substr(source.size() - length);
+}
+
+bool QuasispeciesEdgeCalculator::intersection(const AlignmentRecord & ap1, const AlignmentRecord & ap2) const {
+    std::vector<std::string> list_1 = ap1.getReadNames();
+    std::vector<std::string> list_2 = ap2.getReadNames();
+    std::sort(list_1.begin(), list_1.end());
+    std::sort(list_2.begin(), list_2.end());
+
+    list_1.erase(std::unique(list_1.begin(), list_1.end()), list_1.end());
+    list_2.erase(std::unique(list_2.begin(), list_2.end()), list_2.end());
+
+    std::vector<std::string> myvec3;
+    set_intersection(list_1.begin(),list_1.end(), list_2.begin(),list_2.end(), std::back_inserter(myvec3));
+    
+    if (myvec3.size() > 0) {
+        return 1;
+    }
+    return 0;
 }
 
 double QuasispeciesEdgeCalculator::computeOverlap(const AlignmentRecord & ap1, const AlignmentRecord & ap2, const double cutoff) const {
@@ -95,6 +126,9 @@ double QuasispeciesEdgeCalculator::computeOverlap(const AlignmentRecord & ap1, c
         if (overlap_size1 < MIN_OVERLAP) {
             return 0;
         }
+
+        if (intersection(ap1,ap2)) { return 1; }
+
         overlap_result r = singleOverlap(ap1, ap2, 1, 1, MIN_OVERLAP, cutoff);
         double p = r.probability;
         hamming += r.hamming;
@@ -119,6 +153,8 @@ double QuasispeciesEdgeCalculator::computeOverlap(const AlignmentRecord & ap1, c
             // cerr << ap1.getStart1() << " " << ap1.getEnd1() << " " << ap2.getStart1() << " " << ap2.getEnd1() << " " << ap2.getStart2() << " " << ap2.getEnd2() << endl;
             // cerr << overlap_size1 << " " << overlap_size2 << endl;
             if ((overlap_size1 >= MIN_OVERLAP && overlap_size2 >= MIN_OVERLAP) || (overlap_size1+overlap_size2 >= MIN_OVERLAP && overlap_size1 > 0 && overlap_size2 > 0)) {
+                if (intersection(ap1,ap2)) { return 1; }
+
                 overlap_result r1 = singleOverlap(ap1, ap2, 1, 1, MIN_OVERLAP, cutoff);
                 p = r1.probability;
                 hamming += r1.hamming;
@@ -167,6 +203,9 @@ double QuasispeciesEdgeCalculator::computeOverlap(const AlignmentRecord & ap1, c
             // cerr << ap1.getStart1() << " " << ap1.getEnd1() << " " << ap1.getStart2() << " " << ap1.getEnd2() << " " << ap2.getStart1() << " " << ap2.getEnd1() << endl;
             // cerr << overlap_size1 << " " << overlap_size2 << endl;
             if ((overlap_size1 >= MIN_OVERLAP && overlap_size2 >= MIN_OVERLAP) || (overlap_size1+overlap_size2 >= MIN_OVERLAP && overlap_size1 > 0 && overlap_size2 > 0)) {
+
+                if (intersection(ap1,ap2)) { return 1; }
+
                 // cerr << "did" << endl;
                 overlap_result r1 = singleOverlap(ap1, ap2, 1, 1, MIN_OVERLAP, cutoff);
                 p *= r1.probability;
@@ -215,6 +254,7 @@ double QuasispeciesEdgeCalculator::computeOverlap(const AlignmentRecord & ap1, c
         if (overlap_size1 < MIN_OVERLAP) {
             return 0;
         }
+
         int read_size2 = min(ap1.getEnd2() - ap1.getStart2(), ap2.getEnd2() - ap2.getStart2());
         float overlap_size2 = -1;
         if (MIN_OVERLAP <= 1) {
@@ -225,6 +265,8 @@ double QuasispeciesEdgeCalculator::computeOverlap(const AlignmentRecord & ap1, c
         if (overlap_size2 < MIN_OVERLAP) {
             return 0;
         }
+
+        if (intersection(ap1,ap2)) { return 1; }
 
         overlap_result r1 = singleOverlap(ap1, ap2, 1, 1, MIN_OVERLAP, cutoff);
         //cerr << "1" << endl;

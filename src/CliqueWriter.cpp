@@ -118,9 +118,11 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
         return;
     }
     stats->clique_number = clique_count++;
+    bool contains_clique = 0;
     it = pairs.begin();
     for (; it != pairs.end(); ++it) {
         const AlignmentRecord& ap = **it;
+        contains_clique |= ap.getName().find("Clique") != std::string::npos;
         vector<BamTools::CigarOp>::const_iterator it_cigar = ap.getCigar1().begin();
         int deletions1 = 0;
         int shift1 = 0;
@@ -188,13 +190,13 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
     //map<string,vector<int>> insertion_map;
     it = pairs.begin();
     for (; it != pairs.end(); ++it) {
-        const AlignmentRecord& ap_alignment = **it;
-        vector<BamTools::CigarOp>::const_iterator it_cigar = ap_alignment.getCigar1().begin();
+        const AlignmentRecord& ap = **it;
+        vector<BamTools::CigarOp>::const_iterator it_cigar = ap.getCigar1().begin();
 
-        int alignment_index = ap_alignment.getStart1() - stats->window_start1;
+        int alignment_index = ap.getStart1() - stats->window_start1;
         int sequence_index = 0;
 
-        for (; it_cigar != ap_alignment.getCigar1().end(); ++it_cigar) {
+        for (; it_cigar != ap.getCigar1().end(); ++it_cigar) {
             int cigar_length = it_cigar->Length;
             if (it_cigar->Type == 'S') {
                 sequence_index += cigar_length;
@@ -204,7 +206,7 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
                     alignment_index+=cigar_length;
                 } else {
                     for (int k = 0; k < cigar_length; k++) {
-                        alignment1[alignment_index++][4]++;
+                        alignment1[alignment_index++][4]+=ap.getReadCount();
                     }
                 }
             }
@@ -216,12 +218,12 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
                     sequence_index+=cigar_length;
                 } else {
                     for (int k = 0; k < cigar_length; k++) {
-                        int base = shortenBase(ap_alignment.getSequence1()[sequence_index++]);
+                        int base = shortenBase(ap.getSequence1()[sequence_index++]);
 
                         assert(alignment_index < alignment_length1);
                         if (base != -1) {
-                            phred1[alignment_index][base] += ap_alignment.getSequence1().qualityCorrectLog(sequence_index - 1);
-                            alignment1[alignment_index][base]++;
+                            phred1[alignment_index][base] += ap.getSequence1().qualityCorrectLog(sequence_index - 1);
+                            alignment1[alignment_index][base]+=ap.getReadCount();
                         } else {
                         }
                         alignment_index++;
@@ -229,15 +231,6 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
                 }
             }
         }
-    }
-    if (DEBUG) {
-        for (int k = 0; k < 5; k++) {
-            for (int j = 0; j < alignment_length1; j++) {
-                cerr << alignment1[j][k] << "\t";
-            }
-            cerr << endl;
-        }
-        cerr << "\n" << endl;
     }
 
     //Compute maximum coverage
@@ -254,9 +247,9 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
         }
     }
 
-    int min_coverage_local1 = stats->maximum_coverage1 < min_coverage ? 1 : min_coverage;
+     int min_coverage_local1 = contains_clique ? 1 : stats->maximum_coverage1 < min_coverage ? 1 : min_coverage;
 
-        //Majority vote for super-read assembly
+    //Majority vote for super-read assembly
     bool prefix1 = 1;
     int end1 = 0;
     for (int j = alignment_length1 - 1; j >= 0; j--) {
@@ -360,9 +353,6 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
                             if (base != -1) {
                                 phred2[alignment_index][base] += ap_alignment.getSequence2().qualityCorrectLog(sequence_index - 1);
                                 alignment2[alignment_index][base]++;
-                            } else {
-//                                    cerr << "w000t2" << endl;
-//                                    problem = 1;
                             }
 
                             alignment_index++;
@@ -396,8 +386,8 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
             }
         }
 
-        int min_coverage_local2 = stats->maximum_coverage2 < min_coverage ? 1 : min_coverage;
-
+        int min_coverage_local2 = contains_clique ? 1 : stats->maximum_coverage2 < min_coverage ? 1 : min_coverage;
+        
         bool prefix2 = 1;
         int end2 = 0;
         for (int j = alignment_length2 - 1; j >= 0; j--) {

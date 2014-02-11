@@ -36,7 +36,6 @@
 #include "CliqueFinder.h"
 #include "CliqueWriter.h"
 #include "CoverageMonitor.h"
-#include "CoverageWriter.h"
 #include "HistogramBasedDistribution.h"
 #include "AnyDistributionEdgeCalculator.h"
 #include "ReadSetSignificanceTester.h"
@@ -238,10 +237,6 @@ int main(int argc, char* argv[]) {
         reads_ofstream = new ofstream(reads_output_filename.c_str());
         clique_writer.enableReadListOutput(*reads_ofstream);
     }
-    CoverageWriter* coverage_writer = 0;
-    if (coverage_output_filename.size() > 0) {
-        coverage_writer = new CoverageWriter(coverage_output_filename);
-    }
 
     size_t last_pos = 0;
     int n = 0;
@@ -289,9 +284,6 @@ int main(int argc, char* argv[]) {
                     continue;
                 }
             }
-            if (coverage_writer != 0) {
-                coverage_writer->addAlignment(*alignment_autoptr);
-            }
             clique_finder.addAlignment(alignment_autoptr);
         } catch (std::runtime_error&) {
             cerr << "Error parsing input, offending line: " << n << endl;
@@ -318,11 +310,7 @@ int main(int argc, char* argv[]) {
     if (reads_ofstream != 0) {
         delete reads_ofstream;
     }
-    if (coverage_writer != 0) {
-        coverage_writer->finish();
-        delete coverage_writer;
-    }
     double cpu_time = (double) (clock() - clock_start) / CLOCKS_PER_SEC;
-    cerr << "SkippedTime/SkippedSize/Cliques/CPU time:\t" << skipped_by_coverage << "/" << clique_writer.getSingleSkippedCount() << "/" << clique_writer.getPairedCount() + clique_writer.getSingleCount() << "/" << round(cpu_time) << endl;
+    cerr << "Cliques/CPU time:\t" << clique_writer.getPairedCount() + clique_writer.getSingleCount() << "/" << round(cpu_time) << endl;
     return 0;
 }
