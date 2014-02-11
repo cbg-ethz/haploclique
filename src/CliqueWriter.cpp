@@ -179,15 +179,25 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
     int alignment_length1 = stats->window_end1 - stats->window_start1;
     int alignment1[alignment_length1][5];
     double phred1[alignment_length1][5];
-    for (int j = 0; j < alignment_length1; j++) {
-        for (int k = 0; k < 5; k++) {
-            alignment1[j][k] = 0;
-            phred1[j][k] = 0;
+
+    int alignment_length2 = 0;
+    if (paired_end_count > 0) {
+        alignment_length2 = stats->window_end2 - stats->window_start2+1;
+    }
+    int alignment2[alignment_length2][5];
+    double phred2[alignment_length2][5];
+    int max_length = std::max(alignment_length1,alignment_length2);
+
+    for (int i = 0; i < max_length; ++i) {
+        if (i < alignment_length1) {
+            std::fill_n(alignment1[i], 5, 0);
+            std::fill_n(phred1[i], 5, 0);
+        }
+        if (i < alignment_length2) {
+            std::fill_n(alignment2[i], 5, 0);
+            std::fill_n(phred2[i], 5, 0);
         }
     }
-    if (DEBUG) cerr << "computing alignment, length: " << alignment_length1 << endl;
-    //For each read pair, save the first read in alignment
-    //map<string,vector<int>> insertion_map;
     it = pairs.begin();
     for (; it != pairs.end(); ++it) {
         const AlignmentRecord& ap = **it;
@@ -198,40 +208,84 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
 
         for (; it_cigar != ap.getCigar1().end(); ++it_cigar) {
             int cigar_length = it_cigar->Length;
-            if (it_cigar->Type == 'S') {
-                sequence_index += cigar_length;
-            }
-            if (it_cigar->Type == 'D') {
-                if (merge && cigar_length % 3 != 0) {
-                    alignment_index+=cigar_length;
-                } else {
-                    for (int k = 0; k < cigar_length; k++) {
-                        alignment1[alignment_index++][4]+=ap.getReadCount();
+            switch (it_cigar->Type) {
+                case 'S':
+                    sequence_index += cigar_length;
+                    break;
+                case 'D':
+                    if (merge && cigar_length == 1) {
+                        alignment_index++;
+                    } else {
+                        for (int k = 0; k < cigar_length; k++) {
+                            alignment1[alignment_index++][4]++;
+                        }
                     }
-                }
-            }
-            if (it_cigar->Type == 'I' || it_cigar->Type == 'M') {
-                if (it_cigar->Type == 'I' && cigar_length % 3 != 0 && merge) {
-                    //cerr << "TRIPPING LAICA BAWS:\t" << cigar_length << endl;
-
-                    //alignment_index+=cigar_length;
-                    sequence_index+=cigar_length;
-                } else {
+                    break;
+                case 'I':
+                    if (cigar_length == 1 && merge) {
+                        sequence_index++;
+                        break;
+                    }
+                case 'M':
                     for (int k = 0; k < cigar_length; k++) {
                         int base = shortenBase(ap.getSequence1()[sequence_index++]);
 
                         assert(alignment_index < alignment_length1);
                         if (base != -1) {
                             phred1[alignment_index][base] += ap.getSequence1().qualityCorrectLog(sequence_index - 1);
-                            alignment1[alignment_index][base]+=ap.getReadCount();
-                        } else {
+                            alignment1[alignment_index][base]++;
                         }
+
                         alignment_index++;
                     }
-                }
+                    break;
+            }
+        }
+
+        if (ap.isSingleEnd()) continue;
+        it_cigar = ap.getCigar2().begin();
+
+        alignment_index = ap.getStart2() - stats->window_start2;
+        sequence_index = 0;
+
+        for (; it_cigar != ap.getCigar2().end(); ++it_cigar) {
+            int cigar_length = it_cigar->Length;
+            switch (it_cigar->Type) {
+                case 'S':
+                    sequence_index += cigar_length;
+                    break;
+                case 'D':
+                    if (merge && cigar_length == 1) {
+                        alignment_index++;
+                    } else {
+                        for (int k = 0; k < cigar_length; k++) {
+                            alignment2[alignment_index++][4]++;
+                        }
+                    }
+                    break;
+                case 'I':
+                    if (cigar_length == 1 && merge) {
+                        sequence_index++;
+                        break;
+                    }
+                case 'M':
+                    for (int k = 0; k < cigar_length; k++) {
+                        int base = shortenBase(ap.getSequence2()[sequence_index++]);
+
+                        assert(alignment_index < alignment_length2);
+                        if (base != -1) {
+                            phred2[alignment_index][base] += ap.getSequence2().qualityCorrectLog(sequence_index - 1);
+                            alignment2[alignment_index][base]++;
+                        }
+
+                        alignment_index++;
+                    }
+                    break;
             }
         }
     }
+
+
 
     //Compute maximum coverage
     stats->maximum_coverage1 = 0;
@@ -305,63 +359,7 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
         //same stuff as for first read, this time for second read
     if (paired_end_count > 0) {
         this->paired_count += 1;
-        int alignment_length2 = stats->window_end2 - stats->window_start2+1;
-        int alignment2[alignment_length2][5];
-        double phred2[alignment_length2][5];
-        for (int j = 0; j < alignment_length2; j++) {
-            for (int k = 0; k < 5; k++) {
-                alignment2[j][k] = 0;
-                phred2[j][k] = 0;
-            }
-        }
-        if (DEBUG) cerr << "computing alignment, length: " << alignment_length2 << endl;
-        it = pairs.begin();
-        for (; it != pairs.end(); ++it) {
-            const AlignmentRecord& ap_alignment = **it;
-            if (ap_alignment.isSingleEnd()) continue;
-            vector<BamTools::CigarOp>::const_iterator it_cigar = ap_alignment.getCigar2().begin();
-
-            int alignment_index = ap_alignment.getStart2() - stats->window_start2;
-            int sequence_index = 0;
-
-            for (; it_cigar != ap_alignment.getCigar2().end(); ++it_cigar) {
-                if (DEBUG) cerr << "   " << sequence_index << "\t" << alignment_index << "\t" << ap_alignment.getName() << endl;
-                if (DEBUG) cerr << ap_alignment.getSequence2() << endl;
-                if (DEBUG) cerr << it_cigar->Length << it_cigar->Type << endl;
-                int cigar_length = it_cigar->Length;
-                if (it_cigar->Type == 'S') {
-                    sequence_index += cigar_length;
-                    if (DEBUG) cerr << "S: " << sequence_index << "\t" << alignment_index << endl;
-                }
-                if (it_cigar->Type == 'D') {
-                    for (int k = 0; k < cigar_length; k++) {
-                        alignment2[alignment_index++][4]++;
-                    }
-                    if (DEBUG) cerr << "D: " << sequence_index << "\t" << alignment_index << endl;
-                }
-                if (it_cigar->Type == 'I' || it_cigar->Type == 'M') {
-                    if (it_cigar->Type == 'I' && cigar_length == 1 && merge) {
-                            //                            cerr << "TRIPPING LAICA BAWS" << endl;
-                        alignment_index++;
-                    } else {
-                        for (int k = 0; k < cigar_length; k++) {
-                            if (DEBUG) cerr << "MI:" << sequence_index << "\t" << alignment_index << "\t" << alignment_length2 << endl;
-                            int base = shortenBase(ap_alignment.getSequence2()[sequence_index++]);
-                            if (DEBUG) cerr << base << endl;
-
-                            assert(alignment_index < alignment_length2);
-                            if (base != -1) {
-                                phred2[alignment_index][base] += ap_alignment.getSequence2().qualityCorrectLog(sequence_index - 1);
-                                alignment2[alignment_index][base]++;
-                            }
-
-                            alignment_index++;
-                        }
-                        if (DEBUG) cerr << "MI done:" << sequence_index << "\t" << alignment_index << endl;
-                    }
-                }
-            }
-        }
+        
         if (DEBUG) {
             for (int k = 0; k < 5; k++) {
                 for (int j = 0; j < alignment_length2; j++) {

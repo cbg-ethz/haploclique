@@ -141,6 +141,24 @@ private:
         }
     } clique_stats_t;
 
+        //     int window_start[2];
+        // int window_end[2];
+        // std::string consensus_string[2];
+        // std::string coverage_string[2];
+        // std::string phred_string[2];
+
+        // std::vector<std::string>* readnames;
+        // int clique_number;
+
+        // int maximum_coverage[2];
+        // int min_coverage_user;
+
+        // int clique_size_weighted;
+
+        // clique_stats_t() : variation(), total_weight(0.0), clique_size(0), coverage(0), start(0), end(0), length(0), diff(0), pvalue_corr(0.0), fdr_level(-1.0), is_significant(false), best_sample_combination(-1), reads(0), window_start[0](-1), window_end[0](-1), window_start[1](-1), window_end[1](-1), clique_number(0), clique_size_weighted(0) {
+        // }
+
+
     typedef struct {
         std::vector<int> alignment;
     } insertion;
