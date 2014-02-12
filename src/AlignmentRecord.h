@@ -20,6 +20,7 @@
 #define ALIGNMENTRECORD_H_
 
 #include <string>
+#include <set>
 
 #include <bamtools/api/BamAux.h>
 
@@ -52,7 +53,7 @@ private:
 	alignment_id_t id;
 	bool single_end;
 	std::string line;
-	std::vector<std::string> readNames;
+	std::set<std::string> readNames;
 	int readCount;
 
 public:
@@ -109,7 +110,7 @@ public:
 	bool isSingleEnd() const;
 	bool isPairedEnd() const;
 	std::string getLine() const;
-	std::vector<std::string> getReadNames() const;
+	std::set<std::string> getReadNames() const;
 	int getReadCount() const;
 };
 

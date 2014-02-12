@@ -55,6 +55,7 @@
     if (!this->suffix.empty()) {
         this->suffix += "_";
     }
+    this->output_position=0;
 }
 
 CliqueWriter::~CliqueWriter() {
@@ -98,30 +99,24 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
         // assume every clique to be not significant until the final FDR control
     stats->is_significant = false;
 
-    stats->readnames = new vector<std::string>();
-
     vector<const AlignmentRecord*>::const_iterator it = pairs.begin();
-
-    int single_end_count = 0;
-    int paired_end_count = 0;
-    ofstream singles;
 
     for (; it != pairs.end(); ++it) {
         const AlignmentRecord& ap = **it;
-        for (int x=0;x<ap.getReadNames().size();++x) {
-            stats->readnames->push_back(ap.getReadNames()[x]); 
-        }
+        std::set<string>::iterator it_s;
+        set<string> from = ap.getReadNames();
+        std::copy(from.begin(), from.end(), std::inserter( stats->readnames, stats->readnames.begin()));
         stats->clique_size_weighted += ap.getReadCount();
     }
     if (stats->clique_size_weighted < min_coverage) {
         return;
     }
+
     stats->clique_number = clique_count++;
-    bool contains_clique = 0;
+    bool has_paired_end = 0;
     it = pairs.begin();
     for (; it != pairs.end(); ++it) {
         const AlignmentRecord& ap = **it;
-        contains_clique |= ap.getName().find("Clique") != std::string::npos;
         vector<BamTools::CigarOp>::const_iterator it_cigar = ap.getCigar1().begin();
         int deletions1 = 0;
         int shift1 = 0;
@@ -147,7 +142,6 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
             stats->window_end1 = ap.getStart1() + ap.getSequence1().size() + deletions1 - shift_end1;
         }
         if (ap.isPairedEnd()) {
-            paired_end_count++;
             it_cigar = ap.getCigar2().begin();
             int deletions2 = 0;
             int shift2 = 0;
@@ -173,14 +167,16 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
                 stats->window_end2 = ap.getStart2() + ap.getSequence2().size() + deletions2 - shift_end2;
             }
         }
+        has_paired_end=1;
     }
+
     //2D array represents nucleotide distribution for super-read
     int alignment_length1 = stats->window_end1 - stats->window_start1;
     int alignment1[alignment_length1][5];
     double phred1[alignment_length1][5];
 
     int alignment_length2 = 0;
-    if (paired_end_count > 0) {
+    if (has_paired_end) {
         alignment_length2 = stats->window_end2 - stats->window_start2+1;
     }
     int alignment2[alignment_length2][5];
@@ -216,6 +212,7 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
                         alignment_index++;
                     } else {
                         for (int k = 0; k < cigar_length; k++) {
+                            assert(alignment_index < alignment_length1);
                             alignment1[alignment_index++][4]+=ap.getReadCount();
                         }
                     }
@@ -227,6 +224,7 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
                     }
                 case 'M':
                     for (int k = 0; k < cigar_length; k++) {
+                        assert(sequence_index < ap.getSequence1().size());
                         int base = shortenBase(ap.getSequence1()[sequence_index++]);
 
                         assert(alignment_index < alignment_length1);
@@ -258,6 +256,7 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
                         alignment_index++;
                     } else {
                         for (int k = 0; k < cigar_length; k++) {
+                            assert(alignment_index < alignment_length2);
                             alignment2[alignment_index++][4]+=ap.getReadCount();
                         }
                     }
@@ -269,6 +268,7 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
                     }
                 case 'M':
                     for (int k = 0; k < cigar_length; k++) {
+                        assert(sequence_index < ap.getSequence2().size());
                         int base = shortenBase(ap.getSequence2()[sequence_index++]);
 
                         assert(alignment_index < alignment_length2);
@@ -357,9 +357,14 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
             stats->window_end1--;
         }
     }
+    // delete [] coverage1;
+    // for (int j = 0; j < alignment_length1; ++j) {
+    //     delete [] alignment1[j];
+    //     delete [] phred1[j];
+    // }
 
     //same stuff as for first read, this time for second read
-    if (paired_end_count > 0) {
+    if (has_paired_end) {
         this->paired_count += 1;
         
         bool prefix2 = 1;
@@ -412,9 +417,12 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
                 stats->window_end2--;
             }
         }
-    } else {
-        this->single_count += 1;
     }
+    // delete [] coverage2;
+    // for (int j = 0; j < alignment_length2; ++j) {
+    //     delete [] alignment2[j];
+    //     delete [] phred2[j];
+    // }
     if (problem || overlapSize(stats)) {
         stats->window_end1 = -1;
         stats->window_start1 = -1;
@@ -425,14 +433,12 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
         stats->phred_string1 = "";
         stats->phred_string2 = "";
         stats->clique_number = 0;
-        this->single_count -= single_end_count;
-        this->paired_count -= paired_end_count;
+        this->paired_count --;
         merge = 0;
         problem = 0;
         cerr << endl << "PROBLEM" << endl;
             //continue;
     }
-    //if (!merge) cerr << stats->window_start1 << " " << merge << "|" << endl;
 }
 
 bool CliqueWriter::overlapSize(clique_stats_t* stats) const {
@@ -534,8 +540,8 @@ bool CliqueWriter::overlapSize(clique_stats_t* stats) const {
                     assert(stats->phred_string1.size() == cons.size());
                 }
             } else {
-                // ------
-                //   --
+            //     // ------
+            //     //   --
             }
         }
     }
@@ -596,11 +602,13 @@ bool CliqueWriter::overlapSize(clique_stats_t* stats) const {
 
 string CliqueWriter::equalStrings(string s1, string s2) const {
     int e1 = s1.size();
-    int e2 = s1.size();
-    for (int i = 0; i < e2; i++) {
+    int e2 = s2.size();
+    int m = min(e2,e1);
+    for (int i = 0; i < m; i++) {
         bool fit = 1;
         int del = 0;
         for (int j = 0; j <= i; j++) {
+            if (-1-i+j >= 0) { cerr << "NOOO" <<endl;break; }
             if (s1.at(e1 - 1 - i + j) != s2.at(j)) {
                 fit = 0;
                 break;
@@ -706,9 +714,9 @@ void CliqueWriter::add(std::auto_ptr<Clique> clique) {
             fastq_map[key] = fastq_entry();
             fastq_map[key].name = boost::lexical_cast<std::string>(stats.clique_number);
             fastq_map[key].read_names = new std::set<std::string>();
-            for (size_t i = 0; i < stats.readnames->size(); ++i) {
-                    fastq_map[key].read_names->insert(stats.readnames->at(i));
-            }
+
+            set<string> from = stats.readnames;
+            std::copy(from.begin(), from.end(), std::inserter(*fastq_map[key].read_names, fastq_map[key].read_names->begin()));
             fastq_map[key].pos_1 = stats.window_start1;
             fastq_map[key].seq_1 = stats.consensus_string1;
             fastq_map[key].phreds_1.push_back(stats.phred_string1);
@@ -718,9 +726,8 @@ void CliqueWriter::add(std::auto_ptr<Clique> clique) {
                 fastq_map[key].phreds_2.push_back(stats.phred_string2);
             }
         } else {
-            for (size_t i = 0; i < stats.readnames->size(); ++i) {
-                fastq_map[key].read_names->insert(stats.readnames->at(i));
-            }
+            set<string> from = stats.readnames;
+            std::copy(from.begin(), from.end(), std::inserter(*fastq_map[key].read_names, fastq_map[key].read_names->begin()));
             fastq_map[key].phreds_1.push_back(stats.phred_string1);
             if (!stats.consensus_string2.empty()) {
                 fastq_map[key].phreds_2.push_back(stats.phred_string2);
@@ -782,6 +789,14 @@ void CliqueWriter::writeReadlist() {
 }
 
 void CliqueWriter::printout(int pos_1) {
+    if (fastq_map.empty()) {
+        return;
+    }
+    if (pos_1 < this->output_position+100 && pos_1 != -1) {
+        return;
+    } else {
+        this->output_position=pos_1;
+    }
     ofstream fr1;
     fr1.open ("data_cliques_paired_R1.fastq", ios::out | ios::app);
     ofstream fr2;
@@ -796,7 +811,7 @@ void CliqueWriter::printout(int pos_1) {
     for (;it!=fastq_map.end();) {
         fastq_entry f;
         f = it->second;
-        if (f.pos_1+10 < pos_1 || pos_1 == -1) {
+        if (f.pos_1+100 < pos_1 || pos_1 == -1) {
             if (f.read_names->size() >= this->min_coverage) {
                 ofstream* out1;
                 if (f.seq_2.empty()) {
@@ -846,6 +861,7 @@ void CliqueWriter::printout(int pos_1) {
                     fr2 << "+" << f.pos_2 << endl;
                     fr2 << f.phreds_2[0] << endl;
                 }
+                this->single_count++;
             }
             fastq_map.erase(it++);
         } else {

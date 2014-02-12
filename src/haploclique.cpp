@@ -311,6 +311,6 @@ int main(int argc, char* argv[]) {
         delete reads_ofstream;
     }
     double cpu_time = (double) (clock() - clock_start) / CLOCKS_PER_SEC;
-    cerr << "Cliques/CPU time:\t" << clique_writer.getPairedCount() + clique_writer.getSingleCount() << "/" << round(cpu_time) << endl;
+    cerr << "Cliques/Uniques/CPU time:\t" << clique_writer.getPairedCount() << "/" << clique_writer.getSingleCount() << "/" << round(cpu_time) << endl;
     return 0;
 }

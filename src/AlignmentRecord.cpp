@@ -55,12 +55,11 @@ AlignmentRecord::AlignmentRecord(const string& line, ReadGroups* read_groups) {
                 boost::split(fields2, complex, is_any_of(","));
                 this->readCount += fields2.size();
                 for (int x=0; x<fields2.size();++x) {
-                	this->readNames.push_back(fields2[x]);
+                	this->readNames.insert(fields2[x]);
                 }
             }
-            sort(this->readNames.begin(), this->readNames.end());
         } else {
-        	this->readNames.push_back(this->name);
+        	this->readNames.insert(this->name);
             this->readCount = 1;
         }
 
@@ -258,7 +257,7 @@ std::string AlignmentRecord::getLine() const {
 	return this->line;
 }
 
-std::vector<std::string> AlignmentRecord::getReadNames() const {
+std::set<std::string> AlignmentRecord::getReadNames() const {
 	return this->readNames;
 }
 

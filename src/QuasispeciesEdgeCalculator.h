@@ -45,10 +45,10 @@ private:
     // survival function (aka complement cumulative distribution function of the standard normal distribution)
     double sf(double x) const;
     double computeOverlap(const AlignmentRecord & ap1, const AlignmentRecord & ap2, const double cutoff) const;
-    QuasispeciesEdgeCalculator::overlap_result singleOverlap(const AlignmentRecord & ap1, const AlignmentRecord & ap2, int strain1, int strain2, double MIN_OVERLAP, const double cutoff) const;
-    int overlapSize(int e1, int e2, int s1, int s2) const;
+    double singleOverlap(const AlignmentRecord & ap1, const AlignmentRecord & ap2, int strain1, int strain2, double MIN_OVERLAP, const double cutoff) const;
+    float overlapSize(int e1, int e2, int s1, int s2) const;
     string tail(std::string const& source, size_t const length) const;
-    bool intersection(const AlignmentRecord & ap1, const AlignmentRecord & ap2) const;
+    bool is_disjoint(const std::set<std::string> &set1, const std::set<std::string> &set2) const;
 public:
     QuasispeciesEdgeCalculator(double Q, double edge_quasi_cutoff, double overlap, bool frameshift_merge, map<int, double>& simpson_map, double edge_quasi_cutoff_single, double overlap_single);
     virtual ~QuasispeciesEdgeCalculator();
@@ -59,7 +59,6 @@ public:
     /** Compute a length range. An alignment pair with a length outside this range is
      *  guaranteed not to have an edge to the given pair ap. */
     virtual void getPartnerLengthRange(const AlignmentRecord& ap, unsigned int* min, unsigned int* max) const;
-
 };
 
 #endif /* QUASISPECIESEDGECALCULATOR_H_ */
