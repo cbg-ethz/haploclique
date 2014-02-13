@@ -59,7 +59,7 @@ private:
 public:
 	/** Parse an alignment pair from a line. If no read_group information is available, 
 	  * parameter read_groups can be 0. */
-	AlignmentRecord(const std::string& line, ReadGroups* read_groups = 0);
+	AlignmentRecord(const std::string& line, std::map<std::string,std::string> clique_to_reads, ReadGroups* read_groups = 0);
 
 	unsigned int getRecordNr() const;
 	int getPhredSum1() const;

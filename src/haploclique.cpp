@@ -46,11 +46,11 @@
 #include "ReadSetGroupWiseZTester.h"
 #include "GaussianEdgeCalculator.h"
 
- using namespace std;
- using namespace boost;
- namespace po = boost::program_options;
+using namespace std;
+using namespace boost;
+namespace po = boost::program_options;
 
- void usage(const char* name, const po::options_description& options_desc) {
+void usage(const char* name, const po::options_description& options_desc) {
     cerr << "Usage: " << name << " [options]" << endl;
     cerr << endl;
     cerr << "<distribution-file> file with assumed internal segment length distribution." << endl;
@@ -119,7 +119,7 @@ int main(int argc, char* argv[]) {
     string indel_output_file = "";
     int time_limit;
     bool no_sort;
-    std::string suffix;
+    string suffix;
 
     po::options_description options_desc("Allowed options");
     options_desc.add_options()
@@ -172,8 +172,19 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-//read allel frequency distributions
 
+
+    std::map<string,string> clique_to_reads_map;
+    ifstream tsv_stream("data_clique_to_reads.tsv");
+    string tsv_stream_line;
+    while (getline(tsv_stream, tsv_stream_line)) {
+        std::vector<std::string> words;
+        trim_right(tsv_stream_line);
+        boost::split(words, tsv_stream_line, boost::is_any_of("\t"), boost::token_compress_on);
+        clique_to_reads_map[words[0]] = words[1];
+    }
+    
+    //read allel frequency distributions
     std::map<int, double> simpson_map;
     //cerr << "PARSE PRIOR";
     cerr.flush();
@@ -193,8 +204,10 @@ int main(int argc, char* argv[]) {
                 //cerr << simpson_map[atoi(words[0].c_str())] << endl;
             }
         }
+        ia.close();
     }
     //cerr << "PARSE PRIOR: done" << endl;
+    
 
     clock_t clock_start = clock();
     EdgeCalculator* edge_calculator = 0;
@@ -252,7 +265,7 @@ int main(int argc, char* argv[]) {
         n += 1;
         total_alignments += 1;
         try {
-            AlignmentRecord ap(line, read_groups);
+            AlignmentRecord ap(line, clique_to_reads_map, read_groups);
             if (ap.getIntervalStart() < last_pos) {
                 cerr << "Error: Input is not ordered by position (field 6)! Offending line: " << n << endl;
                 return 1;

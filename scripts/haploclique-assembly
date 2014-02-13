@@ -163,8 +163,8 @@ function initial() {
     samtools view -uF 1 $ALIGNMENT > single.bam 2> /dev/null
     java -jar $SAF/ConsensusFixer.jar -i $ALIGNMENT --stats 2>&1 > /dev/null
     samtools sort -n single.bam single_sort 2> /dev/null > /dev/null
-    samtools view single_sort.bam 2> /dev/null | head > single_sort.sam 2> /dev/null
-    samtools view paired.bam 2> /dev/null | head > paired.sam 2> /dev/null
+    samtools view single_sort.bam  | head > single_sort.sam 2> /dev/null
+    samtools view paired.bam  | head > paired.sam 2> /dev/null
 
     touch paired.priors single.priors
     if [ -s paired.sam ]; then
@@ -173,20 +173,12 @@ function initial() {
     if [ -s single_sort.sam ]; then
         bam-to-alignment-priors --unsorted --single-end $REF single_sort.bam > single.priors 2> /dev/null
     fi
+
+    mv paired.priors alignment.prior 2> /dev/null
     if [ $INDEL == 0 ]; then
-        if [ -s data_clique_to_reads.tsv ]; then
-            cat paired.priors single.priors  | manipulate_alignment_prior.py data_clique_to_reads.tsv > alignment.prior 2> /dev/null
-        else
-            cat paired.priors single.priors > alignment.prior 2> /dev/null
-        fi
-    else
-        if [ -s data_clique_to_reads.tsv ]; then
-            cat paired.priors  | manipulate_alignment_prior.py data_clique_to_reads.tsv > alignment.prior 2> /dev/null
-        else
-            mv paired.priors alignment.prior 2> /dev/null
-        fi
+        cat single.priors >> alignment.prior 2> /dev/null
     fi
-    rm *sam *bam *.priors 2>&1 > /dev/null
+    rm *sam paired.bam single_sort.bam single.bam *.priors 2>&1 > /dev/null
 }
 
 function assemble() {
@@ -222,7 +214,7 @@ function assemble() {
             bwa mem -t 79 $2 $1 $3 > aln.sam 2> /dev/null
         fi
         samtools faidx $2 2>&1 > /dev/null
-        samtools view $SVIEW -q 20 -F 4 -bt $REF.fai aln.sam > aln.bam 2> /dev/null
+        samtools view $SVIEW -q 1 -F 4 -bt $REF.fai aln.sam > aln.bam 2> /dev/null
         samtools sort $SSORT aln.bam reads 2>&1 > /dev/null
         rm aln* 2>&1 > /dev/null
         samtools view -uf 1 reads.bam > paired.bam 2> /dev/null
@@ -247,7 +239,7 @@ function assemble() {
             bwa mem -t 79 $2 $1 > aln.sam
         fi
         samtools faidx $2 2>&1 > /dev/null
-        samtools view $SVIEW -q 20 -F 4 -bt $REF.fai aln.sam > aln.bam 2> /dev/null
+        samtools view $SVIEW -q 1 -F 4 -bt $REF.fai aln.sam > aln.bam 2> /dev/null
         samtools sort $SSORT aln.bam single_2 2>&1 > /dev/null
         rm aln* 2>&1 > /dev/null
     }
@@ -303,11 +295,9 @@ function assemble() {
     if [ -s single_sort.sam ]; then
         bam-to-alignment-priors --unsorted --single-end $REF single_sort.bam > single.priors 2> /dev/null
     fi
-    if [ -s data_clique_to_reads.tsv ]; then
-        cat paired.priors single.priors | manipulate_alignment_prior.py data_clique_to_reads.tsv > alignment.prior 2> /dev/null
-    else
-        cat paired.priors single.priors > alignment.prior
-    fi
+
+    mv paired.priors alignment.prior
+    cat single.priors >> alignment.prior
     rm -rf *sam *bam *.priors 2> /dev/null
 }
 
@@ -327,7 +317,6 @@ function computeParallelSingle() {
 
     if [ $INDEL == 1 ]; then PI="-M ../mean-sd -I indel.out"; fi
     if [[ $NOPRIOR == 0 ]];then PA="-A ../statistics.txt"; fi
-    echo -e "cat alignment.prior | sort -k6,6 -g | haploclique $PA $PI -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -t $TIME -a $INDELS -S $1;"
     cat alignment.prior | sort -k6,6 -g | haploclique $PA $PI -c $HC -s $HS -q $HQ -o $HO -j $HJ -g $HG -t $TIME -a $INDELS -S $1;
     seek-singletons.py data_clique_to_reads.tsv < alignment.prior > singles.prior;
 }
@@ -366,7 +355,7 @@ if [[ $NOPARALLEL == 0 ]]; then
         if [[ $NOSINGLETONS == 0 ]]; then
             cat singles.prior >> alignment.prior 2> /dev/null
         fi
-        rm -rf singles.prior data* trash* *-e x* 2> /dev/null
+        rm -rf singles.prior data*.fastq trash* *-e x* 2> /dev/null
         if [[ $SHUFFLE == 1 ]]; then
             cat alignment.prior | awk 'BEGIN{srand();}{print rand()"\t"$0}' | sort -k1 -n | cut -f2- | split -l $SPLITSIZE -a 10
             for i in x*; do mkdir $i-dir; mv $i $i-dir/alignment.prior; rm $i; done
@@ -378,7 +367,7 @@ if [[ $NOPARALLEL == 0 ]]; then
         parallel computeParallelSingle {} ::: x*-dir
         #rm -rf data*
         if [[ $NOSINGLETONS == 0 ]]; then
-            echo "Error correction"
+            echo "Error correction of singletons"
             copyX;
             
             cat data_cliques_* | awk 'BEGIN {l = 0} {if (NR%4==2 && l < length($0)) l = length($0)} END {printf("Max read length:\t\t%.0f bp\n",l)}'
@@ -415,7 +404,7 @@ else
             sort -u -t" " -k1,1 singles.prior >> alignment.prior 2> /dev/null
             rm -rf singles.prior 2> /dev/null
         fi
-        rm -rf data* trash* *-e x* 2> /dev/null
+        rm -rf data*.fastq trash* *-e x* 2> /dev/null
         compute
         if [[ $INDEL == 1 ]];then
             cat x*/indel.out >> indel.out

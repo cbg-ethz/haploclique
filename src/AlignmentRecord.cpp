@@ -30,7 +30,7 @@
 using namespace std;
 using namespace boost;
 
-AlignmentRecord::AlignmentRecord(const string& line, ReadGroups* read_groups) {
+AlignmentRecord::AlignmentRecord(const string& line, std::map<std::string,std::string> clique_to_reads, ReadGroups* read_groups) {
 	this->line = line;
 	typedef boost::tokenizer<boost::char_separator<char> > tokenizer_t;
 	boost::char_separator<char> separator(" \t");
@@ -46,10 +46,8 @@ AlignmentRecord::AlignmentRecord(const string& line, ReadGroups* read_groups) {
 	try {
 		this->name = tokens[0];
 		this->readCount = 0;
-		if (this->name.find("-+-") != std::string::npos) {
-            vector<string> fields;
-            boost::iter_split(fields, this->name, first_finder("-+-", is_iequal()));
-            string complex = fields[1];
+		if (clique_to_reads.find(this->name) != clique_to_reads.end()) {
+            string complex = clique_to_reads[this->name];
             if (complex.find(",") != std::string::npos) {
                 vector<string> fields2;
                 boost::split(fields2, complex, is_any_of(","));
