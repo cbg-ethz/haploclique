@@ -123,16 +123,19 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
         int shift_end1 = 0;
         int read_begin1 = 1;
         for (; it_cigar != ap.getCigar1().end(); ++it_cigar) {
-            if (it_cigar->Type == 'S') {
-                if (read_begin1) {
-                    shift1 += it_cigar->Length;
-                    read_begin1 = 0;
-                } else {
-                    shift_end1 += it_cigar->Length;
-                }
-            }
-            if (it_cigar->Type == 'D') {
-                deletions1 += it_cigar->Length;
+            switch (it_cigar->Type) {
+                case 'S':
+                    if (read_begin1) {
+                        shift1 += it_cigar->Length;
+                        read_begin1 = 0;
+                    } else {
+                        shift_end1 += it_cigar->Length;
+                    }
+                    break;
+                case 'D':
+                    deletions1 += it_cigar->Length;
+                    break;
+                default: break;
             }
         }
         if (stats->window_start1 == -1 || int(ap.getStart1() + shift1) < stats->window_start1) {
@@ -148,16 +151,19 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
             int shift_end2 = 0;
             int read_begin2 = 1;
             for (; it_cigar != ap.getCigar2().end(); ++it_cigar) {
-                if (it_cigar->Type == 'S') {
-                    if (read_begin1) {
-                        shift2 += it_cigar->Length;
-                        read_begin2 = 0;
-                    } else {
-                        shift_end2 += it_cigar->Length;
-                    }
-                }
-                if (it_cigar->Type == 'D') {
-                    deletions2 += it_cigar->Length;
+                switch (it_cigar->Type) {
+                    case 'S':
+                        if (read_begin2) {
+                            shift2 += it_cigar->Length;
+                            read_begin2 = 0;
+                        } else {
+                            shift_end2 += it_cigar->Length;
+                        }
+                        break;
+                    case 'D':
+                        deletions2 += it_cigar->Length;
+                        break;
+                    default: break;
                 }
             }
             if (stats->window_start2 == -1 || int(ap.getStart2() + shift2) < stats->window_start2) {
@@ -166,8 +172,8 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
             if (stats->window_end2 == -1 || int(ap.getStart2() + ap.getSequence2().size() + deletions2 - shift_end2) > stats->window_end2) {
                 stats->window_end2 = ap.getStart2() + ap.getSequence2().size() + deletions2 - shift_end2;
             }
+            has_paired_end=1;
         }
-        has_paired_end=1;
     }
 
     //2D array represents nucleotide distribution for super-read
