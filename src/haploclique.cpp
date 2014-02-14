@@ -183,6 +183,7 @@ int main(int argc, char* argv[]) {
         boost::split(words, tsv_stream_line, boost::is_any_of("\t"), boost::token_compress_on);
         clique_to_reads_map[words[0]] = words[1];
     }
+    remove("data_clique_to_reads.tsv");
     
     //read allel frequency distributions
     std::map<int, double> simpson_map;

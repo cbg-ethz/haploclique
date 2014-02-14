@@ -238,7 +238,7 @@ double QuasispeciesEdgeCalculator::singleOverlap(const AlignmentRecord & ap1, co
         sequence1 = ap1.getSequence1();
 
         for (vector<BamTools::CigarOp>::const_iterator it = ap1.getCigar1().begin(); it != ap1.getCigar1().end(); ++it) {
-            for (int s = 0; s < it->Length; s++) cigar1.push_back(it->Type);
+            for (int s = 0; s < it->Length; ++s) cigar1.push_back(it->Type);
         }
     } else if (strain1 == 2) {
         s1 = ap1.getStart2();
@@ -246,7 +246,7 @@ double QuasispeciesEdgeCalculator::singleOverlap(const AlignmentRecord & ap1, co
         sequence1 = ap1.getSequence2();
 
         for (vector<BamTools::CigarOp>::const_iterator it = ap1.getCigar2().begin(); it != ap1.getCigar2().end(); ++it) {
-            for (int s = 0; s < it->Length; s++) cigar1.push_back(it->Type);
+            for (int s = 0; s < it->Length; ++s) cigar1.push_back(it->Type);
         }
     }
     if (strain2 == 1) {
@@ -255,7 +255,7 @@ double QuasispeciesEdgeCalculator::singleOverlap(const AlignmentRecord & ap1, co
         sequence2 = ap2.getSequence1();
 
         for (vector<BamTools::CigarOp>::const_iterator it = ap2.getCigar1().begin(); it != ap2.getCigar1().end(); ++it) {
-            for (int s = 0; s < it->Length; s++) cigar2.push_back(it->Type);
+            for (int s = 0; s < it->Length; ++s) cigar2.push_back(it->Type);
         }
     } else if (strain2 == 2) {
         s2 = ap2.getStart2();
@@ -263,7 +263,7 @@ double QuasispeciesEdgeCalculator::singleOverlap(const AlignmentRecord & ap1, co
         sequence2 = ap2.getSequence2();
 
         for (vector<BamTools::CigarOp>::const_iterator it = ap2.getCigar2().begin(); it != ap2.getCigar2().end(); ++it) {
-            for (int s = 0; s < it->Length; s++) cigar2.push_back(it->Type);
+            for (int s = 0; s < it->Length; ++s) cigar2.push_back(it->Type);
         }
     }
 
@@ -272,10 +272,10 @@ double QuasispeciesEdgeCalculator::singleOverlap(const AlignmentRecord & ap1, co
     int x_l1 = e1 - s1;
     int x_l2 = e2 - s2;
 
-    int offset1 = -1;
-    int offset2 = -1;
+    int offset1 = 0;
+    int offset2 = 0;
 
-    int overlap = -1;
+    int overlap = 0;
 
     if (s1 == s2 && e1 == e2) {
             // -----
@@ -404,13 +404,15 @@ double QuasispeciesEdgeCalculator::singleOverlap(const AlignmentRecord & ap1, co
                         if (!perfect) {
                             double q_x1 = sequence1.qualityCorrect(j_tmp);
                             double q_x2 = sequence2.qualityCorrect(j2_tmp);
+                            double anti_q_x1 = (1.0 - q_x1) / 3.0;
+                            double anti_q_x2 = (1.0 - q_x2) / 3.0;
+
                             assert(q_x1 <= 1 && q_x2 <= 1);
                             double sum = 0.0;
-                            for (int x = 0; x < 4; x++) {
-                                double p_aj_x = sequence1[j_tmp] == alphabet[x] ? q_x1 : (1.0 - q_x1) / 3.0;
-                                double p_bj_x = sequence2[j2_tmp] == alphabet[x] ? q_x2 : (1.0 - q_x2) / 3.0;
-                                sum = sum + (p_aj_x * p_bj_x);
-                            }
+                            sum += ((sequence1[j_tmp] == alphabet[0] ? q_x1 : anti_q_x1) * (sequence2[j2_tmp] == alphabet[0] ? q_x2 : anti_q_x2));
+                            sum += ((sequence1[j_tmp] == alphabet[1] ? q_x1 : anti_q_x1) * (sequence2[j2_tmp] == alphabet[1] ? q_x2 : anti_q_x2));
+                            sum += ((sequence1[j_tmp] == alphabet[2] ? q_x1 : anti_q_x1) * (sequence2[j2_tmp] == alphabet[2] ? q_x2 : anti_q_x2));
+                            sum += ((sequence1[j_tmp] == alphabet[3] ? q_x1 : anti_q_x1) * (sequence2[j2_tmp] == alphabet[3] ? q_x2 : anti_q_x2));
                             overlap_probability *= sum;
                         } else {
                             if (sequence1[j_tmp] != sequence2[j2_tmp]) {
