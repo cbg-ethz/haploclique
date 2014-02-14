@@ -1,4 +1,5 @@
-<h1 align="center">HaploClique</h1>
+<h1 align="center">
+<img src="https://github.com/armintoepfer/haploclique/blob/master/haploclique_logo.png?raw=true" alt="HaploClique"/></h1>
 We present a novel method to reconstruct the structure of a viral quasispecies from NGS data.
 Our approach can be used to:
  - reconstruct local error-corrected haplotypes and estimate their abundance
@@ -109,7 +110,7 @@ The detected indels are saved as indels.vcf.
 
 ###Ultra-deep next-generation sequencing data workflow
 <p align="center">
-  <img src="https://github.com/armintoepfer/haploclique/blob/master/haploclique_workflow.png?raw=true" alt="ConsensusFixer logo"/>
+  <img src="https://github.com/armintoepfer/haploclique/blob/master/haploclique_workflow.png?raw=true" alt="HaploClique workflow"/>
 </p>
 
 ### Contributions
