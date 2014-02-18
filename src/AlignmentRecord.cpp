@@ -44,6 +44,7 @@ AlignmentRecord::AlignmentRecord(const string& line, std::map<std::string,std::s
 		throw std::runtime_error("Error parsing alignment pair.");
 	}
 	try {
+		this->hcount = 0;
 		this->name = tokens[0];
 		this->readCount = 0;
 		if (clique_to_reads.find(this->name) != clique_to_reads.end()) {
@@ -51,10 +52,22 @@ AlignmentRecord::AlignmentRecord(const string& line, std::map<std::string,std::s
             if (complex.find(",") != std::string::npos) {
                 vector<string> fields2;
                 boost::split(fields2, complex, is_any_of(","));
-                this->readCount += fields2.size();
                 for (int x=0; x<fields2.size();++x) {
-                	this->readNames.insert(fields2[x]);
+                	if (boost::starts_with(fields2[x], "HCOUNT|")) {
+                  		vector<string> split;
+		                boost::split(split, fields2[x], boost::is_any_of("|"));
+                		this->hcount = boost::lexical_cast<int>(split[1]);
+                	} else {
+                		this->readCount++;
+	                	this->readNames.insert(fields2[x]);
+	                }
                 }
+            } else {
+            	if (boost::starts_with(complex, "HCOUNT|")) {
+              		vector<string> split;
+	                boost::split(split, complex, boost::is_any_of("|"));
+            		this->hcount = boost::lexical_cast<int>(split[1]);
+            	}
             }
         } else {
         	this->readNames.insert(this->name);
@@ -261,4 +274,10 @@ std::set<std::string> AlignmentRecord::getReadNames() const {
 
 int AlignmentRecord::getReadCount() const {
 	return this->readCount;
+}
+int AlignmentRecord::getHCount() const {
+	return this->hcount;
+}
+int AlignmentRecord::getCount() const {
+	return this->hcount+this->readCount;
 }

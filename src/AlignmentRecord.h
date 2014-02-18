@@ -55,6 +55,7 @@ private:
 	std::string line;
 	std::set<std::string> readNames;
 	int readCount;
+	int hcount;
 
 public:
 	/** Parse an alignment pair from a line. If no read_group information is available, 
@@ -112,6 +113,8 @@ public:
 	std::string getLine() const;
 	std::set<std::string> getReadNames() const;
 	int getReadCount() const;
+	int getHCount() const;
+	int getCount() const;
 };
 
 #endif /* ALIGNMENTRECORD_H_ */

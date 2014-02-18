@@ -75,8 +75,6 @@ void CliqueWriter::enableReadListOutput(std::ostream& os) {
 }
 
 void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, size_t coverage, clique_stats_t &stats) {
-    //cerr << endl << "CALL VARIATION " << pairs.size() << endl;
-    //cerr.flush();
     bool DEBUG = 0;
     bool merge = this->FRAMESHIFT_MERGE;
     bool problem = 0;
@@ -96,18 +94,21 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
     stats.total_weight = vc_stats.total_weight;
     stats.coverage = coverage;
     stats.pvalue_corr = min(1.0, stats.variation.getPValue() * pow(1.2, static_cast<int> (stats.coverage)));
-        // assume every clique to be not significant until the final FDR control
     stats.is_significant = false;
-
     vector<const AlignmentRecord*>::const_iterator it = pairs.begin();
-
     for (; it != pairs.end(); ++it) {
         const AlignmentRecord& ap = **it;
+        // cerr << ap.getName() << endl;
         std::set<string>::iterator it_s;
-        set<string> from = ap.getReadNames();
-        std::copy(from.begin(), from.end(), std::inserter( stats.readnames, stats.readnames.begin()));
-        stats.clique_size_weighted += ap.getReadCount();
+        if (!ap.getReadNames().empty()) {
+            set<string> from = ap.getReadNames();
+            std::copy(from.begin(), from.end(), std::inserter( stats.readnames, stats.readnames.begin()));
+        }
+        stats.clique_size_weighted += ap.getCount();
+        stats.hcount += ap.getHCount();
     }
+    // cerr << stats.clique_size_weighted << endl;
+
     if (stats.clique_size_weighted < min_coverage) {
         return;
     }
@@ -219,7 +220,7 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
                     } else {
                         for (int k = 0; k < cigar_length; k++) {
                             assert(alignment_index < alignment_length1);
-                            alignment1[alignment_index++][4]+=ap.getReadCount();
+                            alignment1[alignment_index++][4]+=ap.getCount();
                         }
                     }
                     break;
@@ -236,7 +237,7 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
                         assert(alignment_index < alignment_length1);
                         if (base != -1) {
                             phred1[alignment_index][base] += ap.getSequence1().qualityCorrectLog(sequence_index - 1);
-                            alignment1[alignment_index][base]+=ap.getReadCount();
+                            alignment1[alignment_index][base]+=ap.getCount();
                         }
 
                         alignment_index++;
@@ -263,7 +264,7 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
                     } else {
                         for (int k = 0; k < cigar_length; k++) {
                             assert(alignment_index < alignment_length2);
-                            alignment2[alignment_index++][4]+=ap.getReadCount();
+                            alignment2[alignment_index++][4]+=ap.getCount();
                         }
                     }
                     break;
@@ -280,7 +281,7 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
                         assert(alignment_index < alignment_length2);
                         if (base != -1) {
                             phred2[alignment_index][base] += ap.getSequence2().qualityCorrectLog(sequence_index - 1);
-                            alignment2[alignment_index][base]+=ap.getReadCount();
+                            alignment2[alignment_index][base]+=ap.getCount();
                         }
 
                         alignment_index++;
@@ -442,26 +443,23 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
         this->paired_count --;
         merge = 0;
         problem = 0;
-        cerr << endl << "PROBLEM" << endl;
+        error("PROBLEM");
             //continue;
     }
 }
 
 bool CliqueWriter::overlapSize(clique_stats_t& stats) const {
-    //    cerr << "Overlap: " << stats->window_start1 << "\t" << stats->window_end1 << "\t" << stats->window_start2 << "\t" << stats->window_end2 << endl;
     if (stats.window_start2 > 0) {
         int s1 = stats.window_start1;
         int s2 = stats.window_start2;
         int e1 = s1 + stats.consensus_string1.size();
         int e2 = s2 + stats.consensus_string2.size();
         if (s2 > e1) {
-            //        cerr << "a" << endl;
             // -----
             //       -----
             return 0;
         }
         if (s1 > e2) {
-            //        cerr << "b" << endl;
             //       -----
             // -----
             string cons_tmp = stats.consensus_string1;
@@ -487,7 +485,6 @@ bool CliqueWriter::overlapSize(clique_stats_t& stats) const {
             // ----  AND -----
             // ----- AND ----
             if (e1 < e2) {
-                //            cerr << "c" << endl;
                 stats.consensus_string1 = stats.consensus_string2;
                 stats.phred_string1 = stats.phred_string2;
                 stats.window_end1 = stats.window_end2;
@@ -497,7 +494,6 @@ bool CliqueWriter::overlapSize(clique_stats_t& stats) const {
             //  ---- AND -----
             // ----- AND  ----
             if (s1 > s2) {
-                //            cerr << "d" << endl;
                 stats.consensus_string1 = stats.consensus_string2;
                 stats.phred_string1 = stats.phred_string2;
                 stats.window_start1 = stats.window_start2;
@@ -516,7 +512,7 @@ bool CliqueWriter::overlapSize(clique_stats_t& stats) const {
                         stats.consensus_string1 = cons;
                         stats.window_end1 = stats.window_start1 + cons.size();
                         if (stats.phred_string1.size() != cons.size()) {
-                            cerr << stats.phred_string1.size() << " " << cons.size() << endl;
+                            error(boost::lexical_cast<std::string>(stats.phred_string1.size()) + " " + boost::lexical_cast<std::string>(cons.size()));
                         }
                         assert(stats.phred_string1.size() == cons.size());
                     }
@@ -541,7 +537,7 @@ bool CliqueWriter::overlapSize(clique_stats_t& stats) const {
                     stats.window_start1 = stats.window_start2;
                     stats.window_end1 = stats.window_start1 + cons.size();
                     if (stats.phred_string1.size() != cons.size()) {
-                        cerr << stats.phred_string1.size() << " " << cons.size() << endl;
+                        error(boost::lexical_cast<std::string>(stats.phred_string1.size()) + " " + boost::lexical_cast<std::string>(cons.size()));
                     }
                     assert(stats.phred_string1.size() == cons.size());
                 }
@@ -591,7 +587,7 @@ bool CliqueWriter::overlapSize(clique_stats_t& stats) const {
                     stats.phred_string2 += stats.phred_string1.at(i);
 
                     if (stats.consensus_string1.at(i) == 'N') {
-                        cerr << "FUCK " << i << " " << stats.consensus_string1.size() << endl;
+                        error(boost::lexical_cast<std::string>(i) + " " + boost::lexical_cast<std::string>(stats.consensus_string1.size()));
                         return 1;
                     }
                 }
@@ -600,7 +596,7 @@ bool CliqueWriter::overlapSize(clique_stats_t& stats) const {
         stats.window_end1 = stats.window_start1 + stats.consensus_string1.size();
         stats.consensus_string1 = tmp_string1;
 
-        cerr << "SPLIT" << endl;
+        error("SPLIT");
     }
 
     return 0;
@@ -614,7 +610,7 @@ string CliqueWriter::equalStrings(string &s1, string &s2) const {
         bool fit = 1;
         int del = 0;
         for (int j = 0; j <= i; j++) {
-            if (-1-i+j >= 0) { cerr << "NOOO" <<endl;break; }
+            if (-1-i+j >= 0) { error("NOOO");break; }
             if (s1.at(e1 - 1 - i + j) != s2.at(j)) {
                 fit = 0;
                 break;
@@ -662,7 +658,7 @@ int CliqueWriter::shortenBase(char base) {
         case 78:
         return -1;
         default:
-        cerr << "Not aware of base: " << base << endl;
+        error("Not aware of base: " + boost::lexical_cast<std::string>(base));
         exit(0);
         break;
     }
@@ -709,23 +705,31 @@ void CliqueWriter::add(std::auto_ptr<Clique> clique) {
             stats.reads->push_back(as);
         }
     }
-
+    // cerr <<"ADD: " << stats.clique_size_weighted << endl;
+    // set<string> xlr = stats.readnames;
+    // set<string>::iterator it = xlr.begin();
+    // do {
+    //     cerr << *it << " ";
+    // } while (++it != xlr.end());
+    // cerr << endl;
     if (stats.clique_size_weighted >= stats.min_coverage_user) {
-        std::string key;
-        key = boost::lexical_cast<std::string>(stats.window_start1)+stats.consensus_string1;
+        string key;
+        key = boost::lexical_cast<string>(stats.window_start1)+stats.consensus_string1;
         if (!stats.consensus_string2.empty()) {
-            key += boost::lexical_cast<std::string>(stats.window_start2)+stats.consensus_string2;
+            key += boost::lexical_cast<string>(stats.window_start2)+stats.consensus_string2;
         }
         if (fastq_map.find(key) == fastq_map.end()) {
             fastq_map[key] = fastq_entry();
-            fastq_map[key].name = boost::lexical_cast<std::string>(stats.clique_number);
-            fastq_map[key].read_names = new std::set<std::string>();
+            fastq_map[key].name = boost::lexical_cast<string>(stats.clique_number);
+            fastq_map[key].read_names = new set<string>();
 
             set<string> from = stats.readnames;
-            std::copy(from.begin(), from.end(), std::inserter(*fastq_map[key].read_names, fastq_map[key].read_names->begin()));
+            // cerr << "Size: " << stats.readnames.size() << endl;
+            if (!stats.readnames.empty()) copy(from.begin(), from.end(), inserter(*fastq_map[key].read_names, fastq_map[key].read_names->begin()));
             fastq_map[key].pos_1 = stats.window_start1;
             fastq_map[key].seq_1 = stats.consensus_string1;
             fastq_map[key].phreds_1.push_back(stats.phred_string1);
+            fastq_map[key].hcount = stats.hcount;
             if (!stats.consensus_string2.empty()) {
                 fastq_map[key].pos_2 = stats.window_start2;
                 fastq_map[key].seq_2 = stats.consensus_string2;
@@ -733,13 +737,24 @@ void CliqueWriter::add(std::auto_ptr<Clique> clique) {
             }
         } else {
             set<string> from = stats.readnames;
-            std::copy(from.begin(), from.end(), std::inserter(*fastq_map[key].read_names, fastq_map[key].read_names->begin()));
+            if (!stats.readnames.empty()) copy(from.begin(), from.end(), inserter(*fastq_map[key].read_names, fastq_map[key].read_names->begin()));
             fastq_map[key].phreds_1.push_back(stats.phred_string1);
             if (!stats.consensus_string2.empty()) {
                 fastq_map[key].phreds_2.push_back(stats.phred_string2);
             }
+            fastq_map[key].hcount += stats.hcount;
         }
-    }
+    } 
+    // else {
+    //     cerr << "TOO SMALL:";
+    //     vector<const AlignmentRecord*>::const_iterator it = (*all_pairs).begin();
+    //     for (; it != (*all_pairs).end(); ++it) {
+    //         const AlignmentRecord& ap = **it;
+    //         cerr << " " << ap.getName();
+    //     }
+    //     cerr << endl;
+    // }
+    
     if (stats.window_start1 > 0) {
         printout(stats.window_start1);
     }
@@ -795,6 +810,7 @@ void CliqueWriter::writeReadlist() {
 }
 
 void CliqueWriter::printout(int pos_1) {
+    // cerr << "PRINT: " << pos_1 << endl;
     if (fastq_map.empty()) {
         return;
     }
@@ -818,7 +834,7 @@ void CliqueWriter::printout(int pos_1) {
         fastq_entry f;
         f = it->second;
         if (f.pos_1+100 < pos_1 || pos_1 == -1) {
-            if (f.read_names->size() >= this->min_coverage) {
+            if ((f.read_names->size() + f.hcount) >= this->min_coverage) {
                 ofstream* out1;
                 if (f.seq_2.empty()) {
                     out1 = &fs;
@@ -828,10 +844,19 @@ void CliqueWriter::printout(int pos_1) {
                 *out1 << "@Clique_" << this->suffix << f.name << endl;
                 std::set<std::string>::iterator set_it;
                 set_it = f.read_names->begin();
-                fc << "Clique_" << this->suffix << f.name << "\t" << *set_it;
-                ++set_it;
-                for (;set_it!=f.read_names->end();++set_it) {
-                     fc << "," << *set_it;
+                fc << "Clique_" << this->suffix << f.name << "\t";
+                if (!f.read_names->empty()) {
+                    fc << *set_it;
+                    ++set_it;
+                    for (;set_it!=f.read_names->end();++set_it) {
+                         fc << "," << *set_it;
+                    }
+                }
+                if (f.hcount != 0) {
+                    if (!f.read_names->empty()) {
+                        fc << ",";
+                    }
+                    fc << "HCOUNT|" << f.hcount;
                 }
                 fc << endl;
                 *out1 << f.seq_1 << endl;
@@ -859,7 +884,7 @@ void CliqueWriter::printout(int pos_1) {
                                 fr2 << 'N';
                                 break;
                             default:
-                            cerr << "UNKNOWN BASE " << f.seq_2[i] << endl;
+                            error("UNKNOWN BASE " + boost::lexical_cast<std::string>(f.seq_2[i]));
                                 break;
                         }
                     }
@@ -868,6 +893,8 @@ void CliqueWriter::printout(int pos_1) {
                     fr2 << f.phreds_2[0] << endl;
                 }
                 this->single_count++;
+            } else {
+                error("Too small " + boost::lexical_cast<std::string>(f.read_names->size()) + " "+ boost::lexical_cast<std::string>(f.hcount));
             }
             fastq_map.erase(it++);
         } else {
@@ -928,7 +955,7 @@ void CliqueWriter::finish() {
     }
 }
 
-ostream& operator<<(ostream& os, const CliqueWriter::clique_stats_t& stats) {
-    cerr << "Thou shall not make use of me" << endl;
-    return os;
+void CliqueWriter::error(std::string s) const {
+    std::cerr << "    .o oOOOOOOOo                                            OOOo\n    Ob.OOOOOOOo  OOOo.      oOOo.                      .adOOOOOOO\n    OboO\"\"\"\"\"\"\"\"\"\"\"\".OOo. .oOOOOOo.    OOOo.oOOOOOo..\"\"\"\"\"\"\"\"\"'OO\n    OOP.oOOOOOOOOOOO \"POOOOOOOOOOOo.   `\"OOOOOOOOOP,OOOOOOOOOOOB'\n    `O'OOOO'     `OOOOo\"OOOOOOOOOOO` .adOOOOOOOOO\"oOOO'    `OOOOo\n    .OOOO'            `OOOOOOOOOOOOOOOOOOOOOOOOOO'            `OO\n    OOOOO                 '\"OOOOOOOOOOOOOOOO\"`                oOO\n   oOOOOOba.                .adOOOOOOOOOOba               .adOOOOo.\n  oOOOOOOOOOOOOOba.    .adOOOOOOOOOO@^OOOOOOOba.     .adOOOOOOOOOOOO\n OOOOOOOOOOOOOOOOO.OOOOOOOOOOOOOO\"`  '\"OOOOOOOOOOOOO.OOOOOOOOOOOOOO\n \"OOOO\"       \"YOoOOOOMOIONODOO\"`  .   '\"OOROAOPOEOOOoOY\"     \"OOO\"\n    Y           'OOOOOOOOOOOOOO: .oOOo. :OOOOOOOOOOO?'         :`\n    :            .oO%OOOOOOOOOOo.OOOOOO.oOOOOOOOOOOOO?         .\n    .            oOOP\"%OOOOOOOOoOOOOOOO?oOOOOO?OOOO\"OOo\n                 '%o  OOOO\"%OOOO%\"%OOOOO\"OOOOOO\"OOO':\n                      `$\"  `OOOO' `O\"Y ' `OOOO'  o             .\n    .                  .     OP\"          : o     .\n                              :\n                              .\n\nPlease create an issue at https://github.com/armintoepfer/haploclique/issues\nor write a mail armin.toepfer@gmail.com" << std::endl;
+    std::cerr << s<< std::endl;
 }
