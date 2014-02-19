@@ -83,7 +83,7 @@ int main() {
     out << ss.str();
     out.close();
 
-    //cerr << read_map.size()+count_global << "\t" << read_map.size() << "\t" << count_global << endl;
+    cerr << read_map.size()+count_global << "\t" << read_map.size() << "\t" << count_global << endl;
 
     return 0;
 }
