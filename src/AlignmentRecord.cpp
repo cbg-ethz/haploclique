@@ -36,6 +36,8 @@ AlignmentRecord::AlignmentRecord(const string& line, std::map<std::string,std::s
 	boost::char_separator<char> separator(" \t");
 	tokenizer_t tokenizer(line,separator);
 	vector<string> tokens(tokenizer.begin(), tokenizer.end());
+	this->hcount = 0;
+	this->readCount = 0;
 	if (tokens.size() == 12) {
 		single_end = true;
 	} else if (tokens.size() == 21) {
@@ -44,9 +46,7 @@ AlignmentRecord::AlignmentRecord(const string& line, std::map<std::string,std::s
 		throw std::runtime_error("Error parsing alignment pair.");
 	}
 	try {
-		this->hcount = 0;
 		this->name = tokens[0];
-		this->readCount = 0;
 		if (clique_to_reads.find(this->name) != clique_to_reads.end()) {
             string complex = clique_to_reads[this->name];
             if (complex.find(",") != std::string::npos) {
@@ -279,5 +279,8 @@ int AlignmentRecord::getHCount() const {
 	return this->hcount;
 }
 int AlignmentRecord::getCount() const {
+	if (this->hcount+this->readCount < 0) {
+		cerr << "GETCOUNT: " << this->hcount << "\t" << this->readCount << endl;
+	}
 	return this->hcount+this->readCount;
 }
