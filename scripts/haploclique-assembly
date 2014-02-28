@@ -28,6 +28,7 @@ OPTIONS:
    -l      Only predict indels, no haplotypes
    -m      Maximal time for max-clique enumeration
    -P      Ignore single indels
+   -L      Laser alignment
 
 UPDATE:    http://bit.ly/haploclique
 EOF
@@ -55,7 +56,8 @@ NOPRIOR=0
 INDEL=0
 TIME=10000
 INDELS=""
-while getopts “ah:r:q:o:pt:c:s:euz:Gwng:j:i:lx:m:P” OPTION
+LASER=0
+while getopts “ah:r:q:o:pt:c:s:euz:Gwng:j:i:lx:m:PL” OPTION
 do
      case $OPTION in
          h)
@@ -126,6 +128,9 @@ do
              ;;
          P)
              INDELS="-m"
+             ;;
+         L)
+             LASER=1
              ;;
          ?)
              usage
@@ -234,6 +239,13 @@ function assemble() {
                 idf -i $1 -g $2
             fi
             mv reads.sam aln.sam
+        elif [ $LASER == 1 ]; then
+            split-reads --single-end $1 > x.fastq
+            bwa aln $2 x.fastq > x.sai
+            bwa samse -n25 $2 x.sai x.fastq | xa2multi.pl | samtools view -Sb - > x.bwa.bam
+            cat x.bwa.bam | laser-core -X -I -T 20 --m_in_cigar --indel_cost 35 --affine_gapcosts --split_cost 70 --soft_clip --soft_clip_open_cost 200 --soft_clip_extend_cost 5 --cost_threshold 3000 --max_span 10000 --anchor_distance 10000 --single-end $2 x.fastq > x.laser.bam
+            samtools view -h x.laser.bam > aln.sam
+            rm x*
         else
             bwa index $2 2> /dev/null > /dev/null
             bwa mem -t 79 $2 $1 > aln.sam
