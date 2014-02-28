@@ -195,25 +195,20 @@ void process_read_allpairs(const BamTools::RefVector& ref_vector, const vector<B
 	vector<aln_pair_t> all_pairs;
 	double p_sum = 0.0;
 	double p_ins_sum = 0.0;
-	cerr << "A" << endl;
 	for (size_t i=0; i<alignments1.size(); ++i) {
 		const BamTools::BamAlignment& read_aln1 = *alignments1[i];
 		assert(read_aln1.CigarData.size() > 0);
 		double posterior1 = posteriors1->at(i);
 		assert(read_aln1.IsMapped());
-		cerr << "B1" << endl;
 		for (size_t j=0; j<alignments2.size(); ++j) {
 			const BamTools::BamAlignment& read_aln2 = *alignments2[j];
 			assert(read_aln2.CigarData.size() > 0);
 			double posterior2 = posteriors2->at(j);
 			assert(read_aln2.IsMapped());
-			cerr << "B2" << endl;
 			// skip if strandedness is the same
 			if (read_aln1.IsReverseStrand() == read_aln2.IsReverseStrand()) continue;
-			cerr << "B2 1" << endl;
 			// skip if both reads map to different chromosomes
 			if (read_aln1.RefID != read_aln2.RefID) continue;
-			cerr << "B2 2" << endl;
 			double p = posterior1*posterior2;
 			double p_ins = p;
 			const BamTools::BamAlignment& left = (read_aln1.Position<=read_aln2.Position)?read_aln1:read_aln2;
@@ -229,14 +224,10 @@ void process_read_allpairs(const BamTools::RefVector& ref_vector, const vector<B
 			p_ins *= ild.probability(insert_length);
 			p_sum += p;
 			p_ins_sum += p_ins;
-			cerr << concordant_min << " " << concordant_max << endl;
-			cerr << insert_length << endl;
 			// if ((concordant_min!=-1) && (concordant_max!=-1)) {
 			// 	if ((concordant_min<=insert_length) && (insert_length<=concordant_max)) continue;
 			// }
-			cerr << "B2 3" << endl;
 			all_pairs.push_back(aln_pair_t(&left, &right, p, p_ins));
-			cerr << "B3" << endl;
 		}
 	}
 	string rg = "";

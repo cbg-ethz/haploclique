@@ -35,10 +35,10 @@ EOF
 
 REF=
 ALIGNMENT=
-HQ=0.999
+HQ=0.99
 HG=0.95
 HO=0.9
-HJ=0.6
+HJ=0.9
 HC=1000
 HS=5
 PACBIO=0
@@ -394,11 +394,10 @@ if [[ $NOPARALLEL == 0 ]]; then
             cat x*/singles.prior > singles.prior
             cat data_cliques_* | awk 'BEGIN {l = 0} {if (NR%4==2 && l < length($0)) l = length($0)} END {printf("Max read length:\t\t%.0f bp\n",l)}'
             assemble
-            alignmentparser
+            #alignmentparser
         fi
         rm -rf x*
         echo "===="
-        CONTINUE=1
     done
 else
     for i in $(seq 1 ${ITERATIONS}); do
@@ -415,7 +414,7 @@ else
             exit 12
         fi
         assemble
-        alignmentparser
+        #alignmentparser
         cat data_cliques_* | awk 'BEGIN {l = 0} {if (NR%4==2 && l < length($0)) l = length($0)} END {printf("Max read length:\t\t%.0f bp\n",l)}'
     done
 fi

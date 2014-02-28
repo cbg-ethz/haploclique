@@ -733,9 +733,9 @@ void CliqueWriter::add(std::auto_ptr<Clique> clique) {
 
     if (stats.clique_size_weighted >= stats.min_coverage_user) {
         string key;
-        key = boost::lexical_cast<string>(stats.window_start1)+stats.consensus_string1;
+        key = stats.consensus_string1+"=";
         if (!stats.consensus_string2.empty()) {
-            key += boost::lexical_cast<string>(stats.window_start2)+stats.consensus_string2;
+            key += stats.consensus_string2;
         }
         if (fastq_map.find(key) == fastq_map.end()) {
             fastq_map[key] = fastq_entry();
