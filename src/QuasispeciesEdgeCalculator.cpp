@@ -1,4 +1,4 @@
-/* Copyright 2012 Tobias Marschall
+/* Copyright 2012-2014 Tobias Marschall and Armin Töpfer
  *
  * This file is part of HaploClique.
  *
@@ -84,14 +84,14 @@ string QuasispeciesEdgeCalculator::tail(string const& source, size_t const lengt
 }
 
 bool QuasispeciesEdgeCalculator::is_disjoint(const std::set<std::string> &set1, const std::set<std::string> &set2) const {
-    
+
     if(set1.empty() || set2.empty()) return true;
 
-    std::set<std::string>::const_iterator 
-        it1 = set1.begin(), 
+    std::set<std::string>::const_iterator
+        it1 = set1.begin(),
         it1End = set1.end();
-    std::set<std::string>::const_iterator 
-        it2 = set2.begin(), 
+    std::set<std::string>::const_iterator
+        it2 = set2.begin(),
         it2End = set2.end();
 
     while(it1 != it1End && it2 != it2End)
@@ -157,7 +157,7 @@ double QuasispeciesEdgeCalculator::computeOverlap(const AlignmentRecord & ap1, c
         int read_size1 = min(ap1.getEnd1() - ap1.getStart1(), ap2.getEnd1() - ap2.getStart1());
         float overlap_size1 = overlapSize(ap1.getEnd1(), ap2.getEnd1(), ap1.getStart1(), ap2.getStart1());
         if (MIN_OVERLAP <= 1) overlap_size1 /= (float) read_size1;
-        if (overlap_size1 < MIN_OVERLAP) return 0; 
+        if (overlap_size1 < MIN_OVERLAP) return 0;
 
         int read_size2 = min(ap1.getEnd2() - ap1.getStart2(), ap2.getEnd2() - ap2.getStart2());
         float overlap_size2 = overlapSize(ap1.getEnd2(), ap2.getEnd2(), ap1.getStart2(), ap2.getStart2());
@@ -368,7 +368,7 @@ double QuasispeciesEdgeCalculator::singleOverlap(const AlignmentRecord & ap1, co
     if (ap1.getName().find("Clique") != string::npos
         && ap2.getName().find("Clique") != string::npos
         && cutoff == 1.0) {
-        perfect = 1;    
+        perfect = 1;
     }
     for (int j_compare = 0, j2_compare = 0, prefix = 1, run = 1, run2 = 1, compute_overlap = 0, j_overlap = 0, jm = 0, jm2 = 0,
             shift_ins_prefix = 0, shift_ins_prefix2 = 0,

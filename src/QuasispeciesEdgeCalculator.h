@@ -1,7 +1,7 @@
-/* Copyright 2012 Tobias Marschall
- * 
+/* Copyright 2012-2014 Tobias Marschall and Armin Töpfer
+ *
  * This file is part of HaploClique.
- * 
+ *
  * HaploClique is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -41,7 +41,7 @@ private:
         int hamming;
         int size;
     } overlap_result;
-    
+
     // survival function (aka complement cumulative distribution function of the standard normal distribution)
     double sf(double x) const;
     double computeOverlap(const AlignmentRecord & ap1, const AlignmentRecord & ap2, const double cutoff) const;

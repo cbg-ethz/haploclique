@@ -1,7 +1,7 @@
-/* Copyright 2012 Tobias Marschall
- * 
+/* Copyright 2012-2014 Tobias Marschall and Armin Töpfer
+ *
  * This file is part of HaploClique.
- * 
+ *
  * HaploClique is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -204,7 +204,7 @@ private:
     bool output_all;
     /** Threshold for the false discovery rate (FDR). */
     double fdr_threshold;
-    /** If true, FDR control has already been done and no more cliques 
+    /** If true, FDR control has already been done and no more cliques
      *  can be processed. */
     bool finished;
     /** List of cliques that are possibly significant. This list is only populated

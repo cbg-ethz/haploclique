@@ -1,7 +1,7 @@
-/* Copyright 2012 Tobias Marschall
- * 
+/* Copyright 2012-2014 Tobias Marschall and Armin Töpfer
+ *
  * This file is part of HaploClique.
- * 
+ *
  * HaploClique is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -194,7 +194,7 @@ void CliqueFinder::addAlignment(std::auto_ptr<AlignmentRecord> alignment_autoptr
 	if (no_sort == 0) {
 		sort(new_cliques.begin(), new_cliques.end(), clique_comp_t());
 		new_cliques.erase(std::unique(new_cliques.begin(), new_cliques.end(),clique_equal_t()), new_cliques.end());
-	} 
+	}
 	// check for subset relations and delete cliques that are subsets of others
 	for (size_t i=0; i<new_cliques.size(); ++i) {
 		if (new_cliques[i]==0) continue;

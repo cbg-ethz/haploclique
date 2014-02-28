@@ -1,7 +1,7 @@
-/* Copyright 2012 Tobias Marschall
- * 
+/* Copyright 2012-2014 Tobias Marschall and Armin Töpfer
+ *
  * This file is part of HaploClique.
- * 
+ *
  * HaploClique is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -79,13 +79,13 @@ private:
             //     }
             // }
             // return 0;
-            return c0->getAlignmentSet() < c1->getAlignmentSet(); 
+            return c0->getAlignmentSet() < c1->getAlignmentSet();
         }
     } clique_comp_t;
 
     typedef struct {
         bool operator()(const Clique* c0,const Clique* c1) const {
-            return c0->getAlignmentSet() == c1->getAlignmentSet(); 
+            return c0->getAlignmentSet() == c1->getAlignmentSet();
         }
     } clique_equal_t;
 
@@ -99,7 +99,7 @@ public:
     const AlignmentRecord & getAlignmentByIndex(size_t index) const;
 
     void setEdgeWriter(EdgeWriter& edge_writer) { this->edge_writer = &edge_writer; }
-    
+
     /** Add a second edge calculator: edges will only be drawn when both edge calculators agree
 	 *  that the edge is present.
 	 */
