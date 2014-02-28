@@ -1,7 +1,7 @@
-/* Copyright 2012 Tobias Marschall
- * 
+/* Copyright 2012-2014 Tobias Marschall and Armin Töpfer
+ *
  * This file is part of HaploClique.
- * 
+ *
  * HaploClique is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -332,13 +332,13 @@ typedef struct work_package_t {
 			process_read_allpairs(bam_ref_data, *alignments1, *alignments2, insert_size_dist, output, use_mapq);
 		}
 	}
-	
+
 } work_package_t;
- 
+
 typedef struct output_writer_t {
 	ASTagCalculator::stats_t as_stats;
 	BamTools::BamWriter* bam_writer;
-	
+
 	void write(auto_ptr<work_package_t> work) {
 		assert(work.get() != 0);
 		cout << work->output.str();
@@ -426,7 +426,7 @@ int main(int argc, char* argv[]) {
 		("unsorted", po::value<bool>(&unsorted)->zero_tokens(), "Don't assume reads to be sorted by position. In this case, alignments must be grouped by read, i.e. alignments of the same read (pair) must be in subsequent lines.")
 		("single-end", po::value<bool>(&single_end)->zero_tokens(), "Process single-end reads (instead of pairs).")
 	;
-	
+
 	if (argc<3) {
 		usage(argv[0], options_desc);
 	}
@@ -447,18 +447,18 @@ int main(int argc, char* argv[]) {
 		cerr << "Options -i an -d cannot be used together." << endl;
 		return 1;
 	}
-	
+
 	if (use_mapq && !ignore_xa) {
 		cerr << "When using option --use_mapq, then --ignore_xa must also be given" << endl;
 		cerr << "Reason: XA tags do not contain MAPQ fields." << endl;
 		return 1;
 	}
-	
+
 	if ((insert_length_dist_filename.size() > 0) && (rgwise_insert_length_dist_filename.size() > 0)) {
 		cerr << "Options -i and -r cannot be used at the same time." << endl;
 		return 1;
 	}
-	
+
 	if (single_end) {
 		if (insert_length_dist_filename.size() > 0) {
 			cerr << "Options --single-end and -i cannot be used at the same time." << endl;
@@ -476,7 +476,7 @@ int main(int argc, char* argv[]) {
 
 	clock_t clock_start = clock();
 
-	// Create insert size distribution. Either read it from file (if given) or 
+	// Create insert size distribution. Either read it from file (if given) or
 	// estimate based on input
 	HistogramBasedDistribution* insert_length_distribution = 0;
 	readgroupwise_distributions_t* readgroupwise_distributions = 0;

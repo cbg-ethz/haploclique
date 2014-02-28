@@ -1,7 +1,7 @@
-/* Copyright 2012 Tobias Marschall
- * 
+/* Copyright 2012-2014 Tobias Marschall and Armin Töpfer
+ *
  * This file is part of HaploClique.
- * 
+ *
  * HaploClique is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -184,7 +184,7 @@ int main(int argc, char* argv[]) {
         clique_to_reads_map[words[0]] = words[1];
     }
     remove("data_clique_to_reads.tsv");
-    
+
     //read allel frequency distributions
     std::map<int, double> simpson_map;
     //cerr << "PARSE PRIOR";
@@ -208,7 +208,7 @@ int main(int argc, char* argv[]) {
         ia.close();
     }
     //cerr << "PARSE PRIOR: done" << endl;
-    
+
 
     clock_t clock_start = clock();
     EdgeCalculator* edge_calculator = 0;

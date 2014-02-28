@@ -1,4 +1,4 @@
-/* Copyright 2012 Tobias Marschall
+/* Copyright 2012-2014 Tobias Marschall and Armin Töpfer
  *
  * This file is part of HaploClique.
  *
