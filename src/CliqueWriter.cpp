@@ -869,7 +869,8 @@ void CliqueWriter::printout(int pos_1) {
         }
         fc << endl;
         *out1 << f.seq_1 << endl;
-        *out1 << "+" << f.pos_1 << endl;
+        //*out1 << "+" << f.pos_1 << endl;
+        *out1 << "+" << endl;
         *out1 << f.phreds_1[0] << endl;
         if (!f.seq_2.empty()) {
           fr2 << "@Clique_" << this->suffix << f.name;

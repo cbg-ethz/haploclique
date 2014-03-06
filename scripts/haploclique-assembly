@@ -240,12 +240,11 @@ function assemble() {
             fi
             mv reads.sam aln.sam
         elif [ $LASER == 1 ]; then
-            split-reads --single-end $1 > x.fastq
-            bwa aln $2 x.fastq > x.sai
-            bwa samse -n25 $2 x.sai x.fastq | xa2multi.pl | samtools view -Sb - > x.bwa.bam
-            cat x.bwa.bam | laser-core -X -I -T 20 --m_in_cigar --indel_cost 35 --affine_gapcosts --split_cost 70 --soft_clip --soft_clip_open_cost 200 --soft_clip_extend_cost 5 --cost_threshold 3000 --max_span 10000 --anchor_distance 10000 --single-end $2 x.fastq > x.laser.bam
+            split-reads --single-end $1 > x.split.fastq
+            bwa aln $2 x.split.fastq > x.sai
+            bwa samse -n25 $2 x.sai x.split.fastq | xa2multi.pl | samtools view -Sb - > x.bwa.bam
+            cat x.bwa.bam | laser-core -X -I -T 20 --m_in_cigar --indel_cost 35 --affine_gapcosts --split_cost 70 --soft_clip --soft_clip_open_cost 200 --soft_clip_extend_cost 5 --cost_threshold 3000 --max_span 10000 --anchor_distance 10000 --single-end $2 $1 > x.laser.bam
             samtools view -h x.laser.bam > aln.sam
-            rm x*
         else
             bwa index $2 2> /dev/null > /dev/null
             bwa mem -t 79 $2 $1 > aln.sam
