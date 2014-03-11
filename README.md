@@ -55,7 +55,7 @@ make install
 Please use HaploClique in an empty directory.
 ##### Error correction
 For error correction, HaploClique takes a BAM alignment and the reference as input:  
-`haploclique-assembly -r ../reference.fasta -a ../alignment.bam` 
+`haploclique-assembly -r ../reference.fasta -i ../alignment.bam` 
 
 For ultra-deep next-generation sequencing data sets, please set the minimal overlap to 90%:
 `haploclique-assembly -r ../reference.fasta -i ../alignment.bam -o 0.9 -j 0.9` 
@@ -105,7 +105,7 @@ OPTIONS:
 
 #####Structural variation
 For the prediction of large insertion and deletions, please only use alignments in which *all reads are paired-end* and they are *not allowed to overlap*:  
-`haploclique-assembly -r ../reference.fasta -a ../alignment.bam -l`  
+`haploclique-assembly -r ../reference.fasta -i ../alignment.bam -l`  
 The detected indels are saved as indels.vcf.
 
 ###Ultra-deep next-generation sequencing data workflow
