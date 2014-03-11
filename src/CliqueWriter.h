@@ -243,7 +243,7 @@ private:
     std::string equalStrings(std::string &s1, std::string &s2) const;
     void printout(int pos_1);
     void error(std::string s) const;
-    void addCigar(char& current_cigar, int& current_cigar_count, int match0, int match1, int match2, clique_stats_t& stats) const;
+    void addCigar(char& current_cigar, int& current_cigar_count, int match0, int match1, int match2, clique_stats_t& stats, int strand, bool last) const;
 public:
     CliqueWriter(std::ostream& os, VariationCaller* variation_caller, std::ostream* indel_os, const ReadGroups* read_groups, bool multisample, bool output_all, double fdr_threshold, bool verbose, int min_coverage, bool frameshift_merge, std::string suffix);
     virtual ~CliqueWriter();

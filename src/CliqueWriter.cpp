@@ -376,7 +376,7 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
       }
     }
 
-    // addCigar(current_cigar, current_cigar_count, match1[j][0], match1[j][1], match1[j][2], stats);
+    addCigar(current_cigar, current_cigar_count, match1[j][0], match1[j][1], match1[j][2], stats, 1, j == end1);
 
     int local_max = 0;
     int local_base = -1;
@@ -412,6 +412,8 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
 
     bool prefix2 = 1;
     int end2 = 0;
+    current_cigar = 0;
+    current_cigar_count = 0;
     for (int j = alignment_length2 - 1; j >= 0; j--) {
       if (coverage2[j] >= min_coverage) {
         end2 = j;
@@ -431,6 +433,8 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
           continue;
         }
       }
+      
+      addCigar(current_cigar, current_cigar_count, match2[j][0], match2[j][1], match2[j][2], stats, 2, j == end2);
 
       int local_max = 0;
       int local_base = -1;
@@ -494,7 +498,7 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
   }
 }
 
-void CliqueWriter::addCigar(char& current_cigar, int& current_cigar_count, int match0, int match1, int match2, clique_stats_t& stats) const {
+void CliqueWriter::addCigar(char& current_cigar, int& current_cigar_count, int match0, int match1, int match2, clique_stats_t& stats, int strand, bool last) const {
   char now_cigar_char = 0;
   if (match0 >= match1 && match0 > match2) {
     now_cigar_char = 'M';
@@ -503,15 +507,25 @@ void CliqueWriter::addCigar(char& current_cigar, int& current_cigar_count, int m
   } else if (match2 >= match1 && match2 > match0) {
     now_cigar_char = 'I';
   }
-  if (current_cigar == 0) {
+  if (current_cigar == 0 && !last) {
     current_cigar = now_cigar_char;
     current_cigar_count = 1;
-  } else if (current_cigar == now_cigar_char) {
+  } else if (current_cigar == now_cigar_char && !last) {
     current_cigar_count++;
   } else {
-    string cigar_string = boost::lexical_cast<std::string>(current_cigar_count) + now_cigar_char;
-    current_cigar = now_cigar_char;
-    current_cigar_count = 1;
+    if (last) {
+      current_cigar_count++;
+    }
+    string cigar_string = boost::lexical_cast<std::string>(current_cigar_count) + current_cigar;
+    if (strand == 1) {
+      stats.cigar_string1 += cigar_string;
+    } else{
+      stats.cigar_string2 += cigar_string;
+    }
+    if (!last) {
+      current_cigar = now_cigar_char;
+      current_cigar_count = 1;
+    }
   }
 }
 
@@ -774,10 +788,11 @@ void CliqueWriter::add(std::auto_ptr<Clique> clique) {
   }
 
   if (stats.clique_size_weighted >= stats.min_coverage_user) {
+    // cerr << endl << stats.cigar_string1 << endl;
     string key;
-    key = stats.consensus_string1+"=";
+    key = stats.consensus_string1+"="+stats.cigar_string1+"=";
     if (!stats.consensus_string2.empty()) {
-      key += stats.consensus_string2;
+      key += stats.consensus_string2+"="+stats.cigar_string2;
     }
     if (fastq_map.find(key) == fastq_map.end()) {
       fastq_map[key] = fastq_entry();
