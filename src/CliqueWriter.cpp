@@ -157,6 +157,7 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
   int alignment_length1 = stats.window_end1 - stats.window_start1;
   int alignment1[alignment_length1][5];
   double phred1[alignment_length1][5];
+  char match1[alignment_length1][3];
 
   int alignment_length2 = 0;
   if (has_paired_end) {
@@ -164,6 +165,7 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
   }
   int alignment2[alignment_length2][5];
   double phred2[alignment_length2][5];
+  char match2[alignment_length2][3];
   int max_length = std::max(alignment_length1,alignment_length2);
 
   for (int i = 0; i < max_length; ++i) {
@@ -179,6 +181,10 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
       phred1[i][2] = 0;
       phred1[i][3] = 0;
       phred1[i][4] = 0;
+
+      match1[i][0] = 0;
+      match1[i][1] = 0;
+      match1[i][2] = 0;
     }
     if (i < alignment_length2) {
       alignment2[i][0] = 0;
@@ -192,32 +198,39 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
       phred2[i][2] = 0;
       phred2[i][3] = 0;
       phred2[i][4] = 0;
+
+      match2[i][0] = 0;
+      match2[i][1] = 0;
+      match2[i][2] = 0;
     }
   }
-
+  // cerr << endl << "===" << endl;
   it = pairs.begin();
   for (; it != pairs.end(); ++it) {
     const AlignmentRecord& ap = **it;
+    // cerr << ap.getName() << endl;
     vector<BamTools::CigarOp>::const_iterator it_cigar = ap.getCigar1().begin();
-
     int alignment_index = ap.getStart1() - stats.window_start1;
+    // cerr << "start: " << ap.getStart1() << "\t" << stats.window_start1 << endl;
     assert(alignment_index >= 0);
     assert(alignment_index < stats.window_end1);
     int sequence_index = 0;
 
     for (; it_cigar != ap.getCigar1().end(); ++it_cigar) {
       int cigar_length = it_cigar->Length;
+      int cigar_type = 0;
       switch (it_cigar->Type) {
         case 'S':
         sequence_index += cigar_length;
-        alignment_index += cigar_length;
         break;
         case 'D':
+        cigar_type = 1;
         if (merge && cigar_length == 1) {
           alignment_index++;
         } else {
           for (int k = 0; k < cigar_length; k++) {
             assert(alignment_index < alignment_length1);
+            match1[alignment_index][cigar_type]++;
             alignment1[alignment_index++][4]+=ap.getCount();
           }
         }
@@ -227,8 +240,10 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
           sequence_index++;
           break;
         }
+        cigar_type = 2;
         case 'M':
         for (int k = 0; k < cigar_length; k++) {
+          match1[alignment_index][cigar_type]++;
           assert(sequence_index < ap.getSequence1().size());
           assert(alignment_index < alignment_length1);
 
@@ -258,16 +273,18 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
 
     for (; it_cigar != ap.getCigar2().end(); ++it_cigar) {
       int cigar_length = it_cigar->Length;
+      int cigar_type = 0;
       switch (it_cigar->Type) {
         case 'S':
         sequence_index += cigar_length;
-        alignment_index += cigar_length;
         break;
         case 'D':
+        cigar_type = 1;
         if (merge && cigar_length == 1) {
           alignment_index++;
         } else {
           for (int k = 0; k < cigar_length; k++) {
+            match2[alignment_index][cigar_type]++;
             assert(alignment_index < alignment_length2);
             alignment2[alignment_index++][4]+=ap.getCount();
           }
@@ -278,8 +295,10 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
           sequence_index++;
           break;
         }
+        cigar_type = 2;
         case 'M':
         for (int k = 0; k < cigar_length; k++) {
+          match2[alignment_index][cigar_type]++;
           assert(sequence_index < ap.getSequence2().size());
           assert(alignment_index < alignment_length2);
 
@@ -303,9 +322,7 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
   }
 
   // for (int i = 0; i < alignment_length1; ++i) {
-  //     if (alignment1[i][0] != 0) {
-  //         cerr << "WOOOOOT" << endl;
-  //     }
+  //   cerr << alignment1[i][0] << " " << alignment1[i][1] << " " << alignment1[i][2] << " " << alignment1[i][3] << " " << alignment1[i][4] << endl;
   // }
   // for (int i = 0; i < alignment_length2; ++i) {
   //     if (alignment2[i][0] != 0) {
@@ -345,6 +362,8 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
     }
   }
 
+  char current_cigar = 0;
+  int current_cigar_count = 0;
   for (int j = 0; j < alignment_length1; j++) {
     if (j > end1) { break; }
 
@@ -356,6 +375,8 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
         continue;
       }
     }
+
+    // addCigar(current_cigar, current_cigar_count, match1[j][0], match1[j][1], match1[j][2], stats);
 
     int local_max = 0;
     int local_base = -1;
@@ -470,6 +491,27 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
     problem = 0;
     error("PROBLEM");
     //continue;
+  }
+}
+
+void CliqueWriter::addCigar(char& current_cigar, int& current_cigar_count, int match0, int match1, int match2, clique_stats_t& stats) const {
+  char now_cigar_char = 0;
+  if (match0 >= match1 && match0 > match2) {
+    now_cigar_char = 'M';
+  } else if (match1 >= match0 && match1 > match2) {
+    now_cigar_char = 'D';
+  } else if (match2 >= match1 && match2 > match0) {
+    now_cigar_char = 'I';
+  }
+  if (current_cigar == 0) {
+    current_cigar = now_cigar_char;
+    current_cigar_count = 1;
+  } else if (current_cigar == now_cigar_char) {
+    current_cigar_count++;
+  } else {
+    string cigar_string = boost::lexical_cast<std::string>(current_cigar_count) + now_cigar_char;
+    current_cigar = now_cigar_char;
+    current_cigar_count = 1;
   }
 }
 

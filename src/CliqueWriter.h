@@ -139,6 +139,9 @@ private:
         int clique_size_weighted;
         int hcount;
 
+        std::string cigar_string1;
+        std::string cigar_string2;
+
         clique_stats_t() : variation(), total_weight(0.0), clique_size(0), coverage(0), start(0), end(0), length(0), diff(0), pvalue_corr(0.0), fdr_level(-1.0), is_significant(false), best_sample_combination(-1), reads(0), window_start1(-1), window_end1(-1), window_start2(-1), window_end2(-1), clique_number(0), clique_size_weighted(0), maximum_coverage1(0), maximum_coverage2(0), hcount(0) {
         }
     } clique_stats_t;
@@ -240,6 +243,7 @@ private:
     std::string equalStrings(std::string &s1, std::string &s2) const;
     void printout(int pos_1);
     void error(std::string s) const;
+    void addCigar(char& current_cigar, int& current_cigar_count, int match0, int match1, int match2, clique_stats_t& stats) const;
 public:
     CliqueWriter(std::ostream& os, VariationCaller* variation_caller, std::ostream* indel_os, const ReadGroups* read_groups, bool multisample, bool output_all, double fdr_threshold, bool verbose, int min_coverage, bool frameshift_merge, std::string suffix);
     virtual ~CliqueWriter();
