@@ -52,7 +52,9 @@ make install
 ```
 
 ### USAGE
-Please use HaploClique in an empty directory.
+Please use HaploClique in an empty directory.  
+Please create an <b>index</b> for your alignment `samtools index alignment.bam`
+
 ##### Error correction
 For error correction, HaploClique takes a BAM alignment and the reference as input:  
 `haploclique-assembly -r ../reference.fasta -i ../alignment.bam` 
