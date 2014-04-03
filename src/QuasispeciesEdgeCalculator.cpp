@@ -32,10 +32,11 @@
 
  const double QuasispeciesEdgeCalculator::FRAME_SHIFT_WEIGHT = 0.01;
 
- QuasispeciesEdgeCalculator::QuasispeciesEdgeCalculator(double Q, double edge_quasi_cutoff, double overlap, bool frameshift_merge, map<int, double>& simpson_map, double edge_quasi_cutoff_single, double overlap_single) {
+ QuasispeciesEdgeCalculator::QuasispeciesEdgeCalculator(double Q, double edge_quasi_cutoff, double overlap, bool frameshift_merge, map<int, double>& simpson_map, double edge_quasi_cutoff_single, double overlap_single, double edge_quasi_cutoff_mixed) {
     this->Q = Q;
     this->EDGE_QUASI_CUTOFF = edge_quasi_cutoff;
     this->EDGE_QUASI_CUTOFF_SINGLE = edge_quasi_cutoff_single;
+    this->EDGE_QUASI_CUTOFF_MIXED = edge_quasi_cutoff_mixed;
     this->MIN_OVERLAP_CLIQUES = overlap;
     this->MIN_OVERLAP_SINGLE = overlap_single;
     this->FRAMESHIFT_MERGE = frameshift_merge;
@@ -53,12 +54,9 @@ bool QuasispeciesEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const 
     if (ap1.getName().compare(ap2.getName()) == 0) {
         return 1;
     }
-    // string s1 = "Clique_0";
-    // string s2 = "Clique_2";
-    // if ((ap1.getName().compare(s1) == 0 || ap2.getName().compare(s1) == 0 )
-    //     && (ap1.getName().compare(s2) == 0 || ap2.getName().compare(s2) == 0 )) {
-    //     cerr << ap1.getName() << "\t" << ap2.getName() << endl;
-    // }
+
+        // cerr << ap1.getName() << "\t" << ap2.getName() << endl;
+    
 
     double cutoff = 0;
     if (ap1.getName().find("Clique") != string::npos
@@ -66,14 +64,14 @@ bool QuasispeciesEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const 
         cutoff = EDGE_QUASI_CUTOFF;
     } else if (ap1.getName().find("Clique") != string::npos
         || ap2.getName().find("Clique") != string::npos) {
-        cutoff = 0.97;
+        cutoff = this->EDGE_QUASI_CUTOFF_MIXED;
     } else {
         cutoff = EDGE_QUASI_CUTOFF_SINGLE;
     }
     double q = computeOverlap(ap1, ap2, cutoff);
     // if ((ap1.getName().compare(s1) == 0 || ap2.getName().compare(s1) == 0 )
     //     && (ap1.getName().compare(s2) == 0 || ap2.getName().compare(s2) == 0 )) {
-    //     cerr << endl << "Q: " << q << endl;
+        // cerr << endl << "Q: " << q << endl;
     // }
     return q >= cutoff;
 }
@@ -266,78 +264,13 @@ double QuasispeciesEdgeCalculator::singleOverlap(const AlignmentRecord & ap1, co
         }
     }
 
-        // ====
-        // compute overlap
-    int x_l1 = e1 - s1;
-    int x_l2 = e2 - s2;
-
+    // ====
+    // compute overlap
     int offset1 = 0;
     int offset2 = 0;
-
     int overlap = 0;
+    computeOffsets(s1, s2, e1, e2, offset1, offset2, overlap);
 
-    if (s1 == s2 && e1 == e2) {
-            // -----
-            // -----
-        overlap = e1 - s1;
-        offset1 = 0;
-        offset2 = 0;
-    } else if (s1 == s2) {
-            // ----  AND -----
-            // ----- AND ----
-        if (e1 < e2) {
-            overlap = e1 - s1;
-        } else {
-            overlap = e2 - s2;
-        }
-        offset1 = 0;
-        offset2 = 0;
-    } else if (e1 == e2) {
-            //  ---- AND -----
-            // ----- AND  ----
-        if (s1 > s2) {
-            overlap = e1 - s1;
-            offset1 = 0;
-            offset2 = x_l2 - overlap;
-        } else {
-            overlap = e2 - s2;
-            offset1 = x_l1 - overlap;
-            offset2 = 0;
-        }
-    } else if (e1 < e2) {
-            // ----    AND   --
-            //   ----  AND ------
-        if (s1 < s2) {
-                // ----
-                //   ----
-            overlap = e1 - s2;
-            offset1 = x_l1 - overlap;
-            offset2 = 0;
-        } else {
-                //   --
-                // ------
-            overlap = e1 - s1;
-            offset1 = 0;
-            offset2 = e2 - (e2 - e1) - overlap - s2;
-        }
-    } else {
-            //   ---- AND ------
-            // ----   AND   --
-        if (s2 < s1) {
-                //   ----
-                // ----
-                //cout << "#########" << endl;
-            overlap = e2 - s1;
-            offset1 = 0;
-            offset2 = x_l2 - overlap;
-        } else {
-                // ------
-                //   --
-            overlap = e2 - s2;
-            offset1 = e1 - (e1 - e2) - overlap - s1;
-            offset2 = 0;
-        }
-    }
         // cerr << "single overlap: " << overlap << endl;
     if (overlap < MIN_OVERLAP) {
         return 0;
@@ -508,4 +441,71 @@ double QuasispeciesEdgeCalculator::singleOverlap(const AlignmentRecord & ap1, co
     }
     if (perfect) return 1;
     return pow(exp(overlap_probability),1.0/total_size);
+}
+
+void QuasispeciesEdgeCalculator::computeOffsets(int s1, int s2, int e1, int e2, int &offset1, int &offset2, int &overlap) const {
+    int x_l1 = e1 - s1;
+    int x_l2 = e2 - s2;
+    if (s1 == s2 && e1 == e2) {
+            // -----
+            // -----
+        overlap = e1 - s1;
+        offset1 = 0;
+        offset2 = 0;
+    } else if (s1 == s2) {
+            // ----  AND -----
+            // ----- AND ----
+        if (e1 < e2) {
+            overlap = e1 - s1;
+        } else {
+            overlap = e2 - s2;
+        }
+        offset1 = 0;
+        offset2 = 0;
+    } else if (e1 == e2) {
+            //  ---- AND -----
+            // ----- AND  ----
+        if (s1 > s2) {
+            overlap = e1 - s1;
+            offset1 = 0;
+            offset2 = x_l2 - overlap;
+        } else {
+            overlap = e2 - s2;
+            offset1 = x_l1 - overlap;
+            offset2 = 0;
+        }
+    } else if (e1 < e2) {
+            // ----    AND   --
+            //   ----  AND ------
+        if (s1 < s2) {
+                // ----
+                //   ----
+            overlap = e1 - s2;
+            offset1 = x_l1 - overlap;
+            offset2 = 0;
+        } else {
+                //   --
+                // ------
+            overlap = e1 - s1;
+            offset1 = 0;
+            offset2 = e2 - (e2 - e1) - overlap - s2;
+        }
+    } else {
+            //   ---- AND ------
+            // ----   AND   --
+        if (s2 < s1) {
+                //   ----
+                // ----
+                //cout << "#########" << endl;
+            overlap = e2 - s1;
+            offset1 = 0;
+            offset2 = x_l2 - overlap;
+        } else {
+                // ------
+                //   --
+            overlap = e2 - s2;
+            offset1 = e1 - (e1 - e2) - overlap - s1;
+            offset2 = 0;
+        }
+    }
 }

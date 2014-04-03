@@ -107,6 +107,7 @@ int main(int argc, char* argv[]) {
     bool verbose = false;
     double edge_quasi_cutoff_cliques;
     double edge_quasi_cutoff_single;
+    double edge_quasi_cutoff_mixed;
     double Q;
     double overlap_cliques;
     double overlap_single;
@@ -133,7 +134,8 @@ int main(int argc, char* argv[]) {
     ("output_reads,r", po::value<string>(&reads_output_filename)->default_value(""), "Output reads belonging to at least one significant clique to the given filename (along with their assignment to significant cliques.")
     ("output_coverage,C", po::value<string>(&coverage_output_filename)->default_value(""), "Output the coverage with considered insert segments along the chromosome (one line per position) to the given filename.")
     ("edge_quasi_cutoff_cliques,q", po::value<double>(&edge_quasi_cutoff_cliques)->default_value(0.99), "End compatibility probability cutoff between error-corrected reads for quasispecies reconstruction.")
-    ("edge_quasi_cutoff_single,g", po::value<double>(&edge_quasi_cutoff_single)->default_value(0.95), "End compatibility probability cutoff between raw<->raw and raw<->error-corrected reads for quasispecies reconstruction.")
+    ("edge_quasi_cutoff_mixed,k", po::value<double>(&edge_quasi_cutoff_mixed)->default_value(0.97), "End compatibility probability cutoff between raw<->error-corrected reads for quasispecies reconstruction.")
+    ("edge_quasi_cutoff_single,g", po::value<double>(&edge_quasi_cutoff_single)->default_value(0.95), "End compatibility probability cutoff between raw<->raw reads for quasispecies reconstruction.")
     ("random_overlap_probability,Q", po::value<double>(&Q)->default_value(0.9), "Probability that two random reads are equal at the same position.")
     ("frame_shift_merge,m", po::value<bool>(&frameshift_merge)->zero_tokens(), "Reads will be clustered if one has single nucleotide deletions and insertions. Use for PacBio data sets.")
     ("min_overlap_cliques,o", po::value<double>(&overlap_cliques)->default_value(0.9), "Minimum relative overlap between error-corrected reads.")
@@ -217,7 +219,7 @@ int main(int argc, char* argv[]) {
     VariationCaller* variation_caller = 0;
     ReadGroups* read_groups = 0;
     auto_ptr<vector<mean_and_stddev_t> > readgroup_params(0);
-    edge_calculator = new QuasispeciesEdgeCalculator(Q, edge_quasi_cutoff_cliques, overlap_cliques, frameshift_merge, simpson_map, edge_quasi_cutoff_single, overlap_single);
+    edge_calculator = new QuasispeciesEdgeCalculator(Q, edge_quasi_cutoff_cliques, overlap_cliques, frameshift_merge, simpson_map, edge_quasi_cutoff_single, overlap_single, edge_quasi_cutoff_mixed);
     if (call_indels) {
         double insert_mean = -1.0;
         double insert_stddev = -1.0;

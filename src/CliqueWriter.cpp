@@ -95,8 +95,8 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
   stats.coverage = coverage;
   stats.pvalue_corr = min(1.0, stats.variation.getPValue() * pow(1.2, static_cast<int> (stats.coverage)));
   stats.is_significant = false;
-  vector<const AlignmentRecord*>::const_iterator it = pairs.begin();
-  for (; it != pairs.end(); ++it) {
+  vector<const AlignmentRecord*>::const_iterator it;
+  for (it = pairs.begin(); it != pairs.end(); ++it) {
     const AlignmentRecord& ap = **it;
     // cerr << ap.getName() << endl;
     std::set<string>::iterator it_s;
@@ -115,8 +115,7 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
 
   stats.clique_number = clique_count++;
   bool has_paired_end = 0;
-  it = pairs.begin();
-  for (; it != pairs.end(); ++it) {
+  for (it = pairs.begin(); it != pairs.end(); ++it) {
     const AlignmentRecord& ap = **it;
     vector<BamTools::CigarOp>::const_iterator it_cigar = ap.getCigar1().begin();
     int end = ap.getStart1() + ap.getSequence1().size();
@@ -205,8 +204,7 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
     }
   }
   // cerr << endl << "===" << endl;
-  it = pairs.begin();
-  for (; it != pairs.end(); ++it) {
+  for (it = pairs.begin(); it != pairs.end(); ++it) {
     const AlignmentRecord& ap = **it;
     // cerr << ap.getName() << endl;
     vector<BamTools::CigarOp>::const_iterator it_cigar = ap.getCigar1().begin();
@@ -895,8 +893,7 @@ void CliqueWriter::printout(int pos_1) {
   fc.open ("data_clique_to_reads.tsv", ios::out | ios::app);
 
   std::map<std::string,fastq_entry>::iterator it;
-  it = fastq_map.begin();
-  for (;it!=fastq_map.end();) {
+  for (it = fastq_map.begin();it!=fastq_map.end();) {
     fastq_entry f;
     f = it->second;
     if (f.pos_1+100 < pos_1 || pos_1 == -1) {

@@ -31,6 +31,7 @@ private:
     double MIN_OVERLAP_SINGLE;
     static const double FRAME_SHIFT_WEIGHT;
     double Q;
+    double EDGE_QUASI_CUTOFF_MIXED;
     double EDGE_QUASI_CUTOFF_SINGLE;
     double EDGE_QUASI_CUTOFF;
     bool FRAMESHIFT_MERGE;
@@ -46,11 +47,12 @@ private:
     double sf(double x) const;
     double computeOverlap(const AlignmentRecord & ap1, const AlignmentRecord & ap2, const double cutoff) const;
     double singleOverlap(const AlignmentRecord & ap1, const AlignmentRecord & ap2, int strain1, int strain2, double MIN_OVERLAP, const double cutoff) const;
+    void computeOffsets(int s1, int s2, int e1, int e2, int &offset1, int &offset2, int &overlap) const;
     float overlapSize(int e1, int e2, int s1, int s2) const;
     string tail(std::string const& source, size_t const length) const;
     bool is_disjoint(const std::set<std::string> &set1, const std::set<std::string> &set2) const;
 public:
-    QuasispeciesEdgeCalculator(double Q, double edge_quasi_cutoff, double overlap, bool frameshift_merge, map<int, double>& simpson_map, double edge_quasi_cutoff_single, double overlap_single);
+    QuasispeciesEdgeCalculator(double Q, double edge_quasi_cutoff, double overlap, bool frameshift_merge, map<int, double>& simpson_map, double edge_quasi_cutoff_single, double overlap_single, double edge_quasi_cutoff_mixed);
     virtual ~QuasispeciesEdgeCalculator();
 
     /** Decides whether an edge is to be drawn between the two given nodes. */
