@@ -31,20 +31,22 @@ using namespace std;
 using namespace boost;
 
 int main() {
+    int sum = 0;
     map<string,int> read_map;
     ifstream tsv_stream("data_clique_to_reads.tsv");
     vector<string>::iterator it;
-    string tsv_stream_line;
+    string tmpstring;
     vector<string> clique;
     vector<string> words;
-    while (getline(tsv_stream, tsv_stream_line)) {
-        trim_right(tsv_stream_line);
-        boost::split(clique, tsv_stream_line, boost::is_any_of("\t"));
+    while (getline(tsv_stream, tmpstring)) {
+        trim_right(tmpstring);
+        boost::split(clique, tmpstring, boost::is_any_of("\t"));
         boost::split(words, clique[1], boost::is_any_of(","));
         for (it=words.begin(); it!=words.end(); ++it) {
             if (boost::starts_with(*it, "HCOUNT|")) continue;
             if (read_map.find(*it) == read_map.end()) {
                 read_map[*it] = 1;
+                sum++;
             } else {
                 read_map[*it]++;
             }
@@ -54,10 +56,10 @@ int main() {
 
     ifstream tsv_stream2("data_clique_to_reads.tsv");
     stringstream ss;
-    int count_global = 0;
-    while (getline(tsv_stream2, tsv_stream_line)) {
-        trim_right(tsv_stream_line);
-        boost::split(clique, tsv_stream_line, boost::is_any_of("\t"));
+    map<string,double> clique_count_map;
+    while (getline(tsv_stream2, tmpstring)) {
+        trim_right(tmpstring);
+        boost::split(clique, tmpstring, boost::is_any_of("\t"));
         boost::split(words, clique[1], boost::is_any_of(","));
         double count = 0;
         for (it=words.begin(); it!=words.end(); ++it) {
@@ -66,59 +68,82 @@ int main() {
                 boost::split(split, *it, boost::is_any_of("|"));
                 count += boost::lexical_cast<int>(split[1]);
             } else if (read_map[*it] == 1) {
-                count++;
+                count += 1.0/sum;
             } else {
-                count += 1.0/double(read_map[*it]);
+                count += 1.0/double(read_map[*it])/sum;
             }
         }
-        count_global += count;
-        ss << clique[0] << "\t" << count << endl;
+        clique_count_map[clique[0]] = count;
     }
     tsv_stream2.close();
-    ofstream out;
-    out.open ("clique_count.tsv", ios::out);
-    out << ss.str();
-    out.close();
 
-    // ifstream tsv_stream2("data_clique_to_reads.tsv");
-    // stringstream ss;
-    // int count_global = 0;
-    // while (getline(tsv_stream2, tsv_stream_line)) {
-    //     trim_right(tsv_stream_line);
-    //     boost::split(clique, tsv_stream_line, boost::is_any_of("\t"));
-    //     ss << clique[0] << "\t";
-    //     boost::split(words, clique[1], boost::is_any_of(","));
-    //     int count = 0;
-    //     for (it=words.begin(); it!=words.end(); ++it) {
-    //         if (boost::starts_with(*it, "HCOUNT|")) {
-    //             vector<string> split;
-    //             boost::split(split, *it, boost::is_any_of("|"));
-    //             count += boost::lexical_cast<int>(split[1]);
-    //             cerr << "XLR: " << *it << "\t" << boost::lexical_cast<int>(split[1]) << endl;
-    //         } else if (read_map[*it] == 1) {
-    //             read_map.erase(*it);
-    //             count++;
-    //         } else {
-    //             ss << *it << ",";
-    //         }
-    //     }
-    //     count_global += count;
-    //     ss << "HCOUNT|" << count << endl;
-    // }
-    // tsv_stream2.close();
-    // ofstream out;
-    // out.open ("data_clique_to_reads.tsv", ios::out);
-    // out << ss.str();
-    // out.close();
+    ifstream s_stream("data_cliques_single.fastq");
+    int line_number = 0;
+    string tmp_id;
+    map<string, string> clique_id_map_single;
+    while (getline(s_stream, tmpstring)) {
+        trim_right(tmpstring);
+        switch (line_number++ % 4) {
+            case 0:
+                tmp_id = tmpstring.substr(1);
+                //cerr << tmp_id << "\t";
+                break;
+            case 1:
+                clique_id_map_single[tmp_id] = tmpstring;
+                //cerr << tmpstring << endl;
+                break;
+            default:break;
+        }
+    }
 
-    // cerr << read_map.size() << "\t" << count_global << "\t" << read_map.size()+count_global << endl;
-    cerr << read_map.size() << endl;
+    ifstream p1_stream("data_cliques_paired_R1.fastq");
+    line_number = 0;
+    map<string, string> clique_id_map_p1;
+    while (getline(p1_stream, tmpstring)) {
+        trim_right(tmpstring);
+        switch (line_number++ % 4) {
+            case 0:
+                tmp_id = tmpstring.substr(1);
+                //cerr << tmp_id << "\t";
+                break;
+            case 1:
+                clique_id_map_p1[tmp_id] = tmpstring;
+                //cerr << tmpstring << endl;
+                break;
+            default:break;
+        }
+    }
 
-    // map<string,int>::iterator read_map_it;
+    ifstream p2_stream("data_cliques_paired_R1.fastq");
+    line_number = 0;
+    map<string, string> clique_id_map_p2;
+    while (getline(p2_stream, tmpstring)) {
+        trim_right(tmpstring);
+        switch (line_number++ % 4) {
+            case 0:
+                tmp_id = tmpstring.substr(1);
+                //cerr << tmp_id << "\t";
+                break;
+            case 1:
+                clique_id_map_p2[tmp_id] = tmpstring;
+                //cerr << tmpstring << endl;
+                break;
+            default:break;
+        }
+    }
 
-    // for (read_map_it = read_map.begin(); read_map_it != read_map.end(); ++read_map_it) {
-    //     cerr << read_map_it->first << "\t" << read_map_it->second << endl;
-    // }
+    map<string,double>::iterator key_it = clique_count_map.begin();
+    for (;key_it != clique_count_map.end(); ++key_it) {
+        if (clique_id_map_single.find(key_it->first) != clique_id_map_single.end()) {
+            cout << ">" << key_it->first << "x " << key_it->second << " ";
+            cout << clique_id_map_single[key_it->first] << endl;
+        } else if (clique_id_map_p1.find(key_it->first) != clique_id_map_p1.end()) {
+            cout << ">" << key_it->first << "/1x " << key_it->second << " ";
+            cout << clique_id_map_p1[key_it->first] << endl;
+            cout << ">" << key_it->first << "/2x " << key_it->second << " ";
+            cout << clique_id_map_p2[key_it->first] << endl;
+        }
+    }
 
     return 0;
 }

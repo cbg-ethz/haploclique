@@ -29,6 +29,7 @@ OPTIONS:
    -m      Maximal time for max-clique enumeration
    -P      Ignore single indels
    -L      Laser alignment
+   -b      BLASR alignment
 
 UPDATE:    http://bit.ly/haploclique
 EOF
@@ -57,7 +58,8 @@ INDEL=0
 TIME=10000
 INDELS=""
 LASER=0
-while getopts “ah:r:q:o:pt:c:s:euz:Gwng:j:i:lx:m:PL” OPTION
+BLASR=0
+while getopts “ah:r:q:o:pt:c:s:euz:Gwng:j:i:lx:m:PLb” OPTION
 do
      case $OPTION in
          h)
@@ -131,6 +133,9 @@ do
              ;;
          L)
              LASER=1
+             ;;
+         b)
+             BLASR=1
              ;;
          ?)
              usage
@@ -245,6 +250,8 @@ function assemble() {
             bwa samse -n25 $2 x.sai x.split.fastq | xa2multi.pl | samtools view -Sb - > x.bwa.bam
             cat x.bwa.bam | laser-core -X -I -T 20 --m_in_cigar --indel_cost 35 --affine_gapcosts --split_cost 70 --soft_clip --soft_clip_open_cost 200 --soft_clip_extend_cost 5 --cost_threshold 3000 --max_span 10000 --anchor_distance 10000 --single-end $2 $1 > x.laser.bam
             samtools view -h x.laser.bam > aln.sam
+        elif [ $BLASR == 1 ]; then
+            blasr $1 $2 -sam -out aln.sam -nproc $CORES
         else
             bwa index $2 2> /dev/null > /dev/null
             bwa mem -t 79 $2 $1 > aln.sam
@@ -429,3 +436,5 @@ else
         cat data_cliques_* | awk 'BEGIN {l = 0} {if (NR%4==2 && l < length($0)) l = length($0)} END {printf("Max read length:\t\t%.0f bp\n",l)}'
     done
 fi
+
+alignmentparser | sort -r -n -k 2 | sed 's/x /_/g;' | tr ' ' '\n\r' > quasispecies.fasta
