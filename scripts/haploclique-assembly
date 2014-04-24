@@ -144,6 +144,15 @@ do
      esac
 done
 
+command -v haploclique >/dev/null 2>&1 || { echo >&2 "I require haploclique but it's not installed.  Aborting."; exit 1; }
+command -v haploclique-assembly >/dev/null 2>&1 || { echo >&2 "I require haploclique-assembly but it's not installed.  Aborting."; exit 1; }
+command -v samtools >/dev/null 2>&1 || { echo >&2 "I require samtools but it's not installed.  Aborting."; exit 1; }
+command -v bam-to-alignment-priors >/dev/null 2>&1 || { echo >&2 "I require bam-to-alignment-priors but it's not installed.  Aborting."; exit 1; }
+command -v java >/dev/null 2>&1 || { echo >&2 "I require java but it's not installed.  Aborting."; exit 1; }
+command -v seeksingletons >/dev/null 2>&1 || { echo >&2 "I require seeksingletons but it's not installed.  Aborting."; exit 1; }
+command -v postprocess-predictions >/dev/null 2>&1 || { echo >&2 "I require postprocess-predictions but it's not installed.  Aborting."; exit 1; }
+command -v alignmentparser >/dev/null 2>&1 || { echo >&2 "I require alignmentparser but it's not installed.  Aborting."; exit 1; }
+
 if [[ -z $REF ]] || [[ -z $ALIGNMENT ]]
 then
      usage
@@ -178,10 +187,10 @@ function initial() {
 
     touch paired.priors single.priors
     if [ -s paired.sam ]; then
-        bam-to-alignment-priors -m mean-sd $REF paired.bam > paired.priors 2> /dev/null
+        bam-to-alignment-priors -T 80 -m mean-sd $REF paired.bam > paired.priors 2> /dev/null
     fi
     if [ -s single_sort.sam ]; then
-        bam-to-alignment-priors --unsorted --single-end $REF single_sort.bam > single.priors 2> /dev/null
+        bam-to-alignment-priors -T 80 --unsorted --single-end $REF single_sort.bam > single.priors 2> /dev/null
     fi
 
     mv paired.priors alignment.prior 2> /dev/null
@@ -308,10 +317,10 @@ function assemble() {
 
     touch paired.priors single.priors
     if [ -s paired.sam ]; then
-        bam-to-alignment-priors $REF paired.bam > paired.priors 2> /dev/null
+        bam-to-alignment-priors -T 80 $REF paired.bam > paired.priors 2> /dev/null
     fi
     if [ -s single_sort.sam ]; then
-        bam-to-alignment-priors --unsorted --single-end $REF single_sort.bam > single.priors 2> /dev/null
+        bam-to-alignment-priors -T 80 --unsorted --single-end $REF single_sort.bam > single.priors 2> /dev/null
     fi
 
     mv paired.priors alignment.prior
