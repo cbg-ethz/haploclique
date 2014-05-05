@@ -53,46 +53,27 @@ void QuasispeciesEdgeCalculator::getPartnerLengthRange(const AlignmentRecord& ap
 }
 
 bool QuasispeciesEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const AlignmentRecord & ap2) const {
-    if (ap1.getName().compare(ap2.getName()) == 0) {
-        return 1;
-    }
-    //cerr << ap1.getName() << "\t" << ap2.getName() << endl;
-    
+    if (ap1.getName().compare(ap2.getName()) == 0) return 1;
 
     double cutoff = 0;
-    if (ap1.getName().find("Clique") != string::npos
-        && ap2.getName().find("Clique") != string::npos) {
+    if (ap1.getName().find("Clique") != string::npos && ap2.getName().find("Clique") != string::npos) {
         cutoff = EDGE_QUASI_CUTOFF;
-    } else if (ap1.getName().find("Clique") != string::npos
-        || ap2.getName().find("Clique") != string::npos) {
+    } else if (ap1.getName().find("Clique") != string::npos || ap2.getName().find("Clique") != string::npos) {
         cutoff = this->EDGE_QUASI_CUTOFF_MIXED;
     } else {
         cutoff = EDGE_QUASI_CUTOFF_SINGLE;
     }
     double q = computeOverlap(ap1, ap2, cutoff);
-    // if ((ap1.getName().compare(s1) == 0 || ap2.getName().compare(s1) == 0 )
-    //     && (ap1.getName().compare(s2) == 0 || ap2.getName().compare(s2) == 0 )) {
-        // cerr << endl << "Q: " << q << endl;
-    // }
 
     return q >= cutoff;
-}
-
-string QuasispeciesEdgeCalculator::tail(string const& source, size_t const length) const {
-  if (length >= source.size()) { return source; }
-  return source.substr(source.size() - length);
 }
 
 bool QuasispeciesEdgeCalculator::is_disjoint(const std::set<std::string> &set1, const std::set<std::string> &set2) const {
 
     if(set1.empty() || set2.empty()) return true;
 
-    std::set<std::string>::const_iterator
-        it1 = set1.begin(),
-        it1End = set1.end();
-    std::set<std::string>::const_iterator
-        it2 = set2.begin(),
-        it2End = set2.end();
+    std::set<std::string>::const_iterator it1 = set1.begin(), it1End = set1.end();
+    std::set<std::string>::const_iterator it2 = set2.begin(), it2End = set2.end();
 
     while(it1 != it1End && it2 != it2End)
     {
@@ -235,35 +216,40 @@ double QuasispeciesEdgeCalculator::singleOverlap(const AlignmentRecord & ap1, co
         s1 = ap1.getStart1();
         e1 = ap1.getEnd1();
         sequence1 = ap1.getSequence1();
-
-        for (vector<BamTools::CigarOp>::const_iterator it = ap1.getCigar1().begin(); it != ap1.getCigar1().end(); ++it) {
-            for (int s = 0; s < it->Length; ++s) cigar1.push_back(it->Type);
-        }
+        cigar1 = ap1.getCigar1Unrolled();
     } else if (strain1 == 2) {
         s1 = ap1.getStart2();
         e1 = ap1.getEnd2();
         sequence1 = ap1.getSequence2();
-
-        for (vector<BamTools::CigarOp>::const_iterator it = ap1.getCigar2().begin(); it != ap1.getCigar2().end(); ++it) {
-            for (int s = 0; s < it->Length; ++s) cigar1.push_back(it->Type);
-        }
+        cigar1 = ap1.getCigar2Unrolled();
     }
     if (strain2 == 1) {
         s2 = ap2.getStart1();
         e2 = ap2.getEnd1();
         sequence2 = ap2.getSequence1();
-
-        for (vector<BamTools::CigarOp>::const_iterator it = ap2.getCigar1().begin(); it != ap2.getCigar1().end(); ++it) {
-            for (int s = 0; s < it->Length; ++s) cigar2.push_back(it->Type);
-        }
+        cigar2 = ap2.getCigar1Unrolled();
     } else if (strain2 == 2) {
         s2 = ap2.getStart2();
         e2 = ap2.getEnd2();
         sequence2 = ap2.getSequence2();
+        cigar2 = ap1.getCigar2Unrolled();
+    }
 
-        for (vector<BamTools::CigarOp>::const_iterator it = ap2.getCigar2().begin(); it != ap2.getCigar2().end(); ++it) {
-            for (int s = 0; s < it->Length; ++s) cigar2.push_back(it->Type);
-        }
+    if (s2 < s1) {
+        int st = s1;
+        int et = e1;
+        ShortDnaSequence sequencet = sequence1;
+        vector<char> cigart = cigar1;
+
+        s1 = s2;
+        e1 = e2;
+        sequence1 = sequence2;
+        cigar1 = cigar2;
+
+        s2 = st;
+        e2 = et;
+        sequence2 = sequencet;
+        cigar2 = cigart;
     }
 
     // ====
@@ -273,7 +259,12 @@ double QuasispeciesEdgeCalculator::singleOverlap(const AlignmentRecord & ap1, co
     int overlap = 0;
     computeOffsets(s1, s2, e1, e2, offset1, offset2, overlap);
 
-        // cerr << "single overlap: " << overlap << endl;
+    if (offset2 > 0) {
+        //cerr << "offset 2: " << offset2 << endl;
+    }
+    //cerr << "offset 1: " << offset1 << endl;
+    //cerr << "offset 2: " << offset2 << endl;
+    //cerr << "single overlap: " << overlap << endl;
     if (overlap < MIN_OVERLAP) {
         return 0;
     }
@@ -289,7 +280,7 @@ double QuasispeciesEdgeCalculator::singleOverlap(const AlignmentRecord & ap1, co
     double hamming = 0;
     double total_size = 0;
     if (offset1 >= sequence1.size() || offset2 >= sequence2.size()) {
-            // cerr << "out of here" << endl;
+        //cerr << "out of here" << endl;
         return 0;
     }
     /*if (offset1 > 0) {
@@ -298,157 +289,153 @@ double QuasispeciesEdgeCalculator::singleOverlap(const AlignmentRecord & ap1, co
     if (offset2 > 0) {
         offset2 -= 1;
     }*/
-    //cerr << offset1 << " offset " << offset2 << endl;
+    // //cerr << offset1 << " offset " << offset2 << endl;
     bool perfect = 0;
     if (ap1.getName().find("Clique") != string::npos
         && ap2.getName().find("Clique") != string::npos
         && cutoff == 1.0) {
         perfect = 1;
     }
-    for (int j_compare = 0, j2_compare = 0, 
-            prefix = 1, run = 1, run2 = 1, 
-            compute_overlap = 0, j_overlap = 0, 
-            jm = 0, jm2 = 0,
-            shift_prefix = 0, shift_prefix2 = 0,
-            shift_infix = 0, shift_infix2 = 0,
-            softclip = 0, softclip2 = 0,
-            insertion_index = 0, insertion_index2 = 0,
-            j = 0, j2 = 0,
-            j_cigar = 0, j_cigar2 = 0;;) {
-        int j_tmp = j + shift_prefix;
-        int j2_tmp = j2 + shift_prefix2;
-        int jump_single = 0;
-        int jump_single2 = 0;
-        if (prefix) {
-            if (j - softclip == offset1 || offset1 == 0) {
-                run = 0;
-            }
-            if (j2 - softclip2 == offset2 || offset2 == 0) {
-                run2 = 0;
-            }
-        }
-        if (!run && !run2) {
-            compute_overlap = 1;
-            run = 1;
-            run2 = 1;
-        }
-        if (j_overlap >= overlap) {
-            compute_overlap = 0;
-        }
-        bool skip = 1;
-        if (compute_overlap && j < sequence1.size() && j2 < sequence2.size() && j_tmp < sequence1.size() && j2_tmp < sequence2.size()) {
-            skip = 0;
-            prefix = 0;
-            if (cigar1[j_cigar] == cigar2[j_cigar2]) {
-                switch (cigar1[j_cigar]) {
-                    case 'M':
-                    case 'I':
-                        if (!perfect) {
-                            double q_x1 = sequence1.qualityCorrect(j_tmp);
-                            double q_x2 = sequence2.qualityCorrect(j2_tmp);
-                            double anti_q_x1 = (1.0 - q_x1) / 3.0;
-                            double anti_q_x2 = (1.0 - q_x2) / 3.0;
 
-                            assert(q_x1 <= 1 && q_x2 <= 1);
-                            double sum = 0.0;
-                            sum += ((sequence1[j_tmp] == alphabet[0] ? q_x1 : anti_q_x1) * (sequence2[j2_tmp] == alphabet[0] ? q_x2 : anti_q_x2));
-                            sum += ((sequence1[j_tmp] == alphabet[1] ? q_x1 : anti_q_x1) * (sequence2[j2_tmp] == alphabet[1] ? q_x2 : anti_q_x2));
-                            sum += ((sequence1[j_tmp] == alphabet[2] ? q_x1 : anti_q_x1) * (sequence2[j2_tmp] == alphabet[2] ? q_x2 : anti_q_x2));
-                            sum += ((sequence1[j_tmp] == alphabet[3] ? q_x1 : anti_q_x1) * (sequence2[j2_tmp] == alphabet[3] ? q_x2 : anti_q_x2));
-                            overlap_probability += log(sum);
-                            total_size++;
-                        } else {
-                            if (sequence1[j_tmp] != sequence2[j2_tmp]) {
-                                return 0;
-                            }
-                        }
-                        j_overlap++;
-                        default: break;
+    unsigned long j_seq = 0, j_seq2 = 0;
+    unsigned long j_cigar = 0, j_cigar2 = 0;
+    int j = 0, j2 = 0;
+    for (;;) {
+        if (cigar1[j_cigar] != 'S' && cigar2[j_cigar2] != 'S' && cigar1[j_cigar] != 'H' && cigar2[j_cigar2] != 'H') break;
+        if (cigar1[j_cigar] == 'S') { j_cigar++; j_seq++; }
+        if (cigar2[j_cigar2] == 'S') { j_cigar2++; j_seq2++; }
+        if (cigar1[j_cigar] == 'H') { j_cigar++; }
+        if (cigar2[j_cigar2] == 'H') { j_cigar2++; }
+    }
+    for (int j_prefix = 0;;) {
+        if (j_prefix == offset1) break;
+        switch (cigar1[j_cigar]) {
+            case 'M': 
+                if (!perfect) {
+                    int j_global = s1+j;
+                    if (this->SIMPSON_MAP.begin() != this->SIMPSON_MAP.end()
+                        && this->SIMPSON_MAP.find(j_global) != this->SIMPSON_MAP.end()) {
+                        overlap_probability += log(this->SIMPSON_MAP.at(j_global));
+                        //cerr << overlap_probability << endl;
+                    }
                 }
-            } else if (this->FRAMESHIFT_MERGE && (cigar1[j_cigar] == 'I' || cigar1[j_cigar] == 'D')  && cigar2[j_cigar2] == 'M' && j_cigar + 1 < cigar1.size() && j_cigar - 1 >= 0 && cigar1[j_cigar - 1] == 'M' && cigar1[j_cigar + 1] == 'M') {
-                if (cigar1[j_cigar] == 'I') {
-                    jump_single2 = 1;
+                j++;
+            case 'I':
+                j_seq++;
+            default: break;
+        }
+        j_cigar++;
+        j_prefix++;
+    }
+    for (;j_cigar<cigar1.size() && j_cigar2<cigar2.size() && cigar1[j_cigar] != 'S' && cigar2[j_cigar2] != 'S' && j_seq < sequence1.size() && j_seq2 < sequence2.size();) {
+        //cerr << cigar1[j_cigar] << cigar2[j_cigar2] << "\t"; 
+        if (perfect) {
+            if (sequence1[j_seq] != sequence2[j_seq2]) return 0;
+            else {
+                j_cigar++;
+                j_cigar2++;
+                j_seq++;
+                j_seq2++;
+            }
+        } else if (cigar1[j_cigar] == cigar2[j_cigar2]) {
+            //cerr << sequence1[j_seq] << ":" << sequence2[j_seq2];
+            double q_x1 = sequence1.qualityCorrect(j_seq);
+            double q_x2 = sequence2.qualityCorrect(j_seq2);
+            double anti_q_x1 = (1.0 - q_x1) / 3.0;
+            double anti_q_x2 = (1.0 - q_x2) / 3.0;
+            assert(q_x1 <= 1 && q_x2 <= 1);
+            double sum = 0.0;
+            sum += ((sequence1[j_seq] == alphabet[0] ? q_x1 : anti_q_x1) * (sequence2[j_seq2] == alphabet[0] ? q_x2 : anti_q_x2));
+            sum += ((sequence1[j_seq] == alphabet[1] ? q_x1 : anti_q_x1) * (sequence2[j_seq2] == alphabet[1] ? q_x2 : anti_q_x2));
+            sum += ((sequence1[j_seq] == alphabet[2] ? q_x1 : anti_q_x1) * (sequence2[j_seq2] == alphabet[2] ? q_x2 : anti_q_x2));
+            sum += ((sequence1[j_seq] == alphabet[3] ? q_x1 : anti_q_x1) * (sequence2[j_seq2] == alphabet[3] ? q_x2 : anti_q_x2));
+            overlap_probability += log(sum);
+            //cerr << "\t" << overlap_probability;
+            total_size++;
+
+            j_cigar++;
+            j_cigar2++;
+            j_seq++;
+            j_seq2++;
+
+            if (cigar1[j_cigar] == 'M') {
+                j++;
+                j2++;
+            } 
+        } else if (this->FRAMESHIFT_MERGE) {
+            if (cigar2[j_cigar2] == 'M') {
+                switch(cigar1[j_cigar]) {
+                    case 'D':
+                        //cerr << "-:" << sequence2[j_seq2];  
+                        j_cigar++;
+                        j_cigar2++;
+                        j_seq2++;
+                        j2++;
+                        break;
+                    case 'I':
+                        //cerr << sequence1[j_seq] << ":-";  
+                        j_cigar++;
+                        j_seq++;
+                        break;
+                    default: break;
                 }
-                //otherwise it's a deletion and just ignore that base
-            } else if (this->FRAMESHIFT_MERGE && cigar1[j_cigar] == 'M' && (cigar2[j_cigar2] == 'I' || cigar2[j_cigar2] == 'D') && j_cigar2 + 1 < cigar2.size() && j_cigar2 - 1 >= 0 && cigar2[j_cigar2 - 1] == 'M' && cigar2[j_cigar2 + 1] == 'M') {
-                if (cigar2[j_cigar2] == 'I') {
-                    jump_single = 1;
+            } else if (cigar1[j_cigar] == 'M') {
+                switch(cigar2[j_cigar2]) {
+                    case 'D':
+                        //cerr << sequence1[j_seq] << ":-";  
+                        j_cigar2++;
+                        j_cigar++;
+                        j_seq++;
+                        j++;
+                        break;
+                    case 'I':
+                        //cerr << "-:" << sequence2[j_seq2];  
+                        j_cigar2++;
+                        j_seq2++;
+                        break;
                 }
-                //otherwise it's a deletion and just ignore that base
             } else {
+                //cerr << "DOES NOT MATCH" << endl;
                 return 0;
             }
+        } else {
+            return 0;
         }
-        if (j < sequence1.size() && run && !jump_single) {
-            skip = 0;
-            int j_global = j - softclip + shift_infix + s1 - 1;
-            //cerr << "jump1 " << j_global << endl;
-            if (cigar1[j_cigar] == 'I') {
-                if (prefix) shift_prefix++;
-                insertion_index++;
-                shift_infix--;
-                j++;
-            } else {
-                insertion_index = 0;
+        //cerr << endl;
+    }
+    if (!perfect) {
+        if (j_cigar < cigar1.size() && cigar1[j_cigar] != 'S') {
+            for (;j_cigar<cigar1.size();) {
+                if (cigar1[j_cigar] == 'S') break;
                 if (cigar1[j_cigar] == 'M') {
-                    if (j - softclip < offset1 || j - softclip > offset1 + overlap) {
-                        if (this->SIMPSON_MAP.begin() != this->SIMPSON_MAP.end()
-                            && this->SIMPSON_MAP.find(j_global) != this->SIMPSON_MAP.end()) {
-                            overlap_probability += log(this->SIMPSON_MAP.at(j_global));
-                        }
-                        jm++;
+                    int j_global = s1+j;
+                    if (this->SIMPSON_MAP.begin() != this->SIMPSON_MAP.end()
+                        && this->SIMPSON_MAP.find(j_global) != this->SIMPSON_MAP.end()) {
+                        overlap_probability += log(this->SIMPSON_MAP.at(j_global));
+                        //cerr << overlap_probability << endl;
                     }
                     j++;
-                } else if (cigar1[j_cigar] == 'D') {
-                    if (prefix) shift_prefix--;
-                    shift_infix++;
-                    if (jm < offset1) offset_deletion1_++;
-                } else if (cigar1[j_cigar] == 'S') {
-                    softclip++;
-                    j++;
                 }
+                j_cigar++;
             }
-            j_cigar++;
-        }
-        if (j2 < sequence2.size() && run2 && !jump_single2) {
-            skip = 0;
-            int j_global = j2 - softclip2 + shift_infix2 + s2 - 1;
-            //cerr << "jump2 " << j_global << endl;
-            if (cigar2[j_cigar2] == 'I') {
-                if (prefix) shift_prefix2++;
-                insertion_index2++;
-                shift_infix2--;
-                j2++;
-            } else {
-                insertion_index2 = 0;
+        } else if (j_cigar2 < cigar2.size() && cigar2[j_cigar2] != 'S') {
+            for (;j_cigar2<cigar2.size();) {
+                if (cigar2[j_cigar2] == 'S') break;
                 if (cigar2[j_cigar2] == 'M') {
-                    if (j2 - softclip2 < offset2 || j2 - softclip2 > offset2 + overlap) {
-                        if (this->SIMPSON_MAP.begin() != this->SIMPSON_MAP.end()
-                            && this->SIMPSON_MAP.find(j_global) != this->SIMPSON_MAP.end()) {
-                            overlap_probability += log(this->SIMPSON_MAP.at(j_global));
-                        }
-                        jm2++;
+                    int j_global = s2+j2;
+                    if (this->SIMPSON_MAP.begin() != this->SIMPSON_MAP.end()
+                        && this->SIMPSON_MAP.find(j_global) != this->SIMPSON_MAP.end()) {
+                        overlap_probability += log(this->SIMPSON_MAP.at(j_global));
+                        //cerr << overlap_probability << endl;
                     }
                     j2++;
-                } else if (cigar2[j_cigar2] == 'D') {
-                    //cerr << "D2" << endl;
-                    if (prefix) shift_prefix2--;
-                    shift_infix2++;
-                    if (jm2 < offset2) offset_deletion2_++;
-                } else if (cigar2[j_cigar2] == 'S') {
-                    softclip2++;
-                    j2++;
                 }
+                j_cigar2++;
             }
-            j_cigar2++;
-        }
-        if (j == sequence1.size() && j2 == sequence2.size()) {
-            break;
-        }
-        if (skip) {
-            break;
         }
     }
+
+    //cerr << pow(exp(overlap_probability),1.0/total_size) << endl;
     if (perfect) return 1;
     return pow(exp(overlap_probability),1.0/total_size);
 }

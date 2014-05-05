@@ -40,6 +40,7 @@ private:
 	unsigned int end1;
 	std::string strand1;
 	std::vector<BamTools::CigarOp> cigar1;
+	std::vector<char> cigar1_unrolled;
 	ShortDnaSequence sequence1;
 	int phred_sum2;
 	std::string chrom2;
@@ -47,6 +48,7 @@ private:
 	unsigned int end2;
 	std::string strand2;
 	std::vector<BamTools::CigarOp> cigar2;
+	std::vector<char> cigar2_unrolled;
 	ShortDnaSequence sequence2;
 	double aln_prob;
 	double aln_pair_prob_ins_length;
@@ -115,6 +117,8 @@ public:
 	int getReadCount() const;
 	int getHCount() const;
 	int getCount() const;
+	const std::vector<char> getCigar1Unrolled() const;
+	const std::vector<char> getCigar2Unrolled() const;
 };
 
 #endif /* ALIGNMENTRECORD_H_ */

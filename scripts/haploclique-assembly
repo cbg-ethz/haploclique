@@ -204,13 +204,12 @@ function initial() {
     samtools sort -n single.bam single_sort 2> /dev/null > /dev/null
     samtools view single_sort.bam  | head > single_sort.sam 2> /dev/null
     samtools view paired.bam  | head > paired.sam 2> /dev/null
-
     touch paired.priors single.priors
     if [ -s paired.sam ]; then
-        bam-to-alignment-priors -T 80 -m mean-sd $REF paired.bam > paired.priors 2> /dev/null
+        bam-to-alignment-priors -m mean-sd $REF paired.bam > paired.priors 2> /dev/null
     fi
     if [ -s single_sort.sam ]; then
-        bam-to-alignment-priors -T 80 --unsorted --single-end $REF single_sort.bam > single.priors 2> /dev/null
+        bam-to-alignment-priors --unsorted --single-end $REF single_sort.bam > single.priors 2> /dev/null
     fi
 
     mv paired.priors alignment.prior 2> /dev/null
@@ -337,10 +336,10 @@ function assemble() {
 
     touch paired.priors single.priors
     if [ -s paired.sam ]; then
-        bam-to-alignment-priors -T 80 $REF paired.bam > paired.priors 2> /dev/null
+        bam-to-alignment-priors $REF paired.bam > paired.priors 2> /dev/null
     fi
     if [ -s single_sort.sam ]; then
-        bam-to-alignment-priors -T 80 --unsorted --single-end $REF single_sort.bam > single.priors 2> /dev/null
+        bam-to-alignment-priors --unsorted --single-end $REF single_sort.bam > single.priors 2> /dev/null
     fi
 
     mv paired.priors alignment.prior

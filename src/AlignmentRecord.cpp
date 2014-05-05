@@ -106,6 +106,14 @@ AlignmentRecord::AlignmentRecord(const string& line, std::map<std::string,std::s
 			this->aln_pair_prob_ins_length = boost::lexical_cast<double>(tokens[20]);
 		}
 		this->id = 0;
+
+		for (vector<BamTools::CigarOp>::const_iterator it = cigar1.begin(); it != cigar1.end(); ++it) {
+            for (int s = 0; s < it->Length; ++s) cigar1_unrolled.push_back(it->Type);
+        }
+    	for (vector<BamTools::CigarOp>::const_iterator it = cigar2.begin(); it != cigar2.end(); ++it) {
+            for (int s = 0; s < it->Length; ++s) cigar2_unrolled.push_back(it->Type);
+        }
+
 	} catch(boost::bad_lexical_cast &){
 		throw std::runtime_error("Error parsing alignment pair.");
 	}
@@ -283,4 +291,10 @@ int AlignmentRecord::getCount() const {
 		cerr << "GETCOUNT: " << this->hcount << "\t" << this->readCount << endl;
 	}
 	return this->hcount+this->readCount;
+}
+const std::vector<char> AlignmentRecord::getCigar1Unrolled() const {
+	return this->cigar1_unrolled;
+}
+const std::vector<char> AlignmentRecord::getCigar2Unrolled() const {
+	return this->cigar2_unrolled;
 }
