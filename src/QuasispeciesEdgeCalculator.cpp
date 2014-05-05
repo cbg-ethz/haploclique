@@ -20,6 +20,7 @@
 #include <boost/math/distributions/normal.hpp>
 #include <stdlib.h>
 #include <map>
+#include <set>
 #include <algorithm>
 #include <vector>
 #include <boost/algorithm/string.hpp>
@@ -31,6 +32,7 @@
  using namespace boost;
 
  const double QuasispeciesEdgeCalculator::FRAME_SHIFT_WEIGHT = 0.01;
+ 
 
  QuasispeciesEdgeCalculator::QuasispeciesEdgeCalculator(double Q, double edge_quasi_cutoff, double overlap, bool frameshift_merge, map<int, double>& simpson_map, double edge_quasi_cutoff_single, double overlap_single, double edge_quasi_cutoff_mixed) {
     this->Q = Q;
@@ -54,8 +56,7 @@ bool QuasispeciesEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const 
     if (ap1.getName().compare(ap2.getName()) == 0) {
         return 1;
     }
-
-        // cerr << ap1.getName() << "\t" << ap2.getName() << endl;
+    //cerr << ap1.getName() << "\t" << ap2.getName() << endl;
     
 
     double cutoff = 0;
@@ -73,6 +74,7 @@ bool QuasispeciesEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const 
     //     && (ap1.getName().compare(s2) == 0 || ap2.getName().compare(s2) == 0 )) {
         // cerr << endl << "Q: " << q << endl;
     // }
+
     return q >= cutoff;
 }
 

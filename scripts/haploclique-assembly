@@ -7,6 +7,22 @@ USAGE:     haploclique-assembly options...
 
 OPTIONS:
    -h      Show this message
+   -H      Show extended help
+   -r      Path to the reference genome (required)
+   -i      Path to the alignment in BAM format (required)
+
+UPDATE:    http://bit.ly/haploclique
+EOF
+}
+
+usageextended()
+{
+cat << EOF
+
+USAGE:     haploclique-assembly options...
+
+OPTIONS:
+   -H      Show this message
    -r      Path to the reference genome (required)
    -i      Path to the alignment in BAM format (required)
    -q      Edge threshold for error-corrected reads
@@ -37,7 +53,7 @@ EOF
 
 REF=
 ALIGNMENT=
-HQ=0.99
+HQ=1
 HG=0.95
 HO=0.9
 HJ=0.9
@@ -59,11 +75,15 @@ TIME=10000
 INDELS=""
 LASER=0
 BLASR=0
-while getopts “ah:r:q:o:pt:c:s:euz:Gwng:j:i:lx:m:PLb” OPTION
+while getopts “ah:r:q:o:pt:c:s:euz:Gwng:j:i:lx:m:PLbH” OPTION
 do
      case $OPTION in
          h)
              usage
+             exit 1
+             ;;
+         H)
+             usageextended
              exit 1
              ;;
          i)
