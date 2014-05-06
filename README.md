@@ -68,42 +68,13 @@ USAGE:     haploclique-assembly options...
 
 OPTIONS:
    -h      Show this message
+   -H      Show extended help
    -r      Path to the reference genome (required)
    -i      Path to the alignment in BAM format (required)
-   -q      Edge threshold for error-corrected reads
-   -g      Edge threshold for raw reads
-   -o      Minimal relative overlap for error-corrected reads
-   -j      Minimal relative overlap for raw reads
-   -c      Maximal coverage
-   -s      Minimal clique size
-   -p      PacBio alignment with InDelFixer
-   -a      InDelFixer alignment
-   -t      Number of iterations
-   -u      Shuffle in parallelization
-   -e      Continue assembly
-   -z      Split size
-   -x      Split size for singletons
-   -G      No parallelization
-   -w      Do not re-use singletons
-   -n      Do not use alignment prior
-   -l      Only predict indels, no haplotypes
-   -m      Maximal time for max-clique enumeration
 ```
+
 #####Quasispecies assembly of long-range haplotypes 
-For quasispecies assembly, please use the helper script `haploclique-assembly-auto`:
-`haploclique-assembly-auto -r ../reference.fasta -i ../alignment.bam`
-
-######All command-line options:
-```bash
-USAGE:     haploclique-assembly-auto options...
-
-OPTIONS:
-   -h      Show this message
-   -r      Path to the reference genome (required)
-   -i      Path to the alignment in BAM format (required)
-   -l      Whole genome coverage is below 1000x
-   -a      PacBio amplicon mode (Currently non-functional)
-```
+For quasispecies assembly, HaploClique has to be executed iteratively. Currently, this procedure cannot be automated to handle any input alignment. Please contact the author for further help.
 
 #####Structural variation
 For the prediction of large insertion and deletions, please only use alignments in which *all reads are paired-end* and they are *not allowed to overlap*:  
