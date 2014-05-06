@@ -55,6 +55,8 @@ void QuasispeciesEdgeCalculator::getPartnerLengthRange(const AlignmentRecord& ap
 bool QuasispeciesEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const AlignmentRecord & ap2) const {
     if (ap1.getName().compare(ap2.getName()) == 0) return 1;
 
+    //cerr << ap1.getName() << " " << ap2.getName() << endl;
+
     double cutoff = 0;
     if (ap1.getName().find("Clique") != string::npos && ap2.getName().find("Clique") != string::npos) {
         cutoff = EDGE_QUASI_CUTOFF;
@@ -68,28 +70,10 @@ bool QuasispeciesEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const 
     return q >= cutoff;
 }
 
-bool QuasispeciesEdgeCalculator::is_disjoint(const std::set<std::string> &set1, const std::set<std::string> &set2) const {
-
-    if(set1.empty() || set2.empty()) return true;
-
-    std::set<std::string>::const_iterator it1 = set1.begin(), it1End = set1.end();
-    std::set<std::string>::const_iterator it2 = set2.begin(), it2End = set2.end();
-
-    while(it1 != it1End && it2 != it2End)
-    {
-        int c = (*it1).compare(*it2);
-        if(c == 0) { return false; }
-        if(c < 0) { it1++; }
-        else { it2++; }
-    }
-    return true;
-}
-
 double QuasispeciesEdgeCalculator::computeOverlap(const AlignmentRecord & ap1, const AlignmentRecord & ap2, const double cutoff) const {
 
     double MIN_OVERLAP = 0;
-    if (ap1.getName().find("Clique") != string::npos
-        && ap2.getName().find("Clique") != string::npos) {
+    if (ap1.getName().find("Clique") != string::npos && ap2.getName().find("Clique") != string::npos) {
         MIN_OVERLAP = MIN_OVERLAP_CLIQUES;
     } else {
         MIN_OVERLAP = MIN_OVERLAP_SINGLE;
@@ -100,7 +84,6 @@ double QuasispeciesEdgeCalculator::computeOverlap(const AlignmentRecord & ap1, c
         float overlap_size1 = overlapSize(ap1.getEnd1(), ap2.getEnd1(), ap1.getStart1(), ap2.getStart1());
         if (MIN_OVERLAP <= 1) overlap_size1 /= (float) read_size1;
         if (overlap_size1 < MIN_OVERLAP) return 0;
-        // if (!is_disjoint(ap1.getReadNames(),ap2.getReadNames())) return 1;
         return singleOverlap(ap1, ap2, 1, 1, MIN_OVERLAP, cutoff);
     } else if (ap1.isSingleEnd() || ap2.isSingleEnd()) {
         if (ap1.isSingleEnd()) {
@@ -114,7 +97,6 @@ double QuasispeciesEdgeCalculator::computeOverlap(const AlignmentRecord & ap1, c
                 overlap_size2 /= (float) read_size2;
             }
             if ((overlap_size1 >= MIN_OVERLAP && overlap_size2 >= MIN_OVERLAP) || (overlap_size1+overlap_size2 >= MIN_OVERLAP && overlap_size1 > 0 && overlap_size2 > 0)) {
-                // if (!is_disjoint(ap1.getReadNames(),ap2.getReadNames())) return 1;
                 return singleOverlap(ap1, ap2, 1, 1, MIN_OVERLAP, cutoff)*singleOverlap(ap1, ap2, 1, 2, MIN_OVERLAP, cutoff);
             }
             return 0;
@@ -129,7 +111,6 @@ double QuasispeciesEdgeCalculator::computeOverlap(const AlignmentRecord & ap1, c
                 overlap_size2 /= (float) read_size2;
             }
             if ((overlap_size1 >= MIN_OVERLAP && overlap_size2 >= MIN_OVERLAP) || (overlap_size1+overlap_size2 >= MIN_OVERLAP && overlap_size1 > 0 && overlap_size2 > 0)) {
-                // if (!is_disjoint(ap1.getReadNames(),ap2.getReadNames())) return 1;
                 return singleOverlap(ap1, ap2, 1, 1, MIN_OVERLAP, cutoff)*singleOverlap(ap1, ap2, 2, 1, MIN_OVERLAP, cutoff);
             }
             return 0;
@@ -145,7 +126,6 @@ double QuasispeciesEdgeCalculator::computeOverlap(const AlignmentRecord & ap1, c
         if (MIN_OVERLAP <= 1) overlap_size2 /= (float) read_size2;
         if (overlap_size2 < MIN_OVERLAP) return 0;
 
-        // if (!is_disjoint(ap1.getReadNames(),ap2.getReadNames())) return 1;
         return singleOverlap(ap1, ap2, 1, 1, MIN_OVERLAP, cutoff)*singleOverlap(ap1, ap2, 2, 2, MIN_OVERLAP, cutoff);
     }
 
@@ -280,22 +260,10 @@ double QuasispeciesEdgeCalculator::singleOverlap(const AlignmentRecord & ap1, co
     double hamming = 0;
     double total_size = 0;
     if (offset1 >= sequence1.size() || offset2 >= sequence2.size()) {
-        //cerr << "out of here" << endl;
         return 0;
     }
-    /*if (offset1 > 0) {
-        offset1 -= 1;
-    }
-    if (offset2 > 0) {
-        offset2 -= 1;
-    }*/
-    // //cerr << offset1 << " offset " << offset2 << endl;
-    bool perfect = 0;
-    if (ap1.getName().find("Clique") != string::npos
-        && ap2.getName().find("Clique") != string::npos
-        && cutoff == 1.0) {
-        perfect = 1;
-    }
+    ////cerr << offset1 << " offset " << offset2 << endl;
+    bool perfect = cutoff == 1.0;
 
     unsigned long j_seq = 0, j_seq2 = 0;
     unsigned long j_cigar = 0, j_cigar2 = 0;
@@ -337,7 +305,8 @@ double QuasispeciesEdgeCalculator::singleOverlap(const AlignmentRecord & ap1, co
                 j_seq++;
                 j_seq2++;
             }
-        } else if (cigar1[j_cigar] == cigar2[j_cigar2]) {
+        } else if (cigar1[j_cigar] == cigar2[j_cigar2] && (cigar1[j_cigar] == 'M' || cigar1[j_cigar] == 'I')) {
+
             //cerr << sequence1[j_seq] << ":" << sequence2[j_seq2];
             double q_x1 = sequence1.qualityCorrect(j_seq);
             double q_x2 = sequence2.qualityCorrect(j_seq2);
@@ -362,7 +331,10 @@ double QuasispeciesEdgeCalculator::singleOverlap(const AlignmentRecord & ap1, co
                 j++;
                 j2++;
             } 
-        } else if (this->FRAMESHIFT_MERGE) {
+        } else if (cigar1[j_cigar] == cigar2[j_cigar2] && cigar1[j_cigar] == 'D') {
+            j_cigar++;
+            j_cigar2++;
+        }else if (this->FRAMESHIFT_MERGE) {
             if (cigar2[j_cigar2] == 'M') {
                 switch(cigar1[j_cigar]) {
                     case 'D':

@@ -92,6 +92,20 @@ AlignmentRecord::AlignmentRecord(const string& line, std::map<std::string,std::s
 		this->strand1 = tokens[7];
 		BamHelper::parseCigar(tokens[8], &cigar1);
 		this->sequence1 = ShortDnaSequence(tokens[9], tokens[10]);
+
+		this->length_incl_deletions1 = this->sequence1.size();
+		this->length_incl_longdeletions1 = this->sequence1.size();
+		for (vector<BamTools::CigarOp>::const_iterator it = cigar1.begin(); it != cigar1.end(); ++it) {
+            for (int s = 0; s < it->Length; ++s) {
+            	this->cigar1_unrolled.push_back(it->Type);
+            }
+            if (it->Type == 'D') {
+        		this->length_incl_deletions1+=it->Length;
+        		if (it->Length > 1) {
+        			this->length_incl_longdeletions1+=it->Length;
+        		}
+        	}
+        }
 		if (single_end) {
 			this->aln_prob = boost::lexical_cast<double>(tokens[11]);
 		} else {
@@ -104,15 +118,22 @@ AlignmentRecord::AlignmentRecord(const string& line, std::map<std::string,std::s
 			this->sequence2 = ShortDnaSequence(tokens[17], tokens[18]);
 			this->aln_prob = boost::lexical_cast<double>(tokens[19]);
 			this->aln_pair_prob_ins_length = boost::lexical_cast<double>(tokens[20]);
+			this->length_incl_deletions2 = this->sequence2.size();
+			this->length_incl_longdeletions2 = this->sequence2.size();
+	    	for (vector<BamTools::CigarOp>::const_iterator it = cigar2.begin(); it != cigar2.end(); ++it) {
+	            for (int s = 0; s < it->Length; ++s) {
+	            	this->cigar2_unrolled.push_back(it->Type);
+	            }
+                if (it->Type == 'D') {
+	        		this->length_incl_deletions2+=it->Length;
+	        		if (it->Length > 1) {
+	        			this->length_incl_longdeletions2+=it->Length;
+	        		}
+	        	}
+	        }
 		}
 		this->id = 0;
-
-		for (vector<BamTools::CigarOp>::const_iterator it = cigar1.begin(); it != cigar1.end(); ++it) {
-            for (int s = 0; s < it->Length; ++s) cigar1_unrolled.push_back(it->Type);
-        }
-    	for (vector<BamTools::CigarOp>::const_iterator it = cigar2.begin(); it != cigar2.end(); ++it) {
-            for (int s = 0; s < it->Length; ++s) cigar2_unrolled.push_back(it->Type);
-        }
+		
 
 	} catch(boost::bad_lexical_cast &){
 		throw std::runtime_error("Error parsing alignment pair.");
@@ -297,4 +318,16 @@ const std::vector<char> AlignmentRecord::getCigar1Unrolled() const {
 }
 const std::vector<char> AlignmentRecord::getCigar2Unrolled() const {
 	return this->cigar2_unrolled;
+}
+int AlignmentRecord::getLengthInclDeletions1() const {
+	return this->length_incl_deletions1;
+}
+int AlignmentRecord::getLengthInclDeletions2() const {
+	return this->length_incl_deletions2;
+}
+int AlignmentRecord::getLengthInclLongDeletions1() const {
+	return this->length_incl_longdeletions1;
+}
+int AlignmentRecord::getLengthInclLongDeletions2() const {
+	return this->length_incl_longdeletions2;
 }
