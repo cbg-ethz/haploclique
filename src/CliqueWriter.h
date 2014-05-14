@@ -234,6 +234,7 @@ private:
     std::map<std::string,fastq_entry> fastq_map;
     std::string suffix;
     int output_position;
+    int minimal_superread_length;
 
     void writeReadlist();
     void callVariation(const std::vector<const AlignmentRecord*>& pairs, size_t coverage, clique_stats_t& stats);
@@ -245,7 +246,7 @@ private:
     void error(std::string s) const;
     void addCigar(char& current_cigar, int& current_cigar_count, int match, clique_stats_t& stats, int strand, bool last) const;
 public:
-    CliqueWriter(std::ostream& os, VariationCaller* variation_caller, std::ostream* indel_os, const ReadGroups* read_groups, bool multisample, bool output_all, double fdr_threshold, bool verbose, int min_coverage, bool frameshift_merge, std::string suffix);
+    CliqueWriter(std::ostream& os, VariationCaller* variation_caller, std::ostream* indel_os, const ReadGroups* read_groups, bool multisample, bool output_all, double fdr_threshold, bool verbose, int min_coverage, bool frameshift_merge, std::string suffix, int minimal_superread_length);
     virtual ~CliqueWriter();
     virtual void enableReadListOutput(std::ostream& os);
     virtual void add(std::auto_ptr<Clique> clique);

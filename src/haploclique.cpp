@@ -121,6 +121,7 @@ int main(int argc, char* argv[]) {
     int time_limit;
     bool no_sort;
     string suffix;
+    int minimal_superread_length;
 
     po::options_description options_desc("Allowed options");
     options_desc.add_options()
@@ -148,6 +149,7 @@ int main(int argc, char* argv[]) {
     ("time_limit,t", po::value<int>(&time_limit)->default_value(10), "Time limit for computation. If exceeded, non processed reads will be written to skipped.")
     ("no_sort,N", po::value<bool>(&no_sort)->zero_tokens(), "Do not sort new clique w.r.t. their bitsets.")
     ("suffix,S", po::value<string>(&suffix)->default_value(""), "Suffix for clique names. Used for parallelization.")
+    ("minimal_superread_length,L", po::value<int>(&minimal_superread_length)->default_value(0), "Minimal super-read length.")
     ;
 
     if (isatty(fileno(stdin))) {
@@ -236,7 +238,7 @@ int main(int argc, char* argv[]) {
     if (call_indels) {
         indel_os = new ofstream(indel_output_file.c_str());
     }
-    CliqueWriter clique_writer(cout, variation_caller, indel_os, read_groups, false, output_all, fdr, verbose, super_read_min_coverage, frameshift_merge, suffix);
+    CliqueWriter clique_writer(cout, variation_caller, indel_os, read_groups, false, output_all, fdr, verbose, super_read_min_coverage, frameshift_merge, suffix, minimal_superread_length);
     CliqueFinder clique_finder(*edge_calculator, clique_writer, read_groups, no_sort);
     if (indel_edge_calculator != 0) {
         clique_finder.setSecondEdgeCalculator(indel_edge_calculator);

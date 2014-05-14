@@ -55,7 +55,7 @@ void QuasispeciesEdgeCalculator::getPartnerLengthRange(const AlignmentRecord& ap
 bool QuasispeciesEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const AlignmentRecord & ap2) const {
     if (ap1.getName().compare(ap2.getName()) == 0) return 1;
 
-    //cerr << ap1.getName() << " " << ap2.getName() << endl;
+    //cerr << ap1.getName() << " " << ap2.getName() ;
 
     double cutoff = 0;
     if (ap1.getName().find("Clique") != string::npos && ap2.getName().find("Clique") != string::npos) {
@@ -66,7 +66,6 @@ bool QuasispeciesEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const 
         cutoff = EDGE_QUASI_CUTOFF_SINGLE;
     }
     double q = computeOverlap(ap1, ap2, cutoff);
-
     return q >= cutoff;
 }
 
@@ -91,7 +90,6 @@ double QuasispeciesEdgeCalculator::computeOverlap(const AlignmentRecord & ap1, c
             int read_size2 = min(ap1.getEnd1() - ap1.getStart1(), ap2.getEnd2() - ap2.getStart2());
             float overlap_size1 = overlapSize(ap1.getEnd1(), ap2.getEnd1(), ap1.getStart1(), ap2.getStart1());
             float overlap_size2 = overlapSize(ap1.getEnd1(), ap2.getEnd2(), ap1.getStart1(), ap2.getStart2());
-
             if (MIN_OVERLAP <= 1) {
                 overlap_size1 /= (float) read_size1;
                 overlap_size2 /= (float) read_size2;
@@ -181,7 +179,6 @@ float QuasispeciesEdgeCalculator::overlapSize(int e1, int e2, int s1, int s2) co
 }
 
 double QuasispeciesEdgeCalculator::singleOverlap(const AlignmentRecord & ap1, const AlignmentRecord & ap2, int strain1, int strain2, double MIN_OVERLAP, const double cutoff) const {
-
     int e1 = 0;
     int s1 = 0;
     ShortDnaSequence sequence1;
@@ -212,24 +209,14 @@ double QuasispeciesEdgeCalculator::singleOverlap(const AlignmentRecord & ap1, co
         s2 = ap2.getStart2();
         e2 = ap2.getEnd2();
         sequence2 = ap2.getSequence2();
-        cigar2 = ap1.getCigar2Unrolled();
+        cigar2 = ap2.getCigar2Unrolled();
     }
 
     if (s2 < s1) {
-        int st = s1;
-        int et = e1;
-        ShortDnaSequence sequencet = sequence1;
-        vector<char> cigart = cigar1;
-
-        s1 = s2;
-        e1 = e2;
-        sequence1 = sequence2;
-        cigar1 = cigar2;
-
-        s2 = st;
-        e2 = et;
-        sequence2 = sequencet;
-        cigar2 = cigart;
+        std::swap(s1,s2);
+        std::swap(e1,e2);
+        std::swap(sequence1,sequence2);
+        std::swap(cigar1,cigar2);
     }
 
     // ====
@@ -309,7 +296,14 @@ double QuasispeciesEdgeCalculator::singleOverlap(const AlignmentRecord & ap1, co
 
             //cerr << sequence1[j_seq] << ":" << sequence2[j_seq2];
             double q_x1 = sequence1.qualityCorrect(j_seq);
+            // if (q_x1 < 0.001) {
+            //     q_x1 = 0.001;
+            // }
             double q_x2 = sequence2.qualityCorrect(j_seq2);
+            // if (q_x2 < 0.001) {
+            //     q_x2 = 0.001;
+            // }
+            //cerr << "\t" << q_x1 << ":" << q_x2 << "\t";
             double anti_q_x1 = (1.0 - q_x1) / 3.0;
             double anti_q_x2 = (1.0 - q_x2) / 3.0;
             assert(q_x1 <= 1 && q_x2 <= 1);
@@ -321,6 +315,12 @@ double QuasispeciesEdgeCalculator::singleOverlap(const AlignmentRecord & ap1, co
             overlap_probability += log(sum);
             //cerr << "\t" << overlap_probability;
             total_size++;
+
+            //cerr << sum << "\t";
+            //cerr << ((sequence1[j_seq] == alphabet[0] ? q_x1 : anti_q_x1)) << ":" << ((sequence2[j_seq2] == alphabet[0] ? q_x2 : anti_q_x2)) << "\t";
+            //cerr << ((sequence1[j_seq] == alphabet[1] ? q_x1 : anti_q_x1)) << ":" << ((sequence2[j_seq2] == alphabet[1] ? q_x2 : anti_q_x2)) << "\t";
+            //cerr << ((sequence1[j_seq] == alphabet[2] ? q_x1 : anti_q_x1)) << ":" << ((sequence2[j_seq2] == alphabet[2] ? q_x2 : anti_q_x2)) << "\t";
+            //cerr << ((sequence1[j_seq] == alphabet[3] ? q_x1 : anti_q_x1)) << ":" << ((sequence2[j_seq2] == alphabet[3] ? q_x2 : anti_q_x2)) << "\t";
 
             j_cigar++;
             j_cigar2++;
@@ -406,7 +406,6 @@ double QuasispeciesEdgeCalculator::singleOverlap(const AlignmentRecord & ap1, co
             }
         }
     }
-
     //cerr << pow(exp(overlap_probability),1.0/total_size) << endl;
     if (perfect) return 1;
     return pow(exp(overlap_probability),1.0/total_size);

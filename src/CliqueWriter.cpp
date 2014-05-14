@@ -29,7 +29,7 @@
 using namespace std;
 using namespace boost;
 
-CliqueWriter::CliqueWriter(ostream& os, VariationCaller* variation_caller, std::ostream* indel_os, const ReadGroups* read_groups, bool multisample, bool output_all, double fdr_threshold, bool verbose, int min_coverage, bool frameshift_merge, std::string suffix) : os(os), variation_caller(variation_caller), read_groups(read_groups) {
+CliqueWriter::CliqueWriter(ostream& os, VariationCaller* variation_caller, std::ostream* indel_os, const ReadGroups* read_groups, bool multisample, bool output_all, double fdr_threshold, bool verbose, int min_coverage, bool frameshift_merge, std::string suffix, int minimal_superread_length) : os(os), variation_caller(variation_caller), read_groups(read_groups) {
   this->indel_os = indel_os;
   this->significant_ins_count = -1;
   this->significant_del_count = -1;
@@ -56,6 +56,7 @@ CliqueWriter::CliqueWriter(ostream& os, VariationCaller* variation_caller, std::
     this->suffix += "_";
   }
   this->output_position=0;
+  this->minimal_superread_length = minimal_superread_length;
 }
 
 CliqueWriter::~CliqueWriter() {
@@ -141,6 +142,9 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
 
   //2D array represents nucleotide distribution for super-read
   int alignment_length1 = stats.window_end1 - stats.window_start1;
+  if (alignment_length1 < this->minimal_superread_length) {
+    return;
+  }
   int alignment1[alignment_length1][5];
   double phred1[alignment_length1][5];
   char match1[alignment_length1][3];
@@ -148,6 +152,9 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
   int alignment_length2 = 0;
   if (has_paired_end) {
     alignment_length2 = stats.window_end2 - stats.window_start2+1;
+    if (alignment_length2 < this->minimal_superread_length) {
+      return;
+    }
   }
   int alignment2[alignment_length2][5];
   double phred2[alignment_length2][5];
@@ -466,6 +473,23 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
       }  
     }
   }
+
+  if (stats.consensus_string1.size() < this->minimal_superread_length) {
+    stats.window_end1 = -1;
+    stats.window_start1 = -1;
+    stats.window_end2 = -1;
+    stats.window_start1 = -1;
+    stats.consensus_string1 = "";
+    stats.consensus_string2 = "";
+    stats.phred_string1 = "";
+    stats.phred_string2 = "";
+    stats.clique_number = 0;
+  }
+  if (overlapSize(stats)) {
+    error("merge");
+  }
+
+
   //cerr << "XLR" << endl;
   //cerr << stats.window_start1 << " " << stats.cigar_string1 << " " << stats.consensus_string1 << " " << stats.phred_string1 << endl;
   if (has_paired_end) {
@@ -473,6 +497,184 @@ void CliqueWriter::callVariation(const vector<const AlignmentRecord*>& pairs, si
   }
 
   //cerr << endl << endl;
+}
+
+bool CliqueWriter::overlapSize(clique_stats_t& stats) const {
+  if (stats.window_start2 > 0) {
+    int s1 = stats.window_start1;
+    int s2 = stats.window_start2;
+    int e1 = s1 + stats.consensus_string1.size();
+    int e2 = s2 + stats.consensus_string2.size();
+    if (s2 > e1) {
+      // -----
+      //       -----
+      return 0;
+    }
+    if (s1 > e2) {
+      //       -----
+      // -----
+      string cons_tmp = stats.consensus_string1;
+      string phred_tmp = stats.phred_string1;
+      int end_tmp = stats.window_end1;
+      int start_tmp = stats.window_start1;
+
+      stats.consensus_string1 = stats.consensus_string2;
+      stats.phred_string1 = stats.phred_string2;
+      stats.window_end1 = stats.window_end2;
+      stats.window_start1 = stats.window_start2;
+
+      stats.consensus_string2 = cons_tmp;
+      stats.phred_string2 = phred_tmp;
+      stats.window_end2 = end_tmp;
+      stats.window_start2 = start_tmp;
+      return 0;
+    }
+    if (s1 == s2 && e1 == e2) {
+      // -----
+      // -----
+    } else if (s1 == s2) {
+      // ----  AND -----
+      // ----- AND ----
+      if (e1 < e2) {
+        stats.consensus_string1 = stats.consensus_string2;
+        stats.phred_string1 = stats.phred_string2;
+        stats.window_end1 = stats.window_end2;
+      } else {
+      }
+    } else if (e1 == e2) {
+      //  ---- AND -----
+      // ----- AND  ----
+      if (s1 > s2) {
+        stats.consensus_string1 = stats.consensus_string2;
+        stats.phred_string1 = stats.phred_string2;
+        stats.window_start1 = stats.window_start2;
+      } else {
+      }
+    } else if (e1 < e2) {
+      // ----    AND   --
+      //   ----  AND ------
+      if (s1 < s2) {
+        if (e1 - s2 >= 1) {
+          string cons = equalStrings(stats.consensus_string1, stats.consensus_string2);
+          if (cons.size() > 0) {
+            for (int i = stats.consensus_string2.size()-(cons.size() - stats.consensus_string1.size()); i < stats.consensus_string2.size(); i++) {
+              stats.phred_string1 += stats.phred_string2.at(i);
+            }
+            stats.consensus_string1 = cons;
+            stats.window_end1 = stats.window_start1 + cons.size();
+            if (stats.phred_string1.size() != cons.size()) {
+              error(boost::lexical_cast<std::string>(stats.phred_string1.size()) + " " + boost::lexical_cast<std::string>(cons.size()));
+            }
+            assert(stats.phred_string1.size() == cons.size());
+          }
+        }
+      } else {
+        stats.consensus_string1 = stats.consensus_string2;
+        stats.phred_string1 = stats.phred_string2;
+        stats.window_end1 = stats.window_end2;
+        stats.window_start1 = stats.window_start2;
+      }
+    } else {
+      //   ---- AND ------
+      // ----   AND   --
+      if (s2 < s1) {
+        string cons = equalStrings(stats.consensus_string2, stats.consensus_string1);
+        if (cons.size() > 0) {
+          for (int i = stats.consensus_string1.size()-(cons.size() - stats.consensus_string2.size()); i < stats.consensus_string1.size(); i++) {
+            stats.phred_string2 += stats.phred_string1.at(i);
+          }
+          stats.phred_string1 = stats.phred_string2;
+          stats.consensus_string1 = cons;
+          stats.window_start1 = stats.window_start2;
+          stats.window_end1 = stats.window_start1 + cons.size();
+          if (stats.phred_string1.size() != cons.size()) {
+            error(boost::lexical_cast<std::string>(stats.phred_string1.size()) + " " + boost::lexical_cast<std::string>(cons.size()));
+          }
+          assert(stats.phred_string1.size() == cons.size());
+        }
+      } else {
+        //     // ------
+        //     //   --
+      }
+    }
+  }
+
+  stats.window_end2 = 0;
+  stats.window_start2 = 0;
+  stats.phred_string2 = "";
+  stats.consensus_string2 = "";
+
+  int split = 0;
+  for (int i = 0; i < stats.consensus_string1.size(); i++) {
+    if (stats.consensus_string1.at(i) == 'N') {
+      split = 1;
+      break;
+    }
+  }
+  if (split) {
+    int prefix = 1;
+    int suffix = 0;
+    string tmp_string1;
+    string tmp_phred1;
+    int tmp_end = 0;
+    for (int i = 0; i < stats.consensus_string1.size(); i++) {
+      if (prefix) {
+        if (stats.consensus_string1.at(i) == 'N') {
+          split = 1;
+          prefix = 0;
+          tmp_end = stats.window_start1 + i;
+        } else {
+          tmp_string1 += stats.consensus_string1.at(i);
+          tmp_phred1 += stats.phred_string1.at(i);
+        }
+      } else {
+        if (prefix == 0 && stats.consensus_string1.at(i) != 'N') {
+          suffix = 1;
+          stats.window_start2 = stats.window_start1 + i;
+          stats.window_end2 = stats.window_end1;
+        }
+        if (suffix) {
+          stats.consensus_string2 += stats.consensus_string1.at(i);
+          stats.phred_string2 += stats.phred_string1.at(i);
+
+          if (stats.consensus_string1.at(i) == 'N') {
+            error(boost::lexical_cast<std::string>(i) + " " + boost::lexical_cast<std::string>(stats.consensus_string1.size()));
+            return 1;
+          }
+        }
+      }
+    }
+    stats.window_end1 = stats.window_start1 + stats.consensus_string1.size();
+    stats.consensus_string1 = tmp_string1;
+
+    error("SPLIT");
+  }
+
+  return 0;
+}
+
+string CliqueWriter::equalStrings(string &s1, string &s2) const {
+  int e1 = s1.size();
+  int e2 = s2.size();
+  int m = min(e2,e1);
+  for (int i = 0; i < m; i++) {
+    bool fit = 1;
+    int del = 0;
+    for (int j = 0; j <= i; j++) {
+      if (-1-i+j >= 0) { error("NOOO");break; }
+      if (s1.at(e1 - 1 - i + j) != s2.at(j)) {
+        fit = 0;
+        break;
+      }
+      if (s1.at(e1 - 1 - i + j) == '-') {
+        del++;
+      }
+    }
+    if (fit && i - del >= 9) {
+      return s1 + s2.substr(i + 1);
+    }
+  }
+  return "";
 }
 
 void CliqueWriter::addCigar(char& current_cigar, int& current_cigar_count, int match, clique_stats_t& stats, int strand, bool last) const {
