@@ -9,8 +9,8 @@ Our approach can be used to:
 
 ######Reference implementation of: 
 Armin Töpfer, Tobias Marschall, Rowena A. Bull, Fabio Luciani, Alexander Schönhuth, and Niko Beerenwinkel.  
-<b>Viral quasispecies assembly via maximal clique finding</b>  
-<i>PLOS Computational Biology</i>, 2014, in press.
+<b>[Viral quasispecies assembly via maximal clique finding](http://www.ploscompbiol.org/article/info%3Adoi%2F10.1371%2Fjournal.pcbi.1003515)</b>  
+<i>PLOS Computational Biology</i>, 2014.
 
 ######Overview
  - [Installation](https://github.com/armintoepfer/haploclique/edit/master/README.md#install)
