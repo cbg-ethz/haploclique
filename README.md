@@ -59,9 +59,6 @@ Please create an <b>index</b> for your alignment `samtools index alignment.bam`
 For error correction, HaploClique takes a BAM alignment and the reference as input:  
 `haploclique-assembly -r ../reference.fasta -i ../alignment.bam` 
 
-For ultra-deep next-generation sequencing data sets, please set the minimal overlap to 90%:
-`haploclique-assembly -r ../reference.fasta -i ../alignment.bam -o 0.9 -j 0.9` 
-
 ######All command-line options:
 ```bash 
 USAGE:     haploclique-assembly options...
