@@ -340,10 +340,6 @@ def main():
 		sys.exit(1)
 	predictions_file = args[0]
 	insert_size_mean = int(round(float(args[1])))
-	exe_dict = dict()
-	if not locate_executeable(exe_dict, 'ctk-version'): return 1
-	ctk_version = subprocess.Popen([exe_dict['ctk-version']], stdout=subprocess.PIPE).stdout.readline().strip()
-	print('CTK version: ', ctk_version, file=sys.stderr)
 	if options.only_deletions and options.only_insertions:
 		print("Error: Options --only-del and --only-ins are mutually exclusive.", file=sys.stderr)
 		sys.exit(1)
@@ -405,7 +401,7 @@ def main():
 	if options.vcf_output:
 		print('##fileformat=VCFv4.1')
 		print('##fileDate=%s'%datetime.datetime.now().strftime('%Y%m%d'))
-		print('##source=clever-postprocessing-%s cmdline: %s'%(ctk_version, ' '.join(sys.argv)))
+		print('##source=clever-postprocessing-%s cmdline: %s'%(1, ' '.join(sys.argv)))
 		print('#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tdefault')
 	for v in l:
 		if previous != None:
