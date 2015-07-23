@@ -4,7 +4,9 @@ cd bwa
 make
 cd ..
 
-git clone -b master https://github.com/samtools/samtools
-cd samtools
-make
-cd ..
+for sw in htslib bcftools samtools; do                                                                                                                              
+  git clone --branch=develop git://github.com/samtools/${sw}.git                                                                                                    
+  cd ${sw}                                                                                                                                                          
+  make                                                                                                                                                              
+  cd ..                                                                                                                                                             
+done                                                                                                                                                                
