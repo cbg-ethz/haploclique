@@ -1,30 +1,6 @@
-/* Copyright 2012-2014 Tobias Marschall and Armin Töpfer
- *
- * This file is part of HaploClique.
- *
- * HaploClique is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * HaploClique is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with HaploClique.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 #ifndef CLIQUEFINDER_H_
 #define CLIQUEFINDER_H_
 
-#include <set>
-#include <list>
-#include <boost/unordered_map.hpp>
- #include <boost/dynamic_bitset.hpp>
-
-#include "Clique.h"
 #include "CliqueCollector.h"
 #include "AlignmentRecord.h"
 #include "EdgeCalculator.h"
@@ -32,78 +8,57 @@
 #include "EdgeWriter.h"
 #include "ReadGroups.h"
 
-/** A class to store a set of alignments. */
+
+using namespace std;
+using namespace boost;
+
 class CliqueFinder {
-private:
-    typedef std::pair<unsigned int,size_t> length_and_index_t;
-    std::set<length_and_index_t> alignments_by_length;
-    AlignmentRecord **alignments;
-    size_t alignment_count;
-    size_t capacity;
-    typedef std::list<Clique*> clique_list_t;
-    clique_list_t *cliques;
-    CliqueCollector & clique_collector;
-    EdgeWriter *edge_writer;
+protected:
     const EdgeCalculator & edge_calculator;
-    const EdgeCalculator *second_edge_calculator;
+    CliqueCollector & clique_collector;
     CoverageMonitor coverage_monitor;
+    bool initialized;
+    bool converged;
+
+    typedef std::list<Clique*> clique_list_t;
+    clique_list_t *cliques;    
+
+    size_t alignment_count;
+    EdgeWriter *edge_writer;
+    const EdgeCalculator *second_edge_calculator;
     alignment_id_t next_id;
-    bool no_sort;
-    void reorganize_storage();
-
-    typedef struct {
-        bool operator()(const Clique* c0,const Clique* c1) const {
-            // __uint128_t bitInteger = 0;
-            // int size = c0->getAlignmentSet().size();
-            // for (int j = 0; j < size; j++) {
-            //      if (c0->getAlignmentSet()[j]) {
-            //         bitInteger |= (1 << j);
-            //      }
-            //  }
-            //std::cerr << "SORT " << c0->leftmostSegmentStart() << "\t" << c1->leftmostSegmentStart();
-            // if (c0->leftmostSegmentStart() < c1->leftmostSegmentStart()) {
-                // std::cerr << "\t" << "!" << std::endl;
-                // return 1;
-            // }
-            // int size = c0->getAlignmentSet().size();
-            // if (size != c1->getAlignmentSet().size()) {
-            //     throw "Bit vector are of different size.";
-            // }
-            // for (int i = 0; i < size; i++) {
-            //     if (c0->getAlignmentSet()[i] != c1->getAlignmentSet()[i]) {
-            //         if (c0->getAlignmentSet()[i] == 0) {
-            //             return 0;
-            //         } else {
-            //             return 1;
-            //         }
-            //     }
-            // }
-            // return 0;
-            return c0->getAlignmentSet() < c1->getAlignmentSet();
-        }
-    } clique_comp_t;
-
-    typedef struct {
-        bool operator()(const Clique* c0,const Clique* c1) const {
-            return c0->getAlignmentSet() == c1->getAlignmentSet();
-        }
-    } clique_equal_t;
 
 public:
-    CliqueFinder(const EdgeCalculator& edge_calculator, CliqueCollector& clique_collector, const ReadGroups* read_groups, bool no_sort);
-    virtual ~CliqueFinder();
-    void addAlignment(std::auto_ptr<AlignmentRecord> ap);
-    void finish();
-    CoverageMonitor & getCoverageMonitor() { return coverage_monitor; }
+    CliqueFinder(const EdgeCalculator& edge_calculator, CliqueCollector& clique_collector, const ReadGroups* read_groups) : edge_calculator(edge_calculator), clique_collector(clique_collector), coverage_monitor(read_groups) {
+    	alignment_count = 0;
+    	edge_writer = nullptr;
+    	second_edge_calculator = nullptr;
+        next_id = 0;
+        initialized = false;
+        converged = false;        
+    }
+    virtual ~CliqueFinder() {
+        
+    }
 
-    const AlignmentRecord & getAlignmentByIndex(size_t index) const;
+    virtual void addAlignment(std::unique_ptr<AlignmentRecord>& ap) = 0;
 
-    void setEdgeWriter(EdgeWriter& edge_writer) { this->edge_writer = &edge_writer; }
+    virtual void initialize() = 0;
+
+    virtual void finish() = 0;
+
+    virtual CoverageMonitor & getCoverageMonitor() { return coverage_monitor; }
+
+    virtual const AlignmentRecord & getAlignmentByIndex(size_t index) const = 0;
+
+    virtual void setEdgeWriter(EdgeWriter& edge_writer) { this->edge_writer = &edge_writer; }
 
     /** Add a second edge calculator: edges will only be drawn when both edge calculators agree
 	 *  that the edge is present.
 	 */
-    void setSecondEdgeCalculator(const EdgeCalculator* ec) { this->second_edge_calculator = ec; }
+    virtual void setSecondEdgeCalculator(const EdgeCalculator* ec) { this->second_edge_calculator = ec; }
+
+    virtual bool hasConverged() { return converged; };
 };
 
-#endif /* CLIQUEFINDER_H_ */
+#endif

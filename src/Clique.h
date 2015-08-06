@@ -40,13 +40,13 @@ private:
 
 public:
 	Clique(CliqueFinder& parent, size_t index, size_t capacity);
-	Clique(CliqueFinder& parent, std::auto_ptr<alignment_set_t> alignments);
+	Clique(CliqueFinder& parent, std::unique_ptr<alignment_set_t>& alignments);
 	virtual ~Clique();
 
 	void add(size_t index);
 
 	/** Returns the intersection between nodes in the clique and the given set of nodes. */
-	std::auto_ptr<alignment_set_t> intersect(const alignment_set_t& set) const;
+	std::unique_ptr<alignment_set_t> intersect(const alignment_set_t& set) const;
 
 	/** Updates the current bit set representation by a new one, where
 	 *  new_table[j] := old_table[translation_table[j]]. */
@@ -61,7 +61,7 @@ public:
 
 	const alignment_set_t& getAlignmentSet() const { return *alignment_set; }
 
-	std::auto_ptr<std::vector<const AlignmentRecord*> > getAllAlignments() const;
+	std::unique_ptr<std::vector<const AlignmentRecord*> > getAllAlignments() const;
 
 	void computeIntervalIntersection(unsigned int* insert_start, unsigned int* insert_end);
 
@@ -70,7 +70,7 @@ public:
 	size_t totalCenterCoverage();
 
 	/** Returns coverage at putative breakpoint for all read groups separately. */
-	std::auto_ptr<std::vector<size_t> > readGroupWiseCoverage();
+	std::unique_ptr<std::vector<size_t> > readGroupWiseCoverage();
 
 	friend std::ostream& operator<<(std::ostream&, const Clique& clique);
 };

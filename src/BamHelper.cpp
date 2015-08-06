@@ -80,8 +80,8 @@ void BamHelper::getSubalignments(const BamTools::BamAlignment& aln, vector<subal
 	}
 }
 
-auto_ptr<BamHelper::read_t> BamHelper::createReadRecord(const vector<BamTools::BamAlignment*>& alignments1, const vector<BamTools::BamAlignment*>& alignments2) {
-	auto_ptr<BamHelper::read_t> result(new read_t(alignments1, alignments2));
+unique_ptr<BamHelper::read_t> BamHelper::createReadRecord(const vector<BamTools::BamAlignment*>& alignments1, const vector<BamTools::BamAlignment*>& alignments2) {
+	unique_ptr<BamHelper::read_t> result(new read_t(alignments1, alignments2));
 	for (size_t i=0; i<alignments1.size(); ++i) {
 		result->subalignments1.push_back(vector<subalignment_t>());
 		vector<subalignment_t>& v = result->subalignments1[i];
@@ -109,14 +109,14 @@ void BamHelper::recalibratePhredScore(subalignment_t* subalignment, const BamToo
 			if (variation_set == 0) {
 				indel_score += insertion_costs.getPhredCost(it->Length);
 			} else {
-				auto_ptr<vector<size_t> > variations = variation_set->getInsertions(aln.RefID, ref_pos);
+				unique_ptr<vector<size_t> > variations = variation_set->getInsertions(aln.RefID, ref_pos);
 				bool found = false;
 				if (variations.get() != 0) {
 					string seq = aln.QueryBases.substr(query_pos, it->Length);
 					for (size_t j=0; j<variations->size(); ++j) {
 						const Variation& v = variation_set->get(variations->at(j));
 						assert(v.getType() == Variation::INSERTION);
-						assert((int)v.getCoordinate1() == ref_pos);
+						assert((unsigned int)v.getCoordinate1() == ref_pos);
 						if (seq.compare(v.getSequence()) == 0) {
 							found = true;
 							break;
@@ -140,7 +140,7 @@ void BamHelper::recalibratePhredScore(subalignment_t* subalignment, const BamToo
 			if (variation_set == 0) {
 				indel_score += deletion_costs.getPhredCost(it->Length);
 			} else {
-				auto_ptr<vector<size_t> > variations = variation_set->getDeletions(aln.RefID, ref_pos, ref_pos + it->Length);
+				unique_ptr<vector<size_t> > variations = variation_set->getDeletions(aln.RefID, ref_pos, ref_pos + it->Length);
 				// only add costs if no matching variation has been found
 				// if known, then just add cost of 1 to still give (slight) preference to 
 				// alignments without indel
@@ -315,7 +315,7 @@ BamHelper::pairing_t BamHelper::computeBestPairing(const BamHelper::read_t& read
 			// look for variations that lie inside internal segment and 
 			// use best probability
 			if (variation_set != 0) {
-				auto_ptr<vector<size_t> > variations = variation_set->containedIn(aln1.RefID, left, right+1);
+				unique_ptr<vector<size_t> > variations = variation_set->containedIn(aln1.RefID, left, right+1);
 				if (variations.get() != 0) {
 					for (size_t k=0; k<variations->size(); ++k) {
 						const Variation& v = variation_set->get(variations->at(k));
@@ -335,8 +335,8 @@ BamHelper::pairing_t BamHelper::computeBestPairing(const BamHelper::read_t& read
 	return best_pairing;
 }
 
-auto_ptr<vector<double> > BamHelper::compute_alignment_distribution(const vector<vector<BamHelper::subalignment_t> >& subalignments, int* best) {
-	auto_ptr<vector<double> > result(new vector<double>());
+unique_ptr<vector<double> > BamHelper::compute_alignment_distribution(const vector<vector<BamHelper::subalignment_t> >& subalignments, int* best) {
+	unique_ptr<vector<double> > result(new vector<double>());
 	if (best != 0) *best = -1;
 	// no alignments at all
 	if (subalignments.size() == 0) return result;
@@ -363,8 +363,8 @@ auto_ptr<vector<double> > BamHelper::compute_alignment_distribution(const vector
 void BamHelper::writeAlignments(BamTools::BamWriter& bam_writer, const BamHelper::read_t& read, const BamHelper::pairing_t& best_pairing, bool retain_suboptimal, bool retain_alternative_cigars, bool reduce_cigar, bool readgroups_from_names) {
 	int best1 = -1;
 	int best2 = -1;
-	auto_ptr<vector<double> > dist1 = compute_alignment_distribution(read.subalignments1, &best1);
-	auto_ptr<vector<double> > dist2 = compute_alignment_distribution(read.subalignments2, &best2);
+	unique_ptr<vector<double> > dist1 = compute_alignment_distribution(read.subalignments1, &best1);
+	unique_ptr<vector<double> > dist2 = compute_alignment_distribution(read.subalignments2, &best2);
 	// Does a (best) pairing exist?
 	if (best_pairing.aln_idx1 != -1) {
 		write_alignment_record(bam_writer, read.alignments1, read.subalignments1, best_pairing.aln_idx1, best_pairing.cigar_idx1, read.alignments2[best_pairing.aln_idx2], dist1->at(best_pairing.aln_idx1), true, retain_alternative_cigars, reduce_cigar, readgroups_from_names);
@@ -432,7 +432,7 @@ void BamHelper::expandXA(const BamTools::BamReader& bam_reader, const BamTools::
 		tokenizer_t tokenizer(xa, separator);
 		tokenizer_t::const_iterator token_it = tokenizer.begin();
 		while (token_it != tokenizer.end()) {
-			auto_ptr<BamTools::BamAlignment> new_aln(new BamTools::BamAlignment());
+			unique_ptr<BamTools::BamAlignment> new_aln(new BamTools::BamAlignment());
 			new_aln->RefID = bam_reader.GetReferenceID(*token_it);
 			++token_it;
 			assert(token_it != tokenizer.end());
@@ -475,8 +475,8 @@ void BamHelper::expandXA(const BamTools::BamReader& bam_reader, const BamTools::
 	}
 }
 
-auto_ptr<vector<Variation> > BamHelper::variationsFromAlignment(const BamTools::RefVector& bam_ref_data, const BamTools::BamAlignment& aln) {
-	auto_ptr<vector<Variation> > result(new vector<Variation>());
+unique_ptr<vector<Variation> > BamHelper::variationsFromAlignment(const BamTools::RefVector& bam_ref_data, const BamTools::BamAlignment& aln) {
+	unique_ptr<vector<Variation> > result(new vector<Variation>());
 	if (!aln.IsMapped()) return result;
 	int pos = aln.Position;
 	for (size_t i = 0; i < aln.CigarData.size(); ++i) {
@@ -503,7 +503,7 @@ auto_ptr<vector<Variation> > BamHelper::variationsFromAlignment(const BamTools::
 
 void BamHelper::readRegion(BamTools::BamReader& bam_reader, int chromosome_id, int start, int end, std::vector<aln_pair_t>* target) {
 	bam_reader.SetRegion(chromosome_id, start, chromosome_id, end);
-	auto_ptr<BamTools::BamAlignment> aln(new BamTools::BamAlignment());
+	unique_ptr<BamTools::BamAlignment> aln(new BamTools::BamAlignment());
 	typedef boost::unordered_map<string, aln_pair_t> pair_map_t;
 	pair_map_t pair_map;
 	while (bam_reader.GetNextAlignment(*aln)) {
@@ -524,7 +524,7 @@ void BamHelper::readRegion(BamTools::BamReader& bam_reader, int chromosome_id, i
 				if (it->second.second == 0) it->second.second = aln.release();
 			}
 		}
-		aln = auto_ptr<BamTools::BamAlignment>(new BamTools::BamAlignment());
+		aln = unique_ptr<BamTools::BamAlignment>(new BamTools::BamAlignment());
 	}
 	assert(target != 0);
 	pair_map_t::const_iterator it = pair_map.begin();

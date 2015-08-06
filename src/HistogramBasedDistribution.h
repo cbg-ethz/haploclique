@@ -48,7 +48,7 @@ public:
 	 *  probability of observing a value of offset+k, where offset is also set
 	 *  by this function. A probability mass of (at most) tailCutoff is omitted from 
 	 *  each end of the distribution to save space. */
-	std::auto_ptr<std::vector<double> > toDistribution(double tailCutoff, int* offset) const;
+	std::unique_ptr<std::vector<double> > toDistribution(double tailCutoff, int* offset) const;
 
 	/** Prints the distribution along with analogous values obtained from the given normal distribution. */
 	void printWithGaussian(std::ostream& os, double mean, double stddev) const;

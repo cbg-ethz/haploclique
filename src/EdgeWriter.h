@@ -22,6 +22,7 @@
 #include <iostream>
 #include <deque>
 #include <boost/unordered_set.hpp>
+#include <map>
 
 #include "AlignmentRecord.h"
 #include "Types.h"
@@ -29,10 +30,10 @@
 class EdgeWriter {
 	std::ostream& os;
 	typedef boost::unordered_set<alignment_id_t> node_set_t;
-	std::deque<node_set_t*> nodes;
-	size_t offset;
+	std::map<alignment_id_t, node_set_t> nodes;
 	bool finished;
 	void printNode(alignment_id_t id);
+    std::map<alignment_id_t, std::string> vertex_to_read_names;
 public:
 	EdgeWriter(std::ostream& os);
 	virtual ~EdgeWriter();
@@ -46,6 +47,8 @@ public:
 
 	/** Output all nodes and edges that are still unfinished. */
 	virtual void finish();
+
+    virtual void initialize();
 };
 
 #endif /* EDGEWRITER_H_ */

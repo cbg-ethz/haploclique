@@ -20,10 +20,44 @@
 #define CLIQUECOLLECTOR_H_
 
 #include "Clique.h"
+#include <deque>
 
 class CliqueCollector {
+private:
+    std::deque<AlignmentRecord*>* superReads;
+    int id;
 public:
-	virtual void add(std::auto_ptr<Clique> clique) = 0;
+    CliqueCollector() : id(0) {
+        superReads = new std::deque<AlignmentRecord*>;
+    };
+
+    virtual ~CliqueCollector() {
+        assert(superReads->empty());
+        delete superReads;
+    };
+
+	void add(std::unique_ptr<Clique> clique) {
+        assert(clique.get() != nullptr);
+
+//        std::cerr << "Clique " << id << std::endl;
+        std::unique_ptr<std::vector<const AlignmentRecord*>> alignments = clique->getAllAlignments();
+        AlignmentRecord* al;
+
+        if (alignments->size() > 1) {
+            al = new AlignmentRecord(alignments, this->id++);
+        } else {
+            al = new AlignmentRecord(*(alignments->front()));
+        }
+
+        superReads->push_back(al);
+    };
+
+    std::deque<AlignmentRecord*>* finish()
+    {
+        auto retVal = superReads;
+        superReads = new std::deque<AlignmentRecord*>;
+        return retVal;
+    };
 };
 
 #endif /* CLIQUECOLLECTOR_H_ */

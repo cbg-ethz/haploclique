@@ -119,17 +119,17 @@ int VariationIndex::get_id(const std::string& chromosome, bool create_new) {
 	}
 }
 
-auto_ptr<vector<size_t> > VariationIndex::containedIn(const string& chromosome, size_t start, size_t end) {
+unique_ptr<vector<size_t> > VariationIndex::containedIn(const string& chromosome, size_t start, size_t end) {
 	return _containedIn(get_id(chromosome, false), start, end);
 }
 
-auto_ptr<vector<size_t> > VariationIndex::containedIn(int chromosome_id, size_t start, size_t end) {
+unique_ptr<vector<size_t> > VariationIndex::containedIn(int chromosome_id, size_t start, size_t end) {
 	assert(query_by_id_allowed);
 	return _containedIn(chromosome_id, start, end);
 }
 
-auto_ptr<vector<size_t> > VariationIndex::_containedIn(int chromosome_id, size_t start, size_t end) {
-	auto_ptr<vector<size_t> > result(0);
+unique_ptr<vector<size_t> > VariationIndex::_containedIn(int chromosome_id, size_t start, size_t end) {
+	unique_ptr<vector<size_t> > result(nullptr);
 	if (chromosomes.find(chromosome_id) == chromosomes.end()) {
 		return result;
 	}
@@ -147,7 +147,7 @@ auto_ptr<vector<size_t> > VariationIndex::_containedIn(int chromosome_id, size_t
 		switch (event.type) {
 		case INSERTION:
 			if (result.get() == 0) {
-				result = auto_ptr<vector<size_t> >(new vector<size_t>());
+				result = unique_ptr<vector<size_t> >(new vector<size_t>());
 			}
 			result->push_back(event.variation_index);
 			break;
@@ -157,7 +157,7 @@ auto_ptr<vector<size_t> > VariationIndex::_containedIn(int chromosome_id, size_t
 		case DELETION_END:
 			if (active_variations.find(event.variation_index) != active_variations.end()) {
 				if (result.get() == 0) {
-					result = auto_ptr<vector<size_t> >(new vector<size_t>());
+					result = unique_ptr<vector<size_t> >(new vector<size_t>());
 				}
 				result->push_back(event.variation_index);
 			}
@@ -170,25 +170,25 @@ auto_ptr<vector<size_t> > VariationIndex::_containedIn(int chromosome_id, size_t
 	return result;
 }
 
-auto_ptr<vector<size_t> > VariationIndex::overlapping(const string& chromosome, size_t start, size_t end) {
+unique_ptr<vector<size_t> > VariationIndex::overlapping(const string& chromosome, size_t start, size_t end) {
 	return _overlapping(get_id(chromosome, false), start, end);
 }
 
-auto_ptr<vector<size_t> > VariationIndex::overlapping(int chromosome_id, size_t start, size_t end) {
+unique_ptr<vector<size_t> > VariationIndex::overlapping(int chromosome_id, size_t start, size_t end) {
 	assert(query_by_id_allowed);
 	return _overlapping(chromosome_id, start, end);
 }
 
-auto_ptr<vector<size_t> > VariationIndex::_overlapping(int chromosome_id, size_t start, size_t end) {
+unique_ptr<vector<size_t> > VariationIndex::_overlapping(int chromosome_id, size_t start, size_t end) {
 	if (!overlap_queries_allowed) throw runtime_error("VariationIndex: data structures for overlap queries not initialized.");
 	if (start > end) throw runtime_error("VariationIndex::overlapping(): start > end.");;
 	if (chromosomes.find(chromosome_id) == chromosomes.end()) {
-		return auto_ptr<vector<size_t> >(0);
+		return unique_ptr<vector<size_t> >(nullptr);
 	}
 	const chromosome_record_t& chromosome_record = chromosomes[chromosome_id];
 	size_t k = start / step_size;
 	if (chromosome_record.checkpoint_list.size() <= k) {
-		return auto_ptr<vector<size_t> >(0);
+		return unique_ptr<vector<size_t> >(nullptr);
 	}
 	// step 1: determine set of active events at position "start"
 	boost::unordered_set<size_t> result_set(chromosome_record.checkpoint_list[k].active.begin(), chromosome_record.checkpoint_list[k].active.end());
@@ -220,31 +220,31 @@ auto_ptr<vector<size_t> > VariationIndex::_overlapping(int chromosome_id, size_t
 			break;
 		}
 	}
-	if (result_set.size() == 0) return auto_ptr<vector<size_t> >(0);
-	else return auto_ptr<vector<size_t> >(new vector<size_t>(result_set.begin(), result_set.end()));
+	if (result_set.size() == 0) return unique_ptr<vector<size_t> >(nullptr);
+	else return unique_ptr<vector<size_t> >(new vector<size_t>(result_set.begin(), result_set.end()));
 }
 
-std::auto_ptr<std::vector<size_t> > VariationIndex::getDeletions(const std::string& chromosome, size_t start, size_t end) {
+std::unique_ptr<std::vector<size_t> > VariationIndex::getDeletions(const std::string& chromosome, size_t start, size_t end) {
 	return _getDeletions(get_id(chromosome, false), start, end);
 }
 
-std::auto_ptr<std::vector<size_t> > VariationIndex::getDeletions(int chromosome_id, size_t start, size_t end) {
+std::unique_ptr<std::vector<size_t> > VariationIndex::getDeletions(int chromosome_id, size_t start, size_t end) {
 	assert(query_by_id_allowed);
 	return _getDeletions(chromosome_id, start, end);
 }
 
-std::auto_ptr<std::vector<size_t> > VariationIndex::_getDeletions(int chromosome_id, size_t start, size_t end) {
+std::unique_ptr<std::vector<size_t> > VariationIndex::_getDeletions(int chromosome_id, size_t start, size_t end) {
 	if (chromosomes.find(chromosome_id) == chromosomes.end()) {
-		return auto_ptr<vector<size_t> >(0);
+		return unique_ptr<vector<size_t> >(nullptr);
 	}
 	const chromosome_record_t& chromosome_record = chromosomes[chromosome_id];
 	size_t k = (start-1) / step_size;
 	if (chromosome_record.checkpoint_list.size() <= k) {
-		return auto_ptr<vector<size_t> >(0);
+		return unique_ptr<vector<size_t> >(nullptr);
 	}
 	const vector<event_t>& event_list = chromosome_record.events;
 	boost::unordered_set<size_t> candidates;
-	auto_ptr<vector<size_t> > result(0);
+	unique_ptr<vector<size_t> > result(nullptr);
 	for (size_t i=chromosome_record.checkpoint_list[k].index; i<event_list.size(); ++i) {
 		const event_t& event = event_list[i];
 		if (event.position > end) break;
@@ -254,7 +254,7 @@ std::auto_ptr<std::vector<size_t> > VariationIndex::_getDeletions(int chromosome
 		if ((event.position == end) && (event.type == DELETION_END)) {
 			if (candidates.find(event.variation_index) != candidates.end()) {
 				if (result.get() == 0) {
-					result = auto_ptr<vector<size_t> >(new vector<size_t>());
+					result = unique_ptr<vector<size_t> >(new vector<size_t>());
 				}
 				result->push_back(event.variation_index);
 			}
@@ -263,32 +263,32 @@ std::auto_ptr<std::vector<size_t> > VariationIndex::_getDeletions(int chromosome
 	return result;
 }
 
-std::auto_ptr<std::vector<size_t> > VariationIndex::getInsertions(const std::string& chromosome, size_t position) {
+std::unique_ptr<std::vector<size_t> > VariationIndex::getInsertions(const std::string& chromosome, size_t position) {
 	return _getInsertions(get_id(chromosome, false), position);
 }
 
-std::auto_ptr<std::vector<size_t> > VariationIndex::getInsertions(int chromosome_id, size_t position) {
+std::unique_ptr<std::vector<size_t> > VariationIndex::getInsertions(int chromosome_id, size_t position) {
 	assert(query_by_id_allowed);
 	return _getInsertions(chromosome_id, position);
 }
 
-std::auto_ptr<std::vector<size_t> > VariationIndex::_getInsertions(int chromosome_id, size_t position) {
+std::unique_ptr<std::vector<size_t> > VariationIndex::_getInsertions(int chromosome_id, size_t position) {
 	if (chromosomes.find(chromosome_id) == chromosomes.end()) {
-		return auto_ptr<vector<size_t> >(0);
+		return unique_ptr<vector<size_t> >(nullptr);
 	}
 	const chromosome_record_t& chromosome_record = chromosomes[chromosome_id];
 	size_t k = (position-1) / step_size;
 	if (chromosome_record.checkpoint_list.size() <= k) {
-		return auto_ptr<vector<size_t> >(0);
+		return unique_ptr<vector<size_t> >(nullptr);
 	}
 	const vector<event_t>& event_list = chromosome_record.events;
-	auto_ptr<vector<size_t> > result(0);
+	unique_ptr<vector<size_t> > result(nullptr);
 	for (size_t i=chromosome_record.checkpoint_list[k].index; i<event_list.size(); ++i) {
 		const event_t& event = event_list[i];
 		if (event.position > position) break;
 		if ((event.position == position) && (event.type == INSERTION)) {
 			if (result.get() == 0) {
-				result = auto_ptr<vector<size_t> >(new vector<size_t>());
+				result = unique_ptr<vector<size_t> >(new vector<size_t>());
 			}
 			result->push_back(event.variation_index);
 		}

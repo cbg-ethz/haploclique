@@ -31,7 +31,7 @@ Clique::Clique(CliqueFinder& parent, size_t index, size_t capacity) : parent(par
 	init();
 }
 
-Clique::Clique(CliqueFinder& parent, std::auto_ptr<alignment_set_t> alignments) : parent(parent) {
+Clique::Clique(CliqueFinder& parent, std::unique_ptr<alignment_set_t>& alignments) : parent(parent) {
 	alignment_set = alignments.release();
 	init();
 }
@@ -85,8 +85,8 @@ void Clique::translate(size_t* translation_table, size_t table_size, size_t new_
 	alignment_set = new_alignment_set;
 }
 
-auto_ptr<alignment_set_t> Clique::intersect(const alignment_set_t& set) const {
-	auto_ptr<alignment_set_t> intersection(new alignment_set_t(set));
+unique_ptr<alignment_set_t> Clique::intersect(const alignment_set_t& set) const {
+	unique_ptr<alignment_set_t> intersection(new alignment_set_t(set));
 	(*intersection) &= (*alignment_set);
 	return intersection;
 }
@@ -99,10 +99,10 @@ size_t Clique::totalCenterCoverage() {
 	return parent.getCoverageMonitor().getCoverage(pos);
 }
 
-auto_ptr<vector<size_t> > Clique::readGroupWiseCoverage() {
+unique_ptr<vector<size_t> > Clique::readGroupWiseCoverage() {
 	const CoverageMonitor& cm = parent.getCoverageMonitor();
-	if (!cm.hasReadGroups()) return auto_ptr<vector<size_t> >(0);
-	auto_ptr<vector<size_t> > result(new vector<size_t>());
+	if (!cm.hasReadGroups()) return unique_ptr<vector<size_t> >(nullptr);
+	unique_ptr<vector<size_t> > result(new vector<size_t>());
 	unsigned int interval_start = 0;
 	unsigned int interval_end = 0;
 	computeIntervalIntersection(&interval_start, &interval_end);
@@ -126,8 +126,8 @@ void Clique::add(size_t index) {
 	alignment_count += 1;
 }
 
-auto_ptr<vector<const AlignmentRecord*> > Clique::getAllAlignments() const {
-	auto_ptr<vector<const AlignmentRecord*> > result(new vector<const AlignmentRecord*>());
+unique_ptr<vector<const AlignmentRecord*> > Clique::getAllAlignments() const {
+	unique_ptr<vector<const AlignmentRecord*> > result(new vector<const AlignmentRecord*>());
 	for (size_t i=alignment_set->find_first(); i!=alignment_set_t::npos; i=alignment_set->find_next(i)) {
 		result->push_back(&parent.getAlignmentByIndex(i));
 	}

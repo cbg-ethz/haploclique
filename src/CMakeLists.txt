@@ -15,37 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with HaploClique.  If not, see <http://www.gnu.org/licenses/>.
 
-add_executable ( alignmentparser
-	alignmentparser.cpp
-)
-
-add_executable ( seeksingletons
-	seeksingletons.cpp
-)
-
-add_executable ( bam-to-alignment-priors
-	bam-to-alignment-priors.cpp
-	HistogramBasedDistribution.cpp
-	ASTagCalculator.cpp
-	Histogram.cpp
-	SortedBamReader.cpp
-	GroupWiseBamReader.cpp
-	BamHelper.cpp
-	ShortDnaSequence.cpp
-	VariationIndex.cpp
-	PositionSet.cpp
-	IndelLengthDistribution.cpp
-	Variation.cpp
-	NamedDnaSequence.cpp
-)
-
 add_executable (haploclique
 	haploclique.cpp
-	CliqueFinder.cpp
+	CLEVER.cpp
+    BronKerbosch.cpp
 	Clique.cpp
 	QuasispeciesEdgeCalculator.cpp
 	GaussianEdgeCalculator.cpp
-	CliqueWriter.cpp
 	EdgeWriter.cpp
 	AnyDistributionEdgeCalculator.cpp
 	ReadSetZTester.cpp
@@ -56,7 +32,6 @@ add_executable (haploclique
 	AlignmentRecord.cpp
 	ShortDnaSequence.cpp
 	CoverageMonitor.cpp
-	VariationCaller.cpp
 	SingleTrackCoverageMonitor.cpp
 	HistogramBasedDistribution.cpp
 	Distributions.cpp
@@ -66,13 +41,15 @@ add_executable (haploclique
 	PositionSet.cpp
 	Variation.cpp
 	NamedDnaSequence.cpp
+    docopt/docopt.cpp
 )
 
-target_link_libraries(bam-to-alignment-priors ${Boost_LIBRARIES} BamTools ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries(haploclique ${Boost_LIBRARIES} BamTools)
-target_link_libraries(alignmentparser ${Boost_LIBRARIES})
-target_link_libraries(seeksingletons ${Boost_LIBRARIES})
+IF(${STATIC_LINKING} MATCHES "1")
+	target_link_libraries(haploclique ${Boost_LIBRARIES} BamTools-static)
+ELSE()
+    target_link_libraries(haploclique ${Boost_LIBRARIES} BamTools)
+ENDIF()
 
-set(ALL_EXE_TARGETS seeksingletons alignmentparser bam-to-alignment-priors haploclique)
+set(ALL_EXE_TARGETS haploclique)
 
 install(TARGETS ${ALL_EXE_TARGETS} RUNTIME DESTINATION bin)

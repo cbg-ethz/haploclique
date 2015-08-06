@@ -20,13 +20,17 @@
 #define ALIGNMENTRECORD_H_
 
 #include <string>
-#include <set>
+#include <deque>
+#include <utility>
 
-#include <bamtools/api/BamAux.h>
+#include <api/BamAux.h>
+#include <api/BamAlignment.h>
 
 #include "Types.h"
 #include "ShortDnaSequence.h"
 #include "ReadGroups.h"
+
+class Clique;
 
 /** Class that represents alignments of a read pair. */
 class AlignmentRecord {
@@ -54,29 +58,28 @@ private:
 	int length_incl_deletions2;
 	int length_incl_longdeletions2;
 	ShortDnaSequence sequence2;
-	double aln_prob;
-	double aln_pair_prob_ins_length;
+    double probability;
 	alignment_id_t id;
 	bool single_end;
-	std::string line;
-	std::set<std::string> readNames;
-	int readCount;
-	int hcount;
+	std::set<int> readNames;
+    std::vector<std::string>* readNameMap;
 
+    void mergeSequences(std::deque<std::pair<int, int>>, std::vector<ShortDnaSequence>, std::vector<std::vector<BamTools::CigarOp>> cigars);
+
+    void getCigarInterval(unsigned int start, unsigned int end, std::vector<BamTools::CigarOp>& new_cigar, const std::vector<BamTools::CigarOp>& original_cigar, unsigned int interval_start);
 public:
-	/** Parse an alignment pair from a line. If no read_group information is available, 
-	  * parameter read_groups can be 0. */
-	AlignmentRecord(const std::string& line, std::map<std::string,std::string> clique_to_reads, ReadGroups* read_groups = 0);
+    AlignmentRecord(const BamTools::BamAlignment& alignment, int id, std::vector<std::string>* readNameMap);
+    AlignmentRecord(std::unique_ptr<std::vector<const AlignmentRecord*>>& alignments, int clique_id);
 
-	unsigned int getRecordNr() const;
+    void pairWith(const BamTools::BamAlignment& alignment);
+
+    unsigned int getRecordNr() const;
 	int getPhredSum1() const;
 	int getPhredSum2() const;
 	
 	/** Returns probability that alignment pair is correct based on alignment scores alone. */
 	double getProbability() const;
-	/** Returns probability that alignment pair is correct based on alignment scores and insert lenghts. */
-	double getProbabilityInsertLength() const;
-
+    
 	/** Returns start position of interval associated with this alignment record.
 	 *  In case of a single end read, interval corresponds to the alignment;
 	 *  in case of a paired end read, interval corresponds to the whole fragment, i.e. first alignment,
@@ -94,7 +97,7 @@ public:
 	size_t internalSegmentIntersectionLength(const AlignmentRecord& ap) const;
 
 	std::string getChrom1() const;
-	std::string getChrom2() const;	
+	std::string getChrom2() const;
 	std::string getChromosome() const;
 	unsigned int getEnd1() const;
 	unsigned int getEnd2() const;
@@ -108,7 +111,6 @@ public:
 	const ShortDnaSequence& getSequence1() const;
 	const ShortDnaSequence& getSequence2() const;
 	int getReadGroup() const;
-	double getWeight() const;
 	unsigned int getInsertStart() const;
 	unsigned int getInsertEnd() const;
 	unsigned int getInsertLength() const;
@@ -116,17 +118,18 @@ public:
 	void setID(alignment_id_t id);
 	bool isSingleEnd() const;
 	bool isPairedEnd() const;
-	std::string getLine() const;
-	std::set<std::string> getReadNames() const;
-	int getReadCount() const;
-	int getHCount() const;
-	int getCount() const;
+	std::vector<std::string> getReadNames() const;
 	const std::vector<char> getCigar1Unrolled() const;
 	const std::vector<char> getCigar2Unrolled() const;
 	int getLengthInclDeletions1() const;
 	int getLengthInclDeletions2() const;
 	int getLengthInclLongDeletions1() const;
 	int getLengthInclLongDeletions2() const;
+
+    unsigned int getReadCount() const { return readNames.size(); };
+
+    friend void setProbabilities(std::deque<AlignmentRecord*>& reads);
+    friend void printReads(std::ostream& output, std::deque<AlignmentRecord*>&);
 };
 
 #endif /* ALIGNMENTRECORD_H_ */

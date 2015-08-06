@@ -22,18 +22,18 @@
 
 using namespace std;
 
-auto_ptr<vector<double> > Distributions::toCDF(const vector<double>& distribution) {
-	auto_ptr<vector<double> > result(new vector<double>(distribution.size(), 0.0));
+unique_ptr<vector<double> > Distributions::toCDF(const vector<double>& distribution) {
+	unique_ptr<vector<double> > result(new vector<double>(distribution.size(), 0.0));
 	if (distribution.size() == 0) return result;
 	result->at(0) = distribution[0];
-	for (int i=1; i<distribution.size(); ++i) {
+	for (unsigned int i=1; i<distribution.size(); ++i) {
 		result->at(i) = distribution[i] + result->at(i-1);
 	}
 	return result;
 }
 
-auto_ptr<vector<double> > Distributions::toCCDF(const vector<double>& distribution) {
-	auto_ptr<vector<double> > result(new vector<double>(distribution.size(), 0.0));
+unique_ptr<vector<double> > Distributions::toCCDF(const vector<double>& distribution) {
+	unique_ptr<vector<double> > result(new vector<double>(distribution.size(), 0.0));
 	if (distribution.size() == 0) return result;
 	result->at(distribution.size()-1) = distribution[distribution.size()-1];
 	for (int i=distribution.size()-2; i>=0; --i) {
@@ -42,8 +42,8 @@ auto_ptr<vector<double> > Distributions::toCCDF(const vector<double>& distributi
 	return result;
 }
 
-auto_ptr<vector<double> > Distributions::convolve(const vector<double>& dist1, const vector<double>& dist2, int offset1, int offset2, int* offset_result) {
-	auto_ptr<vector<double> > result(new vector<double>());
+unique_ptr<vector<double> > Distributions::convolve(const vector<double>& dist1, const vector<double>& dist2, int offset1, int offset2, int* offset_result) {
+	unique_ptr<vector<double> > result(new vector<double>());
 	*offset_result = offset1 + offset2;
 	int rightmost_nonzero = -1;
 	for (int n = 0; n <= ((int)(dist1.size()+dist2.size()))-2; ++n) {

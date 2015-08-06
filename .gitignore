@@ -1,4 +1,8 @@
 build/*
-bwa/*
-samtools/*
-htslib/*
+bin/*
+lib/*
+include/*
+*~
+*.pyc
+haploclique
+quasispecies.fasta

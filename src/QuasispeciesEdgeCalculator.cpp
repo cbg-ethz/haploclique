@@ -327,7 +327,7 @@ double QuasispeciesEdgeCalculator::singleOverlap(const AlignmentRecord & ap1, co
             j_seq++;
             j_seq2++;
 
-            if (cigar1[j_cigar] == 'M') {
+            if (j_cigar < cigar1.size() && cigar1[j_cigar] == 'M') {
                 j++;
                 j2++;
             } 

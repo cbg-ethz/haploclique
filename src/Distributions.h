@@ -26,16 +26,16 @@
 class Distributions {
 public:
 	/** Computes the cumulative distribution, i.e. the left-tail sums. */
-	static std::auto_ptr<std::vector<double> > toCDF(const std::vector<double>& distribution);
+	static std::unique_ptr<std::vector<double> > toCDF(const std::vector<double>& distribution);
 
 	/** Computes the complementary cumulative distribution, i.e. the 
 	 *  right-tail sums. */
-	static std::auto_ptr<std::vector<double> > toCCDF(const std::vector<double>& distribution);
+	static std::unique_ptr<std::vector<double> > toCCDF(const std::vector<double>& distribution);
 
 	/** Computes the convolution of two distributions. The size of the
 	 *  resulting array is chosen such that all values that are >0.0 in
 	 *  double precision are contained. */
-	static std::auto_ptr<std::vector<double> > convolve(const std::vector<double>& dist1, const std::vector<double>& dist2, int offset1, int offset2, int* offset_result);
+	static std::unique_ptr<std::vector<double> > convolve(const std::vector<double>& dist1, const std::vector<double>& dist2, int offset1, int offset2, int* offset_result);
 };
 
 #endif // DISTRIBUTIONS_H

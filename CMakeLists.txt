@@ -24,33 +24,36 @@ IF(NOT CMAKE_BUILD_TYPE)
 	SET(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build, options are: Debug Release Profile" FORCE)
 ENDIF(NOT CMAKE_BUILD_TYPE)
 
+SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/bin)
+
 enable_testing()
+
+IF(${STATIC_LINKING} MATCHES "1")
+	message("Statically linked binaries requested.")
+	SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
+    SET(Boost_USE_STATIC_LIBS ON)
+ENDIF()
 
 find_package(Boost 1.36 COMPONENTS program_options iostreams unit_test_framework REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(Threads REQUIRED)
 
-IF(${STATIC_LINKING} MATCHES "1")
-	message("Statically linked binaries requested.")
-	SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++")
-ENDIF()
-set(bwa)
 SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
 SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 
-set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -Wno-long-long -Wno-unknown-pragmas -g -ggdb -O0")
-set(CMAKE_CXX_FLAGS_RELEASE "-Wall -Wextra -Wno-long-long -Wno-unknown-pragmas -O3")
-set(CMAKE_CXX_FLAGS_PROFILE "-Wall -Wextra -Wno-long-long -Wno-unknown-pragmas -O3 -g -ggdb")
-include_directories(${Boost_INCLUDE_DIR} 3rd-party/bamtools/src 3rd-party/bamtools/src/bamtools ${CMAKE_BINARY_DIR}/src)
+set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -Wno-long-long -Wno-unknown-pragmas -g -ggdb -O0 -std=c++11")
+set(CMAKE_CXX_FLAGS_RELEASE "-Wall -Wextra -Wno-long-long -Wno-unknown-pragmas -O3 -std=c++11")
+set(CMAKE_CXX_FLAGS_PROFILE "-Wall -Wextra -Wno-long-long -Wno-unknown-pragmas -O3 -g -ggdb -std=c++11")
+include_directories(${Boost_INCLUDE_DIR} src external/BamTools/src)
 
 if( "${CMAKE_SYSTEM_NAME}" MATCHES "SunOS" )
 	add_definitions( -DSUN_OS )
 	set(CMAKE_EXE_LINKER_FLAGS "-lsocket ${CMAKE_EXE_LINKER_FLAGS}")
 endif()
 
-add_subdirectory(3rd-party/bamtools/src/bamtools/api)
+add_subdirectory(external/BamTools/src/api)
 add_subdirectory(src)
 
-install(PROGRAMS scripts/haploclique-assembly scripts/postprocess-predictions bwa/bwa samtools/samtools DESTINATION bin)
+#install(PROGRAMS scripts/haploclique-assembly scripts/postprocess-predictions bwa/bwa samtools/samtools DESTINATION bin)
