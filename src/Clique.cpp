@@ -91,25 +91,6 @@ unique_ptr<alignment_set_t> Clique::intersect(const alignment_set_t& set) const 
 	return intersection;
 }
 
-size_t Clique::totalCenterCoverage() {
-	unsigned int interval_start = 0;
-	unsigned int interval_end = 0;
-	computeIntervalIntersection(&interval_start, &interval_end);
-	size_t pos = (interval_end + interval_start)/2;
-	return parent.getCoverageMonitor().getCoverage(pos);
-}
-
-unique_ptr<vector<size_t> > Clique::readGroupWiseCoverage() {
-	const CoverageMonitor& cm = parent.getCoverageMonitor();
-	if (!cm.hasReadGroups()) return unique_ptr<vector<size_t> >(nullptr);
-	unique_ptr<vector<size_t> > result(new vector<size_t>());
-	unsigned int interval_start = 0;
-	unsigned int interval_end = 0;
-	computeIntervalIntersection(&interval_start, &interval_end);
-	size_t pos = (interval_end + interval_start)/2;
-	return parent.getCoverageMonitor().getReadGroupCoverages(pos);
-}
-
 bool Clique::contains(const Clique& c) {
 	return c.alignment_set->is_subset_of(*alignment_set);
 }

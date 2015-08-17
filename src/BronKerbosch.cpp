@@ -6,8 +6,8 @@
 // using namespace boost;
 using namespace std;
 
-BronKerbosch::BronKerbosch(const EdgeCalculator& edge_calculator, CliqueCollector& clique_collector, const ReadGroups* read_groups)
-: CliqueFinder(edge_calculator, clique_collector, read_groups), alignments_() {
+BronKerbosch::BronKerbosch(const EdgeCalculator& edge_calculator, CliqueCollector& clique_collector, LogWriter* lw)
+: CliqueFinder(edge_calculator, clique_collector), alignments_(), lw(lw) {
     order_ = nullptr;
     vertices_ = nullptr;
     degree_map_ = nullptr;
@@ -44,8 +44,6 @@ void BronKerbosch::initialize() {
 
   	alignment_count = 0;
     next_id = 0;
-
-    if (edge_writer != nullptr) edge_writer->initialize();
 
     initialized = true;
     converged = true;
@@ -256,7 +254,6 @@ void BronKerbosch::addAlignment(std::unique_ptr<AlignmentRecord>& alignment_auto
 	alignment_id_t id = next_id++;
 	AlignmentRecord* alignment = alignment_autoptr.release();
 	alignment->setID(id);
-	coverage_monitor.addAlignment(*alignment);
 
 	size_t index = alignment_count++;
 	alignments_.push_back(alignment);
@@ -293,11 +290,9 @@ void BronKerbosch::addAlignment(std::unique_ptr<AlignmentRecord>& alignment_auto
             get<1>(*vertex).push_back((*it)->first);
             get<1>(**it).push_back(vertex->first);
 
-            converged = false;
+            if (lw != nullptr) lw->reportEdge(vertex->first, (*it)->first);
 
-   			if (edge_writer != 0) {
-				edge_writer->addEdge(*alignment, *alignment2);
-			}
+            converged = false;
         }
         it++;
     }

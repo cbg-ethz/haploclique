@@ -28,7 +28,7 @@
 using namespace std;
 using namespace boost;
 
-CLEVER::CLEVER(const EdgeCalculator& edge_calculator, CliqueCollector& clique_collector, const ReadGroups* read_groups) : CliqueFinder(edge_calculator, clique_collector, read_groups) {
+CLEVER::CLEVER(const EdgeCalculator& edge_calculator, CliqueCollector& clique_collector, LogWriter* lw) : CliqueFinder(edge_calculator, clique_collector), lw(lw) {
     capacity = alignment_set_t::bits_per_block;
     alignments = nullptr;
 }
@@ -48,16 +48,11 @@ void CLEVER::initialize() {
     next_id = 0;
     alignments_by_length.clear();
 
-    if (edge_writer != nullptr) edge_writer->initialize();
-
     converged = true;
     initialized = true;
 }
 
 void CLEVER::finish() {
-    if (edge_writer != 0) {
-  		edge_writer->finish();
-    }
     clique_list_t::iterator clique_it = cliques->begin();
     for (;clique_it!=cliques->end(); ++clique_it) {
     	Clique* clique = *clique_it;
@@ -108,9 +103,6 @@ void CLEVER::reorganize_storage() {
 // 			}
 			j += 1;
 		} else {
-			if (edge_writer != 0) {
-				edge_writer->setNodeCompleted(*(alignments[i]));
-			}
 			delete alignments[i];
 		}
 	}
@@ -121,8 +113,7 @@ void CLEVER::reorganize_storage() {
 		(*it)->translate(translation_table, new_alignment_count, new_capacity);
 		leftmost_pos = min(leftmost_pos, (*it)->leftmostSegmentStart());
 	}
-	coverage_monitor.pruneLeftOf(leftmost_pos);
-	// cout << "Reorganized storage: " << alignment_count << "/" << capacity << " --> " << new_alignment_count << "/" << new_capacity << endl;
+
 	delete [] translation_table;
 	delete [] alignments;
 	alignments = new_alignments;
@@ -138,8 +129,7 @@ void CLEVER::addAlignment(std::unique_ptr<AlignmentRecord>& alignment_autoptr) {
 	alignment_id_t id = next_id++;
 	AlignmentRecord* alignment = alignment_autoptr.release();
 	alignment->setID(id);
-	coverage_monitor.addAlignment(*alignment);
-	// cerr << "Processing alignment " << id << " (" << alignment->getName() << "), length " << alignment->getInsertLength() << ", insert [" <<alignment->getInsertStart() << "," <<alignment->getInsertEnd() << "]" <<  endl;
+
 	// store new alignment
 	if (alignment_count==capacity) {
 		reorganize_storage();
@@ -170,8 +160,8 @@ void CLEVER::addAlignment(std::unique_ptr<AlignmentRecord>& alignment_autoptr) {
 		if (set_edge) {
 			adjacent.set(it->second, true);
 			// cerr << " --> EDGE";
-			if (edge_writer != nullptr) {
-				edge_writer->addEdge(*alignment, *alignment2);
+			if (lw != nullptr) {
+				lw->reportEdge(alignment->getID(), alignment2->getID());
 			}
 
         converged = false;

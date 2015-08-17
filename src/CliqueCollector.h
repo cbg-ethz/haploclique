@@ -19,15 +19,19 @@
 #ifndef CLIQUECOLLECTOR_H_
 #define CLIQUECOLLECTOR_H_
 
-#include "Clique.h"
 #include <deque>
+#include <algorithm>
+
+#include "Clique.h"
+#include "LogWriter.h"
 
 class CliqueCollector {
 private:
     std::deque<AlignmentRecord*>* superReads;
-    int id;
+    LogWriter* lw;
+    unsigned int id;
 public:
-    CliqueCollector() : id(0) {
+    CliqueCollector(LogWriter* lw) : lw(lw), id(0) {
         superReads = new std::deque<AlignmentRecord*>;
     };
 
@@ -41,12 +45,22 @@ public:
 
 //        std::cerr << "Clique " << id << std::endl;
         std::unique_ptr<std::vector<const AlignmentRecord*>> alignments = clique->getAllAlignments();
+
+        if (lw != nullptr) {
+            std::list<unsigned int> cll;            
+            for (const auto& a : *alignments) {
+                cll.push_back(a->getID());
+            }
+            lw->reportClique(this->id, cll);
+        }
+
         AlignmentRecord* al;
 
         if (alignments->size() > 1) {
             al = new AlignmentRecord(alignments, this->id++);
         } else {
             al = new AlignmentRecord(*(alignments->front()));
+            this->id++;
         }
 
         superReads->push_back(al);
@@ -55,6 +69,11 @@ public:
     std::deque<AlignmentRecord*>* finish()
     {
         auto retVal = superReads;
+
+        auto comp = [](AlignmentRecord* r1, AlignmentRecord* r2) { return r1->getIntervalStart() < r2->getIntervalStart(); };
+
+        sort(retVal->begin(), retVal->end(), comp);
+
         superReads = new std::deque<AlignmentRecord*>;
         return retVal;
     };

@@ -101,7 +101,7 @@ size_t ShortDnaSequence::size() const {
 
 char ShortDnaSequence::operator[](size_t pos) const {
 	assert(forward.get() != 0);
-	assert(pos < forward->size());
+    assert(pos < forward->size());
 	return forward->at(pos);
 }
 

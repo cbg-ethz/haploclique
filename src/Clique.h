@@ -65,13 +65,6 @@ public:
 
 	void computeIntervalIntersection(unsigned int* insert_start, unsigned int* insert_end);
 
-	/** Returns the total coverage of all alignments at the center of the represented intervals, not
-	 *  only those that are in the clique. */
-	size_t totalCenterCoverage();
-
-	/** Returns coverage at putative breakpoint for all read groups separately. */
-	std::unique_ptr<std::vector<size_t> > readGroupWiseCoverage();
-
 	friend std::ostream& operator<<(std::ostream&, const Clique& clique);
 };
 

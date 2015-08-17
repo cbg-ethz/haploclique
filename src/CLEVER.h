@@ -26,18 +26,20 @@
 
 #include "Clique.h"
 #include "CliqueFinder.h"
+#include "LogWriter.h"
 
 /** Implementation of the Maximal Clique Enumeration algorithm of CLEVER */
 class CLEVER : public CliqueFinder {
 private:
     size_t capacity;
     AlignmentRecord **alignments;
+    LogWriter* lw;
 
     typedef std::pair<unsigned int,size_t> length_and_index_t;
     std::set<length_and_index_t> alignments_by_length;
     void reorganize_storage();
 public:
-    CLEVER(const EdgeCalculator& edge_calculator, CliqueCollector& clique_collector, const ReadGroups* read_groups);
+    CLEVER(const EdgeCalculator& edge_calculator, CliqueCollector& clique_collector, LogWriter* lw);
     virtual ~CLEVER();
 
     const AlignmentRecord & getAlignmentByIndex(size_t index) const {

@@ -19,14 +19,13 @@
 #include <vector>
 #include <algorithm>
 #include <math.h>
+#include <map>
 
 #include <boost/tokenizer.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/compare.hpp>
-
-#include "BamHelper.h"
 
 #include "AlignmentRecord.h"
 #include "Clique.h"
@@ -66,7 +65,7 @@ AlignmentRecord::AlignmentRecord(const BamTools::BamAlignment& alignment, int re
     }
 }
 
-AlignmentRecord::AlignmentRecord(unique_ptr<vector<const AlignmentRecord*>>& alignments, int clique_id) : cigar1_unrolled(), cigar2_unrolled() {
+AlignmentRecord::AlignmentRecord(unique_ptr<vector<const AlignmentRecord*>>& alignments, unsigned int clique_id) : cigar1_unrolled(), cigar2_unrolled() {
     deque<pair<int, int>> interval;
     vector<ShortDnaSequence> sequences;
     vector<vector<BamTools::CigarOp>> cigars;
@@ -79,18 +78,18 @@ AlignmentRecord::AlignmentRecord(unique_ptr<vector<const AlignmentRecord*>>& ali
             sequences.push_back(al->getSequence1());
             cigars.push_back(al->getCigar1());
             interval.push_back(pair<int, int>(ct, al->getStart1() - 1));
-            interval.push_back(pair<int, int>(ct, al->getEnd1() - 1));
+            interval.push_back(pair<int, int>(ct, al->getStart1() - 1 + al->getSequence1().size()));
             ct++;
             sequences.push_back(al->getSequence2());
             cigars.push_back(al->getCigar2());
             interval.push_back(pair<int, int>(ct, al->getStart2() - 1));
-            interval.push_back(pair<int, int>(ct, al->getEnd2() - 1));
+            interval.push_back(pair<int, int>(ct, al->getStart2() - 1 + al->getSequence2().size()));
             ct++;
         } else {
             sequences.push_back(al->getSequence1());
             cigars.push_back(al->getCigar1());
             interval.push_back(pair<int, int>(ct, al->getStart1() - 1));
-            interval.push_back(pair<int, int>(ct, al->getEnd1() - 1));
+            interval.push_back(pair<int, int>(ct, al->getStart1() - 1 + al->getSequence1().size()));
             ct++;
         }
 
@@ -254,7 +253,7 @@ void AlignmentRecord::pairWith(const BamTools::BamAlignment& alignment) {
     this->single_end = false;
     if (alignment.Position > this->start1) {
         this->start2 = alignment.Position + 1;
-        this->end2 = alignment.GetEndPosition();
+       this->end2 = alignment.GetEndPosition();
         this->cigar2 = alignment.CigarData;
         this->sequence2 = ShortDnaSequence(alignment.QueryBases, alignment.Qualities);
         this->phred_sum2 = phred_sum(alignment.Qualities);
@@ -366,10 +365,6 @@ size_t AlignmentRecord::internalSegmentIntersectionLength(const AlignmentRecord&
 	return max(0, right-left);
 }
 
-unsigned int AlignmentRecord::getRecordNr() const {
-	return record_nr;
-}
-
 int AlignmentRecord::getPhredSum1() const {
 	return phred_sum1;
 }
@@ -381,20 +376,6 @@ int AlignmentRecord::getPhredSum2() const {
 
 double AlignmentRecord::getProbability() const {
 	return probability;
-}
-
-std::string AlignmentRecord::getChrom1() const {
-	return chrom1;
-}
-
-std::string AlignmentRecord::getChrom2() const {
-	assert(!single_end);
-	return chrom2;
-}
-
-std::string AlignmentRecord::getChromosome() const { 
-	assert(single_end || (chrom1.compare(chrom2) == 0));
-	return chrom1; 
 }
 
 unsigned int AlignmentRecord::getEnd1() const {
@@ -419,15 +400,6 @@ unsigned int AlignmentRecord::getStart2() const {
 	return start2;
 }
 
-std::string AlignmentRecord::getStrand1() const {
-	return strand1;
-}
-
-std::string AlignmentRecord::getStrand2() const {
-	assert(!single_end);
-	return strand2;
-}
-
 const std::vector<BamTools::CigarOp>& AlignmentRecord::getCigar1() const {
 	return cigar1;
 }
@@ -444,10 +416,6 @@ const ShortDnaSequence& AlignmentRecord::getSequence1() const {
 const ShortDnaSequence& AlignmentRecord::getSequence2() const {
 	assert(!single_end);
 	return sequence2;
-}
-
-int AlignmentRecord::getReadGroup() const {
-	return read_group;
 }
 
 unsigned int AlignmentRecord::getIntervalStart() const {
@@ -520,15 +488,26 @@ int AlignmentRecord::getLengthInclLongDeletions2() const {
 	return this->length_incl_longdeletions2;
 }
 
-void setProbabilities(std::deque<AlignmentRecord*>& reads) {
+double setProbabilities(std::deque<AlignmentRecord*>& reads) {
     double read_usage_ct = 0.0;
+    double mean = 1.0 / reads.size();
+
     for(auto&& r : reads) {
         read_usage_ct += r->getReadCount();
     }
 
+    if (not reads.empty()) {
+        read_usage_ct = max(read_usage_ct, (double) reads[0]->readNameMap->size());
+    }
+    double stdev = 0.0;
+
     for (auto&& r : reads) {
         r->probability = r->getReadCount() / read_usage_ct;
+        
+        stdev += (r->probability - mean)*(r->probability - mean);
     }
+
+    return sqrt(1.0 / (reads.size() - 1) * stdev);
 }
 
 void printReads(std::ostream& outfile, std::deque<AlignmentRecord*>& reads) {

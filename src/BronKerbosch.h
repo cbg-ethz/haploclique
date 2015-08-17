@@ -1,11 +1,13 @@
 #ifndef BRONKERBOSCH_H_
 #define BRONKERBOSCH_H_
 
-#include "CliqueFinder.h"
 #include <vector>
 #include <map>
 #include <list>
 #include <utility>
+
+#include "CliqueFinder.h"
+#include "LogWriter.h"
 
 class BronKerbosch : public CliqueFinder {
 private:
@@ -18,6 +20,7 @@ private:
     degree_map_t* degree_map_;
     std::list<adjacency_list_t*>* actives_;
     std::vector<adjacency_list_t*>* vertices_as_lists_;
+    LogWriter* lw;
 
     void degeneracy_order();
     void bronkerbosch(alignment_set_t R, alignment_set_t P, alignment_set_t X);
@@ -27,7 +30,7 @@ private:
     void printReads(std::ostream& os, alignment_set_t set);
     bool cliquesistent(const alignment_set_t& R, const alignment_set_t& P, const alignment_set_t& X);
 public:
-    BronKerbosch(const EdgeCalculator& edge_calculator, CliqueCollector& clique_collector, const ReadGroups* read_groups);
+    BronKerbosch(const EdgeCalculator& edge_calculator, CliqueCollector& clique_collector, LogWriter* lw);
     virtual ~BronKerbosch();
 
     virtual const AlignmentRecord & getAlignmentByIndex(size_t index) const {
