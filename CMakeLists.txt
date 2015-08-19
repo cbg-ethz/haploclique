@@ -32,7 +32,7 @@ find_package(Threads REQUIRED)
 
 IF(${STATIC_LINKING} MATCHES "1")
 	message("Statically linked binaries requested.")
-	SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
+	SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++")
 ENDIF()
 set(bwa)
 SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
