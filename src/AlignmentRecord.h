@@ -90,6 +90,11 @@ public:
 	  * by getInsertStart() and getInsertEnd(). */
 	size_t internalSegmentIntersectionLength(const AlignmentRecord& ap) const;
 
+    /** Returns a vector containing the covered positions of an AlignmentRecord, the base and
+     * the quality score; */
+    typedef std::map <int,std::pair<char,int>> covmap;
+    covmap coveredPositions();
+
 	unsigned int getEnd1() const;
 	unsigned int getEnd2() const;
 	std::string getName() const;

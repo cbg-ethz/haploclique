@@ -365,6 +365,13 @@ size_t AlignmentRecord::internalSegmentIntersectionLength(const AlignmentRecord&
 	return max(0, right-left);
 }
 
+AlignmentRecord::covmap AlignmentRecord::coveredPositions(){
+    AlignmentRecord::covmap positions;
+    if (single_end){
+
+    }
+}
+
 int AlignmentRecord::getPhredSum1() const {
 	return phred_sum1;
 }
