@@ -23,6 +23,7 @@
 #include <deque>
 #include <utility>
 #include <set>
+#include <map>
 
 #include <api/BamAux.h>
 #include <api/BamAlignment.h>
@@ -44,6 +45,7 @@ private:
 	int length_incl_deletions1;
 	int length_incl_longdeletions1;
 	ShortDnaSequence sequence1;
+    std::string al_sequence1;
 	int phred_sum2;
 	unsigned int start2;
 	unsigned int end2;
@@ -92,7 +94,7 @@ public:
 
     /** Returns a vector containing the covered positions of an AlignmentRecord, the base and
      * the quality score; */
-    typedef std::map <int,std::pair<char,int>> covmap;
+    typedef std::map <int,std::pair<char,char>> covmap;
     covmap coveredPositions();
 
 	unsigned int getEnd1() const;
