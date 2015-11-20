@@ -45,7 +45,7 @@ AlignmentRecord::AlignmentRecord(const BamTools::BamAlignment& alignment, int re
     this->single_end = true;
     this->readNames.insert(readRef);
     this->name = alignment.Name;
-    cout << alignment.Name << endl;
+    //cout << alignment.Name << endl;
     this->start1 = alignment.Position + 1;
     this->end1 = alignment.GetEndPosition();
     this->cigar1 = alignment.CigarData;
@@ -67,10 +67,10 @@ AlignmentRecord::AlignmentRecord(const BamTools::BamAlignment& alignment, int re
             int k = 0;
         }
         if (it.Type == 'N'){
-            int k = 0;
+            cout << alignment.Name << endl;
         }
         if (it.Type == 'P'){
-            int k = 0;
+           cout << alignment.Name << endl;
         }
         if (it.Type == 'I'){
             int k = 0;
@@ -80,7 +80,7 @@ AlignmentRecord::AlignmentRecord(const BamTools::BamAlignment& alignment, int re
         int k = 0;
         cout << this->sequence1.toString().size() << endl;
     }*/
-    if (this->name ==  "MISEQ-02:83:000000000-A9WYY:1:2103:2137:13246"){
+    /*if (this->name ==  "MISEQ-02:83:000000000-A9WYY:1:2103:2137:13246"){
         cout << alignment.QueryBases << endl;
         cout << alignment.QueryBases.size() << endl;
         cout << alignment.AlignedBases << endl;
@@ -92,7 +92,7 @@ AlignmentRecord::AlignmentRecord(const BamTools::BamAlignment& alignment, int re
         {
             std::cout << it->first << " " << it->second.first << " " << it->second.second << std::endl;
         }
-    }
+    }*/
 
 }
 
@@ -282,7 +282,10 @@ void AlignmentRecord::mergeSequences(std::deque<std::pair<int, int>> intervals, 
 
 void AlignmentRecord::pairWith(const BamTools::BamAlignment& alignment) {
     this->single_end = false;
-    if (alignment.Position > this->start1) {
+    if (this->name == "MISEQ-02:83:000000000-A9WYY:1:1105:3420:17305"){
+        int k = 0;
+    }
+    if (alignment.Position+1 > this->start1) {
         this->start2 = alignment.Position + 1;
        this->end2 = alignment.GetEndPosition();
         this->cigar2 = alignment.CigarData;
@@ -303,23 +306,26 @@ void AlignmentRecord::pairWith(const BamTools::BamAlignment& alignment) {
            	}
         }
     } else {
+        if (this->name == "MISEQ-02:83:000000000-A9WYY:1:1106:20056:23136"){
+            int k = 0;
+        }
         this->start2 = this->start1;
         this->end2 = this->end1;
         this->cigar2 = this->cigar1;
         this->sequence2 = this->sequence1;
         this->phred_sum2 = this->phred_sum1;
+        this->cigar2_unrolled = this->cigar1_unrolled;
+        this->length_incl_deletions2 = this->length_incl_deletions1;
+        this->length_incl_longdeletions2 = this->length_incl_longdeletions1;
+
         this->start1 = alignment.Position + 1;
         this->end1 = alignment.GetEndPosition();
         this->cigar1 = alignment.CigarData;
         this->sequence1 = ShortDnaSequence(alignment.QueryBases, alignment.Qualities);
         this->phred_sum1 = phred_sum(alignment.Qualities);
-
-        this->cigar2_unrolled = this->cigar1_unrolled;
-        this->length_incl_deletions2 = this->length_incl_deletions1;
-        this->length_incl_longdeletions2 = this->length_incl_longdeletions2;
-
         this->length_incl_deletions1 = this->sequence1.size();
         this->length_incl_longdeletions1 = this->sequence1.size();
+        this->cigar1_unrolled.clear();
     	for (const auto& it : cigar1) {
             for (unsigned int s = 0; s < it.Length; ++s) {
               	this->cigar1_unrolled.push_back(it.Type);
@@ -332,6 +338,22 @@ void AlignmentRecord::pairWith(const BamTools::BamAlignment& alignment) {
            	}
         }
     }
+
+    AlignmentRecord::covmap test = AlignmentRecord::coveredPositions();
+    /*if (this->name ==  "MISEQ-02:83:000000000-A9WYY:1:2111:5501:15159"){
+        cout << this->sequence1.toString() << endl;
+        cout << this->sequence2.toString() << endl;
+        cout << this->start1 << endl;
+        cout << this->end1 << endl;
+        cout << this->start2 << endl;
+        cout << this->end2 << endl;
+        AlignmentRecord::covmap test = AlignmentRecord::coveredPositions();
+        for(auto it = test.cbegin(); it != test.cend(); ++it)
+        {
+            std::cout << it->first << " " << it->second.first << " " << it->second.second << std::endl;
+        }
+    }*/
+
 }
 
 void AlignmentRecord::getCigarInterval(unsigned int start, unsigned int end, vector<BamTools::CigarOp>& new_cigar, const vector<BamTools::CigarOp>& original_cigar, unsigned int interval_start) {
@@ -398,17 +420,52 @@ size_t AlignmentRecord::internalSegmentIntersectionLength(const AlignmentRecord&
 
 AlignmentRecord::covmap AlignmentRecord::coveredPositions(){
     AlignmentRecord::covmap cov_positions;
-    if (single_end){
+    //cout << this->name << endl;
+    //position in ref
+    int r = this->start1;
+    //position in query bases
+    int q = 0;
+    for (unsigned int i = 0; i< this->cigar1_unrolled.size(); ++i){
+        char c = this->cigar1_unrolled[i];
+        switch(c){
+            case 'M': {
+                cov_positions[r]=std::make_pair(this->sequence1[q],this->sequence1.qualityChar(q));
+                //char d = this->sequence1[q];
+                ++q;
+                ++r;
+                break;
+            }
+            case 'D': {
+                ++r;
+                break;
+            }
+            case 'S':
+            case 'I': {
+                ++q;
+                break;
+            }
+            case 'H':
+                break;
+        }
+    }
+    //In case of a paired end read
+    if (!this->single_end){
+        assert(this->start1 <= this->start2);
         //position in ref
-        int r = this->start1;
+        r = this->start2;
         //position in query bases
-        int q = 0;
-        for (unsigned int i = 0; i< this->cigar1_unrolled.size(); ++i){
-            char c = this->cigar1_unrolled[i];
+        q = 0;
+        int intersect = 0;
+        for (unsigned int i = 0; i< this->cigar2_unrolled.size(); ++i){
+            //if(cov_positions.count(r)>0 && intersect == 0){
+            //    cout << this->name << endl;
+            //    intersect = 1;
+            //}
+            char c = this->cigar2_unrolled[i];
             switch(c){
                 case 'M': {
-                    cov_positions[r]=std::make_pair(this->sequence1[q],this->sequence1.qualityChar(q));
-                    //char d = this->sequence1[q];
+                    cov_positions[r]=std::make_pair(this->sequence2[q],this->sequence2.qualityChar(q));
+                    //char d = this->sequence2[q];
                     ++q;
                     ++r;
                     break;
@@ -426,67 +483,10 @@ AlignmentRecord::covmap AlignmentRecord::coveredPositions(){
                     break;
             }
        }
-       return cov_positions;
     }
-    //In case of paired end
-    else{
-       assert(this->start1 < this->start2);
-       //position in ref
-       int r = this->start1;
-       //position in query bases
-       int q = 0;
-       for (unsigned int i = 0; i< this->cigar1_unrolled.size(); ++i){
-           char c = this->cigar1_unrolled[i];
-           switch(c){
-               case 'M': {
-                   cov_positions[r]=std::make_pair(this->sequence1[q],this->sequence1.qualityChar(q));
-                   //char d = this->sequence1[q];
-                   ++q;
-                   ++r;
-                   break;
-               }
-               case 'D': {
-                   ++r;
-                   break;
-               }
-               case 'S':
-               case 'I': {
-                   ++q;
-                   break;
-               }
-               case 'H':
-                   break;
-           }
-      }
-      int r = this->start2;
-      //position in query bases
-      int q = 0;
-      for (unsigned int i = 0; i< this->cigar2_unrolled.size(); ++i){
-           char c = this->cigar2_unrolled[i];
-           switch(c){
-               case 'M': {
-                   cov_positions[r]=std::make_pair(this->sequence2[q],this->sequence2.qualityChar(q));
-                   //char d = this->sequence2[q];
-                   ++q;
-                   ++r;
-                   break;
-               }
-               case 'D': {
-                   ++r;
-                   break;
-               }
-               case 'S':
-               case 'I': {
-                   ++q;
-                   break;
-               }
-               case 'H':
-                   break;
-           }
-      }
     return cov_positions;
-    }
 }
+
 
 int AlignmentRecord::getPhredSum1() const {
 	return phred_sum1;
