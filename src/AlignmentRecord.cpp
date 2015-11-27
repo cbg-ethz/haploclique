@@ -41,6 +41,21 @@ int phred_sum(const string& phred, char phred_base=33) {
 	return result;
 }
 
+std::pair<char,char> compute_pair(const char& base1, const char& qual1, const char& base2, const char& qual2){
+    std::pair<char,char> result;
+    int qual;
+    if (base1==base2){
+        qual = std::min(40,qual1+qual2);
+        result=std::make_pair(base1,qual);
+    }
+    else if (qual1 == qual2) {
+        qual = std::min(40,qual1+qual2);
+        result=std::make_pair();
+    }
+    return result;
+}
+
+
 AlignmentRecord::AlignmentRecord(const BamTools::BamAlignment& alignment, int readRef, vector<string>* rnm) : readNameMap(rnm) {
     this->single_end = true;
     this->readNames.insert(readRef);
@@ -451,39 +466,39 @@ AlignmentRecord::covmap AlignmentRecord::coveredPositions(){
     //In case of a paired end read
     if (!this->single_end){
         assert(this->start1 <= this->start2);
-        //position in ref
-        r = this->start2;
-        //position in query bases
-        q = 0;
-        int intersect = 0;
-        for (unsigned int i = 0; i< this->cigar2_unrolled.size(); ++i){
-            //if(cov_positions.count(r)>0 && intersect == 0){
-            //    cout << this->name << endl;
-            //    intersect = 1;
-            //}
-            char c = this->cigar2_unrolled[i];
-            switch(c){
-                case 'M': {
-                    cov_positions[r]=std::make_pair(this->sequence2[q],this->sequence2.qualityChar(q));
-                    //char d = this->sequence2[q];
-                    ++q;
-                    ++r;
-                    break;
-                }
-                case 'D': {
-                    ++r;
-                    break;
-                }
-                case 'S':
-                case 'I': {
-                    ++q;
-                    break;
-                }
-                case 'H':
-                    break;
-            }
-       }
-    }
+            //position in ref
+            r = this->start2;
+            //position in query bases
+            q = 0;
+            for (unsigned int i = 0; i< this->cigar2_unrolled.size(); ++i){
+                char c = this->cigar2_unrolled[i];
+                switch(c){
+                    case 'M': {
+                        if (r > this->end1){
+                            cov_positions[r]=std::make_pair(this->sequence2[q],this->sequence2.qualityChar(q));
+                            //char d = this->sequence2[q];
+                        } else {
+                            assert(cov_positions.count(r)>0);
+                            cov_positions[r]=compute_pair(cov_positions[r].first, cov_positions[r].second ,this->sequence2[q],this->sequence2.qualityChar(q));
+                        }
+                        ++q;
+                        ++r;
+                        break;
+                    }
+                    case 'D': {
+                        ++r;
+                        break;
+                    }
+                    case 'S':
+                    case 'I': {
+                        ++q;
+                        break;
+                    }
+                    case 'H':
+                        break;
+              }
+           }
+        }
     return cov_positions;
 }
 

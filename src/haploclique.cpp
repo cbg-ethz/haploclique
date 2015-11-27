@@ -21,6 +21,7 @@
 #include <sstream>
 #include <vector>
 #include <unordered_map>
+#include <stdexcept>
 #include <limits>
 #include <cassert>
 #include <ctime>
@@ -53,46 +54,46 @@ static const char USAGE[] =
 R"(haploclique predicts haplotypes from NGS reads.
 
 Usage:
-  haploclique bronkerbosch [options] <bamfile> [<output>]
-  haploclique [clever] [options] <bamfile> [<output>]
+  haploclique bronkerbosch [options] [--] <bamfile> [<output>]
+  haploclique [options] [--] <bamfile> [<output>]
 
   clever        use the original clever clique finder
   bronkerbosch  use the Bron-Kerbosch based clique finder
 
-options:
-  -q <num> --edge_quasi_cutoff_cliques <num>  edge calculator option
+Options:
+  -q NUM --edge_quasi_cutoff_cliques=NUM  edge calculator option
                                               [default: 0.99]
-  -k <num> --edge_quasi_cutoff_mixed <num>    edge calculator option
+  -k NUM --edge_quasi_cutoff_mixed=NUM    edge calculator option
                                               [default: 0.97]
-  -g <num> --edge_quasi_cutoff_single <num>   edge calculator option
+  -g NUM --edge_quasi_cutoff_single=NUM   edge calculator option
                                               [default: 0.95]
-  -Q <num> --random_overlap_quality <num>     edge calculator option
+  -Q NUM --random_overlap_quality=NUM     edge calculator option
                                               [default: 0.9]
   -m --frame_shift_merge                      Reads will be clustered with 
                                               single nucleotide insertions or
                                               deletions. Use for PacBio data.
-  -o <num> --min_overlap_cliques <num>        edge calculator option
+  -o NUM --min_overlap_cliques=NUM        edge calculator option
                                               [default: 0.9]
-  -j <num> --min_overlap_single <num>         edge calculator option
+  -j NUM --min_overlap_single=NUM         edge calculator option
                                               [default: 0.6]
-  -A <file> --allel_frequencies <file>
-  -I <file> --call_indels <file>              variant calling is not supported
+  -A FILE --allel_frequencies=NUM
+  -I FILE --call_indels=NUM              variant calling is not supported
                                               yet.
-  -M <file> --mean_and_sd_filename <file>     Required for option -I
-  -p <num> --indel_edge_sig_level <num>       [default: 0.2]
-  -i <num> --iterations <num>                 Number of iterations.
+  -M FILE --mean_and_sd_filename=FILE     Required for option -I
+  -p NUM --indel_edge_sig_level=NUM       [default: 0.2]
+  -i NUM --iterations=NUM                 Number of iterations.
                                               haploclique will stop if the 
                                               superreads converge.
                                               [default: -1]
-  -f <num> --filter <num>                     Filter out reads with low
+  -f NUM --filter=NUM                     Filter out reads with low
                                               frequency at the end.
                                               [default: 0.0]
   -n --no_singletons                          Filter out single read cliques
                                               after first iteration.
-  -s <num> --significance <num>               Filter out reads witch are below
+  -s NUM --significance=NUM               Filter out reads witch are below
                                               <num> standard deviations.
                                               [default: 3.0]
-  -L <file> --log <file>                      Write log to <file>.
+  -L NUM, --log=FILE                      Write log to <file>.
 )";
 
 void usage() {
@@ -133,20 +134,32 @@ deque<AlignmentRecord*>* readBamFile(string filename, vector<string>& readNames)
     }
     BamTools::BamAlignment alignment;
 
+    //int readcounter = 0;
+    //int pairedendcounter = 0;
+    //int singletoncounter = 0;
+    //int overlap = 0;
+
     while (bamreader.GetNextAlignment(alignment)) {
         if(names_to_reads.count(alignment.Name) > 0) {
+            //cout << alignment.Name << endl;
             names_to_reads[alignment.Name]->pairWith(alignment);
+            //if (names_to_reads[alignment.Name]->getStart2() <= names_to_reads[alignment.Name]->getEnd1()){
+                //++overlap;
             reads->push_back(names_to_reads[alignment.Name]);
             names_to_reads.erase(alignment.Name);
+            //++pairedendcounter;
+            //++readcounter;
         } else {
             names_to_reads[alignment.Name] = new AlignmentRecord(alignment, readNames.size(), &readNames);
             readNames.push_back(alignment.Name);
+            //++readcounter;
         }
     }
 
     // Push all single-end reads remaining in names_to_reads into the reads vector
     for (const auto& i : names_to_reads) {
         reads->push_back(i.second);
+        //singletoncounter++;
     }
 
     bamreader.Close();
@@ -154,17 +167,32 @@ deque<AlignmentRecord*>* readBamFile(string filename, vector<string>& readNames)
     auto comp = [](AlignmentRecord* r1, AlignmentRecord* r2) { return r1->getIntervalStart() < r2->getIntervalStart(); };
 
     sort(reads->begin(), reads->end(), comp);
+    cout << "Done with reading BamFile." << endl;
+
+    //cout << "Number of Reads: " << readcounter << endl;
+    //cout << "Number of Pairs: " << pairedendcounter << endl;
+    //cout << "Number of Singletons: " << singletoncounter << endl;
+
+    //cout << "Number of Overlapping Pairs: " << overlap << endl;
+
+
 
     return reads;
 }
 
 int main(int argc, char* argv[]) {
+ 
+    //cout << "Test\n" << endl;
 
     map<std::string, docopt::value> args
         = docopt::docopt(USAGE,
                          { argv + 1, argv + argc },
                          false);
 
+    for(auto elem : args)
+    {
+   	cout << elem.first << " " << elem.second << "\n";
+    }
     // PARAMETERS
     string bamfile = args["<bamfile>"].asString();
     string outfile = "quasispecies.fasta";
