@@ -41,16 +41,36 @@ int phred_sum(const string& phred, char phred_base=33) {
 	return result;
 }
 
+int agreement(const char& qual1, const char& qual2){
+    float prob1 = std::pow(10,(float)-qual1/10);
+    float prob2 = std::pow(10,(float)-qual2/10);
+    float posterior = (prob1*prob2/3)/(1-prob1-prob2+4*prob1*prob2/3);
+    posterior = std::round(-10*log10(posterior));
+    return (posterior);
+}
+
+int disagreement(const char& qual1, const char& qual2){
+    float prob1 = std::pow(10,(float)-qual1/10);
+    float prob2 = std::pow(10,(float)-qual2/10);
+    float posterior = ((prob1*(1-prob2/3))/(prob1+prob2-4*prob1*prob2/3));
+    posterior = std::round(-10*log10(posterior));
+    return (posterior);
+}
+
 std::pair<char,char> compute_pair(const char& base1, const char& qual1, const char& base2, const char& qual2){
     std::pair<char,char> result;
-    int qual;
+    char qual;
+
     if (base1==base2){
-        qual = std::min(40,qual1+qual2);
-        result=std::make_pair(base1,qual);
+        qual = std::min(agreement(qual1-33,qual2-33)+33,126);
+        result = std::make_pair(base1,qual);
     }
-    else if (qual1 == qual2) {
-        qual = std::min(40,qual1+qual2);
-        result=std::make_pair();
+    else if (qual1>=qual2) {
+        qual = disagreement(qual1-33,qual2-33)+33;
+        result = std::make_pair(base1,qual);
+    } else {
+        qual = disagreement(qual2-33,qual1-33)+33;
+        result= std::make_pair(base2,qual);
     }
     return result;
 }
@@ -352,6 +372,9 @@ void AlignmentRecord::pairWith(const BamTools::BamAlignment& alignment) {
            		}
            	}
         }
+        if (this->name == "MISEQ-02:83:000000000-A9WYY:1:1109:18587:11878"){
+            int k = 0;
+        }
     }
 
     AlignmentRecord::covmap test = AlignmentRecord::coveredPositions();
@@ -466,6 +489,11 @@ AlignmentRecord::covmap AlignmentRecord::coveredPositions(){
     //In case of a paired end read
     if (!this->single_end){
         assert(this->start1 <= this->start2);
+            if (this->name == "MISEQ-02:83:000000000-A9WYY:1:1109:18587:11878"){
+                int k = 0;
+                cout << this->sequence1 << endl;
+                cout << this->sequence2 << endl;
+            }
             //position in ref
             r = this->start2;
             //position in query bases
@@ -474,12 +502,12 @@ AlignmentRecord::covmap AlignmentRecord::coveredPositions(){
                 char c = this->cigar2_unrolled[i];
                 switch(c){
                     case 'M': {
-                        if (r > this->end1){
+                        if (r > this->end1 || cov_positions.count(r) == 0){
                             cov_positions[r]=std::make_pair(this->sequence2[q],this->sequence2.qualityChar(q));
                             //char d = this->sequence2[q];
                         } else {
                             assert(cov_positions.count(r)>0);
-                            cov_positions[r]=compute_pair(cov_positions[r].first, cov_positions[r].second ,this->sequence2[q],this->sequence2.qualityChar(q));
+                            cov_positions[r]=compute_pair(cov_positions[r].first, cov_positions[r].second,this->sequence2[q],this->sequence2.qualityChar(q));
                         }
                         ++q;
                         ++r;
