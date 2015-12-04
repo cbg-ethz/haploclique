@@ -46,7 +46,7 @@ int agreement(const char& qual1, const char& qual2){
     float prob2 = std::pow(10,(float)-qual2/10);
     float posterior = (prob1*prob2/3)/(1-prob1-prob2+4*prob1*prob2/3);
     posterior = std::round(-10*log10(posterior));
-    return (posterior);
+    return posterior;
 }
 
 int disagreement(const char& qual1, const char& qual2){
@@ -54,7 +54,7 @@ int disagreement(const char& qual1, const char& qual2){
     float prob2 = std::pow(10,(float)-qual2/10);
     float posterior = ((prob1*(1-prob2/3))/(prob1+prob2-4*prob1*prob2/3));
     posterior = std::round(-10*log10(posterior));
-    return (posterior);
+    return posterior;
 }
 
 std::pair<char,char> compute_pair(const char& base1, const char& qual1, const char& base2, const char& qual2){
@@ -498,6 +498,10 @@ AlignmentRecord::covmap AlignmentRecord::coveredPositions(){
             r = this->start2;
             //position in query bases
             q = 0;
+            //in case of overlapping paired end it is a single end
+            if (r <= this->end1){
+                this->single_end = true;
+            }
             for (unsigned int i = 0; i< this->cigar2_unrolled.size(); ++i){
                 char c = this->cigar2_unrolled[i];
                 switch(c){
