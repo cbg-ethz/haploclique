@@ -49,24 +49,56 @@ NewEdgeCalculator::~NewEdgeCalculator() {
 }
 
 std::vector<int> commonPositions(const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord::covmap & cov_ap2) const{
-
+    std::vector<int> res;
+    for (auto it = cov_ap1.begin(); it!= cov_ap1.end(); ++it){
+            auto fit = cov_ap2.find(it->first);
+            if (fit!= cov_ap2.end()){
+                res.push_back(it->first);
+            }
+    }
+    return res;
 }
 
 std::vector<int> tailPositions(const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord::covmap & cov_ap2) const{
 
 }
 
+double qScore(std::pair<char,char>& pair, char& x){
+    if (pair.first == x){
+        return 1.0 - std::pow(10, (double)(-pair.second-33)/10.0);
+    } else {
+        return std::pow(10, (double)(-pair.second - 33)/10.0)/3.0;
+    }
+}
+
 double calculateProbM(const std::vector<int> & aub, const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord::covmap & cov_ap2) const{
+    double res = 0.0;
+    double sum = 0.0;
+    string bases = "ACTG";
+    for (auto i in aub){
+        for (char j in bases){
+            sum += qScore(cov_ap1[i],j)*qScore(cov_ap2[i],j);
+        }
+        res *=sum;
+    }
 
 }
 
-double calculateProb0(const std::vector<int> & aub, const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord::covmap & cov_ap2) const{
+double calculateProb0(const std::vector<int> & tail, const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord::covmap & cov_ap2) const{
+    double res = 0.0;
 
+}
+
+bool checkGaps(const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord::covmap & cov_ap2){
+    return true;
 }
 
 
 bool NewEdgeCalculator::similarityCriterion(const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord::covmap & cov_ap2) const{
     bool incompatibleGaps = checkGaps(cov_ap1, cov_ap2);
+    if (!incompatibleGaps){
+        return false;
+    }
     std::vector<int> aub = commonPositions(cov_ap1, cov_ap2);
     std::vector<int> tail = tailPositions(cov_ap1,cov_ap2);
     double p_m = calculateProbM(aub, cov_ap1, cov_ap2);
