@@ -24,6 +24,7 @@
 #include <utility>
 #include <set>
 #include <map>
+#include <tuple>
 
 #include <api/BamAux.h>
 #include <api/BamAlignment.h>
@@ -92,9 +93,17 @@ public:
 	  * by getInsertStart() and getInsertEnd(). */
 	size_t internalSegmentIntersectionLength(const AlignmentRecord& ap) const;
 
-    /** Returns a map containing the covered positions of an AlignmentRecord, the base and
-     * the quality score; */
-    typedef std::map <int,std::pair<char,char>> covmap;
+    /** Returns a map containing the ref positions of an AlignmentRecord, the base,
+     * the quality score and the position in the read; */
+    struct mapValue{
+        //mapValue() : base(), qual(), pir(0) {}
+        //mapValue(char & base, char & qual, int & pir)
+        //         : base(base), qual(qual), pir(0) {}
+        char base;
+        char qual;
+        int pir; //position in read
+    };
+    typedef std::map <int,mapValue> covmap;
     covmap coveredPositions();
 
 	unsigned int getEnd1() const;

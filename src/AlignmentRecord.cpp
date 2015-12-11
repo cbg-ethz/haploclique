@@ -57,20 +57,20 @@ int disagreement(const char& qual1, const char& qual2){
     return posterior;
 }
 
-std::pair<char,char> compute_pair(const char& base1, const char& qual1, const char& base2, const char& qual2){
-    std::pair<char,char> result;
+AlignmentRecord::mapValue compute_entry(const char& base1, const char& qual1, const char& base2, const char& qual2, const int& pos){
+    AlignmentRecord::mapValue result;
     char qual;
 
     if (base1==base2){
         qual = std::min(agreement(qual1-33,qual2-33)+33,126);
-        result = std::make_pair(base1,qual);
+        result = {base1,qual,pos};
     }
     else if (qual1>=qual2) {
         qual = disagreement(qual1-33,qual2-33)+33;
-        result = std::make_pair(base1,qual);
+        result = {base1,qual,pos};
     } else {
         qual = disagreement(qual2-33,qual1-33)+33;
-        result= std::make_pair(base2,qual);
+        result= {base2,qual,pos};
     }
     return result;
 }
@@ -111,6 +111,8 @@ AlignmentRecord::AlignmentRecord(const BamTools::BamAlignment& alignment, int re
             int k = 0;
         }
     }
+
+
     /*if(this->cigar1_unrolled.size()!=this->sequence1.toString().size()){
         int k = 0;
         cout << this->sequence1.toString().size() << endl;
@@ -372,20 +374,10 @@ void AlignmentRecord::pairWith(const BamTools::BamAlignment& alignment) {
            		}
            	}
         }
-        if (this->name == "MISEQ-02:83:000000000-A9WYY:1:1109:18587:11878"){
-            int k = 0;
-        }
     }
 
-    AlignmentRecord::covmap test = AlignmentRecord::coveredPositions();
-    /*if (this->name ==  "MISEQ-02:83:000000000-A9WYY:1:2111:5501:15159"){
-        cout << this->sequence1.toString() << endl;
-        cout << this->sequence2.toString() << endl;
-        cout << this->start1 << endl;
-        cout << this->end1 << endl;
-        cout << this->start2 << endl;
-        cout << this->end2 << endl;
-        AlignmentRecord::covmap test = AlignmentRecord::coveredPositions();
+    //AlignmentRecord::covmap test = AlignmentRecord::coveredPositions();
+/*
         for(auto it = test.cbegin(); it != test.cend(); ++it)
         {
             std::cout << it->first << " " << it->second.first << " " << it->second.second << std::endl;
@@ -467,7 +459,7 @@ AlignmentRecord::covmap AlignmentRecord::coveredPositions(){
         char c = this->cigar1_unrolled[i];
         switch(c){
             case 'M': {
-                cov_positions[r]=std::make_pair(this->sequence1[q],this->sequence1.qualityChar(q));
+                cov_positions[r]={this->sequence1[q],this->sequence1.qualityChar(q),q};
                 //char d = this->sequence1[q];
                 ++q;
                 ++r;
@@ -498,7 +490,7 @@ AlignmentRecord::covmap AlignmentRecord::coveredPositions(){
             r = this->start2;
             //position in query bases
             q = 0;
-            //in case of overlapping paired end it is a single end
+            //in case of overlapping paired end it is declared as a single end
             if (r <= this->end1){
                 this->single_end = true;
             }
@@ -507,11 +499,11 @@ AlignmentRecord::covmap AlignmentRecord::coveredPositions(){
                 switch(c){
                     case 'M': {
                         if (r > this->end1 || cov_positions.count(r) == 0){
-                            cov_positions[r]=std::make_pair(this->sequence2[q],this->sequence2.qualityChar(q));
+                            cov_positions[r]={this->sequence2[q],this->sequence2.qualityChar(q),q};
                             //char d = this->sequence2[q];
                         } else {
                             assert(cov_positions.count(r)>0);
-                            cov_positions[r]=compute_pair(cov_positions[r].first, cov_positions[r].second,this->sequence2[q],this->sequence2.qualityChar(q));
+                            cov_positions[r]=compute_entry(cov_positions[r].base, cov_positions[r].qual,this->sequence2[q],this->sequence2.qualityChar(q), q);
                         }
                         ++q;
                         ++r;
