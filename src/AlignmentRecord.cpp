@@ -481,11 +481,6 @@ AlignmentRecord::covmap AlignmentRecord::coveredPositions(){
     //In case of a paired end read
     if (!this->single_end){
         assert(this->start1 <= this->start2);
-            if (this->name == "MISEQ-02:83:000000000-A9WYY:1:1109:18587:11878"){
-                int k = 0;
-                cout << this->sequence1 << endl;
-                cout << this->sequence2 << endl;
-            }
             //position in ref
             r = this->start2;
             //position in query bases

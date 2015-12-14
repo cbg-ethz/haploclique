@@ -98,7 +98,7 @@ double calculateProbM(const std::vector<int> & aub, const AlignmentRecord::covma
     return res;
 }
 
-//TO DO: iterate through bam file
+//TO DO: calculate allel frequency distribution beforehand
 double calculateProb0(const std::vector<int> & tail, const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord::covmap & cov_ap2){
     double res = 1.0;
     for(i in tail){
@@ -109,18 +109,25 @@ double calculateProb0(const std::vector<int> & tail, const AlignmentRecord::covm
 
 //TO DO: find out whether gaps are compatible
 bool checkGaps(AlignmentRecord::covmap & cov_ap1,AlignmentRecord::covmap & cov_ap2, std::vector<int> & aub){
+    bool res = true;
+    for (int i = 0; i < aub.size()-1; ++i){
 
-    return true;
+        int diff1 = cov_ap1[aub[i+1]].pos-cov_ap1[aub[i]].pos;
+        int diff2 = cov_ap2[aub[i+1]].pos-cov_ap2[aub[i]].pos;
+        if (diff1 != diff2){
+            res = false;
+        }
+    }
+    return res;
 }
 
-//TO DO: combine probabilities,
 bool similarityCriterion(const AlignmentRecord & a1, const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord & a2, const AlignmentRecord::covmap & cov_ap2, std::vector<int> & aub, std::vector<int> tail){
 
     //Threshold forprobability that reads were sampled from same haplotype
     double cutoff = 0;
-    if (ap1.getName().find("Clique") != string::npos && ap2.getName().find("Clique") != string::npos) {
+    if (a1.getName().find("Clique") != string::npos && a2.getName().find("Clique") != string::npos) {
         cutoff = this->EDGE_QUASI_CUTOFF;
-    } else if (ap1.getName().find("Clique") != string::npos || ap2.getName().find("Clique") != string::npos) {
+    } else if (a1.getName().find("Clique") != string::npos || a2.getName().find("Clique") != string::npos) {
         cutoff = this->EDGE_QUASI_CUTOFF_MIXED;
     } else {
         cutoff = this->EDGE_QUASI_CUTOFF_SINGLE;
@@ -128,7 +135,7 @@ bool similarityCriterion(const AlignmentRecord & a1, const AlignmentRecord::covm
 
     //Threshold for Overlap of Read Alignments
     double MIN_OVERLAP = 0;
-    if (ap1.getName().find("Clique") != string::npos && ap2.getName().find("Clique") != string::npos) {
+    if (a1.getName().find("Clique") != string::npos && a2.getName().find("Clique") != string::npos) {
         MIN_OVERLAP = MIN_OVERLAP_CLIQUES;
     } else {
         MIN_OVERLAP = MIN_OVERLAP_SINGLE;
@@ -152,8 +159,7 @@ bool NewEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const Alignment
         return false;
     }
     std::vector<int> tail = tailPositions(cov_ap1,cov_ap2);
-    bool similarity = similarityCriterion(ap1, cov_ap1, ap2, cov_ap2, aub, tail);
-    return similarity;
+    return similarityCriterion(ap1, cov_ap1, ap2, cov_ap2, aub, tail);
 }
 
 
