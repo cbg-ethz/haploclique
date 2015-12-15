@@ -17,6 +17,7 @@
 
 cmake_minimum_required (VERSION 2.6) 
 project (STRUCTVAR)
+SET(CMAKE_C_COMPILER "/usr/bin/gcc-4.9")
 
 list(APPEND CMAKE_MODULE_PATH .) 
 
@@ -24,7 +25,7 @@ IF(NOT CMAKE_BUILD_TYPE)
 	SET(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build, options are: Debug Release Profile" FORCE)
 ENDIF(NOT CMAKE_BUILD_TYPE)
 
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/bin)
+#SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/bin)
 
 enable_testing()
 

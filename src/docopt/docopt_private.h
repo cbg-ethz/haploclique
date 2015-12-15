@@ -198,9 +198,7 @@ namespace docopt {
 	
 	class Argument
 	: public LeafPattern {
-	public:
 		using LeafPattern::LeafPattern;
-		
 	protected:
 		virtual std::pair<size_t, std::shared_ptr<LeafPattern>> single_match(PatternList const& left) const override;
 	};

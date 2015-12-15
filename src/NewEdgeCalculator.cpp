@@ -111,14 +111,14 @@ double calculateProb0(const std::vector<int> & tail, const AlignmentRecord::covm
 bool checkGaps(AlignmentRecord::covmap & cov_ap1,AlignmentRecord::covmap & cov_ap2, std::vector<int> & aub){
     bool res = true;
     for (int i = 0; i < aub.size()-1; ++i){
-
-        int diff1 = cov_ap1[aub[i+1]].pos-cov_ap1[aub[i]].pos;
-        int diff2 = cov_ap2[aub[i+1]].pos-cov_ap2[aub[i]].pos;
-        if (diff1 != diff2){
-            res = false;
-        }
-    }
+        int ref_diff1 = aub[i+1]-aub[i];
+        int ref_diff2 = aub[i+1]-aub[i];
+        int pos_diff1 = cov_ap1[aub[i+1]].pir-cov_ap1[aub[i]].pir;
+        int pos_diff2 = cov_ap2[aub[i+1]].pir-cov_ap2[aub[i]].pir;
+        bool jump1 = cov_ap1[aub[i+1]].read-cov_ap1[aub[i]].read; //=0/1 for no jump/jump
+        bool jump2 = cov_ap2[aub[i+1]].read-cov_ap2[aub[i]].read;
     return res;
+    }
 }
 
 bool similarityCriterion(const AlignmentRecord & a1, const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord & a2, const AlignmentRecord::covmap & cov_ap2, std::vector<int> & aub, std::vector<int> tail){

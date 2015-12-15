@@ -319,9 +319,6 @@ void AlignmentRecord::mergeSequences(std::deque<std::pair<int, int>> intervals, 
 
 void AlignmentRecord::pairWith(const BamTools::BamAlignment& alignment) {
     this->single_end = false;
-    if (this->name == "MISEQ-02:83:000000000-A9WYY:1:1105:3420:17305"){
-        int k = 0;
-    }
     if (alignment.Position+1 > this->start1) {
         this->start2 = alignment.Position + 1;
        this->end2 = alignment.GetEndPosition();
@@ -343,9 +340,6 @@ void AlignmentRecord::pairWith(const BamTools::BamAlignment& alignment) {
            	}
         }
     } else {
-        if (this->name == "MISEQ-02:83:000000000-A9WYY:1:1106:20056:23136"){
-            int k = 0;
-        }
         this->start2 = this->start1;
         this->end2 = this->end1;
         this->cigar2 = this->cigar1;
@@ -459,7 +453,7 @@ AlignmentRecord::covmap AlignmentRecord::coveredPositions(){
         char c = this->cigar1_unrolled[i];
         switch(c){
             case 'M': {
-                cov_positions[r]={this->sequence1[q],this->sequence1.qualityChar(q),q};
+                cov_positions[r]={this->sequence1[q],this->sequence1.qualityChar(q),q,0};
                 //char d = this->sequence1[q];
                 ++q;
                 ++r;
@@ -494,7 +488,7 @@ AlignmentRecord::covmap AlignmentRecord::coveredPositions(){
                 switch(c){
                     case 'M': {
                         if (r > this->end1 || cov_positions.count(r) == 0){
-                            cov_positions[r]={this->sequence2[q],this->sequence2.qualityChar(q),q};
+                            cov_positions[r]={this->sequence2[q],this->sequence2.qualityChar(q),q,1};
                             //char d = this->sequence2[q];
                         } else {
                             assert(cov_positions.count(r)>0);

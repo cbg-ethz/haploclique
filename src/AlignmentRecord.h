@@ -102,6 +102,7 @@ public:
         char base;
         char qual;
         int pir; //position in read
+        int read; //number of paired end read
     };
     typedef std::map <int,mapValue> covmap;
     covmap coveredPositions();

@@ -39,6 +39,7 @@
 
 #include "AlignmentRecord.h"
 #include "QuasispeciesEdgeCalculator.h"
+#include "NewEdgeCalculator.h"
 #include "CliqueFinder.h"
 #include "CLEVER.h"
 #include "BronKerbosch.h"
@@ -172,6 +173,7 @@ deque<AlignmentRecord*>* readBamFile(string filename, vector<string>& readNames)
     //cout << "Number of Reads: " << readcounter << endl;
     //cout << "Number of Pairs: " << pairedendcounter << endl;
     //cout << "Number of Singletons: " << singletoncounter << endl;
+
 
     //cout << "Number of Overlapping Pairs: " << overlap << endl;
 

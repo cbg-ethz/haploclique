@@ -84,6 +84,9 @@ void BronKerbosch::degeneracy_order() {
 
         if(degree_map_->count(ind) == 0) {           
             degree_map_->emplace(ind, list<adjacency_list_t*>(1, *it) );
+	//	degree_map_->insert(std::pair<std::list<adjacency_list_t*>::size_type, std::list<adjacency_list_t*>>(ind,list<adjacency_list_t*>(1, *it)));
+	
+
         } else {
             degree_map_->at(ind).push_back(*it);
         }
@@ -119,6 +122,7 @@ void BronKerbosch::degeneracy_order() {
 
             if (degree_map_->count(s-1) == 0) {
                 degree_map_->emplace(s-1, list<adjacency_list_t*>(1, companion) );                
+		//degree_map_->insert(std::pair<std::list<adjacency_list_t*>::size_type, std::list<adjacency_list_t*>>(s-1, list<adjacency_list_t*>(1, companion)));
             } else {
                 degree_map_->at(s-1).push_front(companion);
             }
@@ -270,6 +274,7 @@ void BronKerbosch::addAlignment(std::unique_ptr<AlignmentRecord>& alignment_auto
 
             if(degree_map_->count(ind) == 0) {           
                 degree_map_->emplace(ind, list<adjacency_list_t*>(1, *it) );
+//		degree_map_->insert(std::pair<std::list<adjacency_list_t*>::size_type, std::list<adjacency_list_t*>> (ind, list<adjacency_list_t*>(1, *it)));
             } else {
                 degree_map_->at(ind).push_back(*it);
             }

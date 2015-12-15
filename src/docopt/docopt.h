@@ -10,7 +10,7 @@
 #define __docopt__docopt__
 
 #include "docopt_value.h"
-
+#include <stdexcept>
 #include <map>
 #include <vector>
 #include <string>
@@ -19,10 +19,11 @@ namespace docopt {
 	
 	// Usage string could not be parsed (ie, the developer did something wrong)
 	struct DocoptLanguageError : std::runtime_error { using runtime_error::runtime_error; };
-	
+
 	// Arguments passed by user were incorrect (ie, developer was good, user is wrong)
 	struct DocoptArgumentError : std::runtime_error { using runtime_error::runtime_error; };
 	
+
 	// Arguments contained '--help' and parsing was aborted early
 	struct DocoptExitHelp : std::runtime_error { DocoptExitHelp(); };
 	

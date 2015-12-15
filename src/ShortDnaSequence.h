@@ -24,7 +24,7 @@
 #include <boost/smart_ptr.hpp>
 
 /** A DNA sequence stored in an 8-bit encoding. Can compute and cache its reverse complement. */
-class ShortDnaSequence {
+class                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       ShortDnaSequence {
 private:
     typedef boost::shared_ptr<std::string> string_ptr_t;
     mutable string_ptr_t forward;

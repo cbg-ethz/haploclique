@@ -15,6 +15,7 @@
 #include <vector>
 #include <unordered_set>
 #include <unordered_map>
+#include <stdexcept>
 #include <map>
 #include <string>
 #include <regex>
@@ -1007,6 +1008,9 @@ docopt::docopt_parse(std::string const& doc,
 		     bool version,
 		     bool options_first)
 {
+	//std::cout << "doc: " << doc << std::endl;
+	//std::cout << "argv: " << argv << std::endl;
+	
 	Required pattern;
 	std::vector<Option> options;
 	try {

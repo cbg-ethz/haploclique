@@ -256,14 +256,23 @@ double QuasispeciesEdgeCalculator::singleOverlap(const AlignmentRecord & ap1, co
     unsigned long j_cigar = 0, j_cigar2 = 0;
     int j = 0, j2 = 0;
     for (;;) {
-        if (cigar1[j_cigar] != 'S' && cigar2[j_cigar2] != 'S' && cigar1[j_cigar] != 'H' && cigar2[j_cigar2] != 'H') break;
-        if (cigar1[j_cigar] == 'S') { j_cigar++; j_seq++; }
-        if (cigar2[j_cigar2] == 'S') { j_cigar2++; j_seq2++; }
-        if (cigar1[j_cigar] == 'H') { j_cigar++; }
-        if (cigar2[j_cigar2] == 'H') { j_cigar2++; }
+        if(j_cigar < cigar1.size() && j_cigar2 < cigar2.size()) {
+
+            if (cigar1[j_cigar] != 'S' && cigar2[j_cigar2] != 'S' && cigar1[j_cigar] != 'H' && cigar2[j_cigar2] != 'H') break;
+            if (cigar1[j_cigar] == 'S') { j_cigar++; j_seq++; }
+            if (cigar2[j_cigar2] == 'S') { j_cigar2++; j_seq2++; }
+            if (cigar1[j_cigar] == 'H') { j_cigar++; }
+            if (cigar2[j_cigar2] == 'H') { j_cigar2++; }
+        }
     }
     for (int j_prefix = 0;;) {
         if (j_prefix == offset1) break;
+        if(j_cigar >= cigar1.size()) {
+            int _ = 0;
+            j_cigar++;
+            j_prefix++;
+            continue;
+        }
         switch (cigar1[j_cigar]) {
             case 'M': 
                 if (!perfect) {
@@ -394,6 +403,11 @@ double QuasispeciesEdgeCalculator::singleOverlap(const AlignmentRecord & ap1, co
             for (;j_cigar2<cigar2.size();) {
                 if (cigar2[j_cigar2] == 'S') break;
                 if (cigar2[j_cigar2] == 'M') {
+                    //if (j_cigar >= 26){
+                    //    cerr << s2 << endl;
+                    //    cerr << j2 << endl;
+                    //    cerr << s2+j2 << endl;
+                    //}
                     int j_global = s2+j2;
                     if (this->SIMPSON_MAP.begin() != this->SIMPSON_MAP.end()
                         && this->SIMPSON_MAP.find(j_global) != this->SIMPSON_MAP.end()) {
