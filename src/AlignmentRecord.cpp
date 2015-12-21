@@ -321,27 +321,49 @@ void AlignmentRecord::mergeSequences(std::deque<std::pair<int, int>> intervals, 
 //creates merged Dna Sequence for overlapping paired end reads and creates new Cigar
 ShortDnaSequence::ShortDnaSequence AlignmentRecord::getMergedDnaSequence(const BamTools::BamAlignment& alignment, const unsigned int& start, const unsigned int& end, vector<BamTools::CigarOp>& new_cigar ){
         std::string dna = "";
-        std::string qualities "";
-        int index1 = 0;
-        int index2 = 0;
+        std::string qualities = "";
+        std::string nucigar = "";
+        int offset1 = 0;
+        int offset2 = 0;
         std::vector<char> cigar_temp_unrolled;
-        std::vector
+        //vector of CigarOp
         for (const auto& it : alignment.CigarData) {
             for (unsigned int s = 0; s < it.Length; ++s) {
                 cigar_temp_unrolled.push_back(it.Type);
             }
         }
         for(i in this->cigar1_unrolled){
-            if (i == 'S') index1++;
+            if (i == 'S' || i == 'H'){
+                offset1++;
+            } else break;
         }
         for (i in cigar_temp_unrolled){
-            if (i == 'S') index2++;
+            if (i == 'S' | i == 'H'){
+                offset2++;
+            } else break;
         }
-        while(index2>alignment.Position-this->start1){
+        int rpos1 = this->start1-offset2;
+        int rpos2 = alignment.Position+1-offset2;
+        int bpos1 = 0;
+        int bpos2 = 0;
+        int cpos1 = 0;
+        int cpos2 = 0;
+        if (rpos1 < rpos2){
+            for(;rpos1<rpos2;rpos1++){
+                if (this->cigar1_unrolled[cpos1])
+                dna +=this->sequence1[bpos1];
+                qualities += this->sequence1.qualityChar(bpos1);
+                nucigar += this->cigar_unrolled[cpos1];
+                bpos1++;
+                cpos1++;
+            }
+            if (this->end1<=alignment.GetEndPosition()){
+                for(;rpos<=this)
+            }
+
+        } else {
 
         }
-
-
         return ShortDnaSequence(dna,qualities);
 }
 
@@ -398,10 +420,10 @@ void AlignmentRecord::pairWith(const BamTools::BamAlignment& alignment) {
         }
     }//merging of overlapping paried ends to single end reads
     else if (alignment.Position+1 >= this->start1){
-        this->single_end = true;
-        this->end1=std::max(alignment.GetEndPosition(),this->end1);
+        //this->single_end = true;
         //Interval to merge : [alignment.Position,min(alignment.GetEndPosition()-1,this->end1-1]
-        this->sequence1 = getMergedDnaSequence();
+        //this->sequence1 = getMergedDnaSequence();
+        this->end1=std::max(alignment.GetEndPosition(),this->end1);
         //this->cigar1 = ;
         //this->pred_sum1=;
         //this->length_incl_deletions1 = ;
