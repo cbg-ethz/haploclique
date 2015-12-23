@@ -140,7 +140,7 @@ bool similarityCriterion(const AlignmentRecord & a1, const AlignmentRecord::covm
     } else {
         MIN_OVERLAP = MIN_OVERLAP_SINGLE;
     }
-
+    if (aub.size()>MIN_OVERLAP*std::min(cov_ap1.size(),cov_ap2.size())) return false;
     double p_m = calculateProbM(aub, cov_ap1, cov_ap2);
     double p_0 = calculateProb0(tail, cov_ap1, cov_ap2);
     double prob = p_m*p_0;

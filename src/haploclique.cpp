@@ -124,6 +124,16 @@ bool read_mean_and_sd(const string& filename, double* mean, double* sd) {
     return true;
 }
 
+std::map<int, double>  compute_afd(string filename) {
+    BamTools::BamReader bamreader;
+    if (not bamreader.Open(filename)){
+        cerr << bamreader.GetFilename() << endl;
+        throw std::runtime_error("Couldn't open Bamfile");
+    }
+    BamTools::BamAlignment alignment;
+
+}
+
 deque<AlignmentRecord*>* readBamFile(string filename, vector<string>& readNames) {
     typedef std::unordered_map<std::string, AlignmentRecord*> name_map_t;
     name_map_t names_to_reads;
@@ -249,6 +259,8 @@ int main(int argc, char* argv[]) {
             }
         }
         ia.close();
+    } else {
+        simpson_map = compute_afd(bamfile);
     }
     //cerr << "PARSE PRIOR: done" << endl;
 

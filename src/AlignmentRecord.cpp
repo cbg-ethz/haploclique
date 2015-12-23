@@ -524,7 +524,7 @@ size_t AlignmentRecord::internalSegmentIntersectionLength(const AlignmentRecord&
 	return max(0, right-left);
 }
 
-
+//We assume reads with overlapping paired ends have been merged before method is called
 AlignmentRecord::covmap AlignmentRecord::coveredPositions(){
     AlignmentRecord::covmap cov_positions;
     //cout << this->name << endl;
@@ -563,20 +563,20 @@ AlignmentRecord::covmap AlignmentRecord::coveredPositions(){
             //position in query bases
             q = 0;
             //in case of overlapping paired end it is declared as a single end
-            if (r <= this->end1){
-                this->single_end = true;
-            }
+            //if (r <= this->end1){
+            //   this->single_end = true;
+            //}
             for (unsigned int i = 0; i< this->cigar2_unrolled.size(); ++i){
                 char c = this->cigar2_unrolled[i];
                 switch(c){
                     case 'M': {
-                        if (r > this->end1 || cov_positions.count(r) == 0){
+                        //if (r > this->end1 || cov_positions.count(r) == 0){
                             cov_positions[r]={this->sequence2[q],this->sequence2.qualityChar(q),q,1};
                             //char d = this->sequence2[q];
-                        } else {
-                            assert(cov_positions.count(r)>0);
-                            cov_positions[r]=compute_entry(cov_positions[r].base, cov_positions[r].qual,this->sequence2[q],this->sequence2.qualityChar(q), q);
-                        }
+                        //} //else {
+                            //assert(cov_positions.count(r)>0);
+                            //cov_positions[r]=compute_entry(cov_positions[r].base, cov_positions[r].qual,this->sequence2[q],this->sequence2.qualityChar(q), q);
+                        //}
                         ++q;
                         ++r;
                         break;
