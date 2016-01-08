@@ -89,7 +89,7 @@ double calculateProbM(const std::vector<int> & aub, const AlignmentRecord::covma
     double res = 0.0;
     double sum = 0.0;
     string bases = "ACTG";
-    for (auto i in aub){
+    for (auto i : aub){
         for (char j in bases){
             sum += qScore(cov_ap1[i],j)*qScore(cov_ap2[i],j);
         }
@@ -101,29 +101,44 @@ double calculateProbM(const std::vector<int> & aub, const AlignmentRecord::covma
 //TO DO: calculate allel frequency distribution beforehand
 double calculateProb0(const std::vector<int> & tail, const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord::covmap & cov_ap2){
     double res = 1.0;
-    for(i in tail){
-        res *= 0.25;
+    for(auto i : tail){
+        //simpson_map is 1-based
+        auto k = this->SIMPSON_MAP.find(i);
+        if (k != this->SIMPSON_MAP.end()){
+            res *= k;
+        } else {
+            res *= 0.25;
+        }
     }
     return res;
 }
 
-//TO DO: find out whether gaps are compatible
+//TO DO: find out whether gaps / insertions are compatible
 bool checkGaps(AlignmentRecord::covmap & cov_ap1,AlignmentRecord::covmap & cov_ap2, std::vector<int> & aub){
-    bool res = true;
     for (int i = 0; i < aub.size()-1; ++i){
-        int ref_diff1 = aub[i+1]-aub[i];
-        int ref_diff2 = aub[i+1]-aub[i];
-        int pos_diff1 = cov_ap1[aub[i+1]].pir-cov_ap1[aub[i]].pir;
-        int pos_diff2 = cov_ap2[aub[i+1]].pir-cov_ap2[aub[i]].pir;
+        int ref_diff = aub[i+1]-aub[i];
+        int pos_diff1 = cov_ap1[aub[i+1]].pir-cov_ap1[aub[i]].pir; //<0 if jump is given
+        int pos_diff2 = cov_ap2[aub[i+1]].pir-cov_ap2[aub[i]].pir; //<0 if jump is given
         bool jump1 = cov_ap1[aub[i+1]].read-cov_ap1[aub[i]].read; //=0/1 for no jump/jump
         bool jump2 = cov_ap2[aub[i+1]].read-cov_ap2[aub[i]].read;
-    return res;
+        //insertion
+        if(ref_diff == 1 && pos_diff1 != pos_diff2 && (jump1 || jump2) == 0){
+            return false;
+        }
+        //deletion
+        else if(ref_diff > 1 && pos_diff1 != pos_diff2 && (jump1 || jump2) == 0){
+            return false;
+        }
+        else if(ref_diff > 1 && pos_diff1 == pos_diff2 && pos_diff1 > 1){
+            return false;
+        }
+    return true;
     }
 }
 
 bool similarityCriterion(const AlignmentRecord & a1, const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord & a2, const AlignmentRecord::covmap & cov_ap2, std::vector<int> & aub, std::vector<int> tail){
 
-    //Threshold forprobability that reads were sampled from same haplotype
+    //Threshold for probability that reads were sampled from same haplotype
     double cutoff = 0;
     if (a1.getName().find("Clique") != string::npos && a2.getName().find("Clique") != string::npos) {
         cutoff = this->EDGE_QUASI_CUTOFF;
@@ -140,7 +155,7 @@ bool similarityCriterion(const AlignmentRecord & a1, const AlignmentRecord::covm
     } else {
         MIN_OVERLAP = MIN_OVERLAP_SINGLE;
     }
-    if (aub.size()>MIN_OVERLAP*std::min(cov_ap1.size(),cov_ap2.size())) return false;
+    if (aub.size()<=MIN_OVERLAP*std::min(cov_ap1.size(),cov_ap2.size())) return false;
     double p_m = calculateProbM(aub, cov_ap1, cov_ap2);
     double p_0 = calculateProb0(tail, cov_ap1, cov_ap2);
     double prob = p_m*p_0;

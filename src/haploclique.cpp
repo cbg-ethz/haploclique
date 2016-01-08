@@ -77,8 +77,8 @@ Options:
                                               [default: 0.9]
   -j NUM --min_overlap_single=NUM         edge calculator option
                                               [default: 0.6]
-  -A FILE --allel_frequencies=NUM
-  -I FILE --call_indels=NUM              variant calling is not supported
+  -A FILE --allel_frequencies=FILE
+  -I FILE --call_indels=FILE              variant calling is not supported
                                               yet.
   -M FILE --mean_and_sd_filename=FILE     Required for option -I
   -p NUM --indel_edge_sig_level=NUM       [default: 0.2]
@@ -94,7 +94,7 @@ Options:
   -s NUM --significance=NUM               Filter out reads witch are below
                                               <num> standard deviations.
                                               [default: 3.0]
-  -L NUM, --log=FILE                      Write log to <file>.
+  -L FILE, --log=FILE                      Write log to <file>.
 )";
 
 void usage() {
@@ -122,16 +122,6 @@ bool read_mean_and_sd(const string& filename, double* mean, double* sd) {
         return false;
     }
     return true;
-}
-
-std::map<int, double>  compute_afd(string filename) {
-    BamTools::BamReader bamreader;
-    if (not bamreader.Open(filename)){
-        cerr << bamreader.GetFilename() << endl;
-        throw std::runtime_error("Couldn't open Bamfile");
-    }
-    BamTools::BamAlignment alignment;
-
 }
 
 deque<AlignmentRecord*>* readBamFile(string filename, vector<string>& readNames) {
@@ -254,13 +244,11 @@ int main(int argc, char* argv[]) {
             boost::split(insertion_words, words[0], boost::is_any_of("\\."), boost::token_compress_on);
             if (insertion_words.size() > 1) {
             } else {
-                simpson_map[atoi(words[0].c_str())] = pow(atof(words[1].c_str()),2)+pow(atof(words[2].c_str()),2)+pow(atof(words[3].c_str()),2)+pow(atof(words[4].c_str()),2)+pow(atof(words[5].c_str()),2);
+                simpson_map[atoi(words[0].c_str())] = pow(atof(words[1].c_str()),2)+pow(atof(words[2].c_str()),2)+pow(atof(words[3].c_str()),2)+pow(atof(words[4].c_str()),2);
                 //cerr << simpson_map[atoi(words[0].c_str())] << endl;
             }
         }
         ia.close();
-    } else {
-        simpson_map = compute_afd(bamfile);
     }
     //cerr << "PARSE PRIOR: done" << endl;
 
@@ -269,7 +257,7 @@ int main(int argc, char* argv[]) {
     EdgeCalculator* edge_calculator = nullptr;
     EdgeCalculator* indel_edge_calculator = nullptr;
     unique_ptr<vector<mean_and_stddev_t> > readgroup_params(nullptr);
-    edge_calculator = new QuasispeciesEdgeCalculator(Q, edge_quasi_cutoff_cliques, overlap_cliques, frameshift_merge, simpson_map, edge_quasi_cutoff_single, overlap_single, edge_quasi_cutoff_mixed);
+    edge_calculator = new NewEdgeCalculator(Q, edge_quasi_cutoff_cliques, overlap_cliques, frameshift_merge, simpson_map, edge_quasi_cutoff_single, overlap_single, edge_quasi_cutoff_mixed);
     if (call_indels) {
         double insert_mean = -1.0;
         double insert_stddev = -1.0;

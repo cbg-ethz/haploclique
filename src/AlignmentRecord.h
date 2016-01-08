@@ -61,13 +61,13 @@ private:
 	std::set<int> readNames;
     std::vector<std::string>* readNameMap;
 
-    void mergeSequences(std::deque<std::pair<int, int>>, std::vector<ShortDnaSequence>, std::vector<std::vector<BamTools::CigarOp>> cigars);
-
+    void mergeSequences(std::deque<std::pair<int, int>>, std::vector<ShortDnaSequence>, std::vector<std::vector<BamTools::CigarOp>> cigars);    
     void getCigarInterval(unsigned int start, unsigned int end, std::vector<BamTools::CigarOp>& new_cigar, const std::vector<BamTools::CigarOp>& original_cigar, unsigned int interval_start);
 public:
     AlignmentRecord(const BamTools::BamAlignment& alignment, int id, std::vector<std::string>* readNameMap);
     AlignmentRecord(std::unique_ptr<std::vector<const AlignmentRecord*>>& alignments,unsigned int clique_id);
 
+    void getMergedDnaSequence(const BamTools::BamAlignment& alignment);
     void pairWith(const BamTools::BamAlignment& alignment);
 
     unsigned int getRecordNr() const;
