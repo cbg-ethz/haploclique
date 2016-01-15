@@ -34,7 +34,7 @@
  const double NewEdgeCalculator::FRAME_SHIFT_WEIGHT = 0.01;
  
 
- NewEdgeCalculator::NewEdgeCalculator(double Q, double edge_quasi_cutoff, double overlap, bool frameshift_merge, map<int, double>& simpson_map, double edge_quasi_cutoff_single, double overlap_single, double edge_quasi_cutoff_mixed) {
+NewEdgeCalculator::NewEdgeCalculator(double Q, double edge_quasi_cutoff, double overlap, bool frameshift_merge, map<int, double>& simpson_map, double edge_quasi_cutoff_single, double overlap_single, double edge_quasi_cutoff_mixed) {
     this->Q = Q;
     this->EDGE_QUASI_CUTOFF = edge_quasi_cutoff;
     this->EDGE_QUASI_CUTOFF_SINGLE = edge_quasi_cutoff_single;
@@ -48,7 +48,7 @@
 NewEdgeCalculator::~NewEdgeCalculator() {
 }
 
-std::vector<int> commonPositions(const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord::covmap & cov_ap2){
+std::vector<int> NewEdgeCalculator::commonPositions(const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord::covmap & cov_ap2) const{
     std::vector<int> res;
     for (auto it = cov_ap1.begin(); it != cov_ap1.end(); ++it){
             auto fit = cov_ap2.find(it->first);
@@ -59,7 +59,7 @@ std::vector<int> commonPositions(const AlignmentRecord::covmap & cov_ap1, const 
     return res;
 }
 
-std::vector<int> tailPositions(const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord::covmap & cov_ap2){
+std::vector<int> NewEdgeCalculator::tailPositions(const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord::covmap & cov_ap2) const{
     std::vector<int> res;
     for (auto it = cov_ap1.begin(); it != cov_ap1.end(); ++it){
         auto fit = cov_ap2.find(it->first);
@@ -77,7 +77,7 @@ std::vector<int> tailPositions(const AlignmentRecord::covmap & cov_ap1, const Al
     return res;
 }
 
-double qScore(AlignmentRecord::mapValue& value, char& x){
+double NewEdgeCalculator::qScore(const AlignmentRecord::mapValue& value, char& x) const{
     if (value.base == x){
         return 1.0 - std::pow(10, (double)(-value.qual-33)/10.0);
     } else {
@@ -85,13 +85,13 @@ double qScore(AlignmentRecord::mapValue& value, char& x){
     }
 }
 
-double calculateProbM(const std::vector<int> & aub, const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord::covmap & cov_ap2){
+double NewEdgeCalculator::calculateProbM(const std::vector<int> & aub, const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord::covmap & cov_ap2) const{
     double res = 0.0;
     double sum = 0.0;
     string bases = "ACTG";
     for (auto i : aub){
-        for (char j in bases){
-            sum += qScore(cov_ap1[i],j)*qScore(cov_ap2[i],j);
+        for (char j : bases){
+            sum += qScore(cov_ap1.at(i),j)*qScore(cov_ap2.at(i),j);
         }
         res *= sum;
     }
@@ -99,13 +99,13 @@ double calculateProbM(const std::vector<int> & aub, const AlignmentRecord::covma
 }
 
 //TO DO: calculate allel frequency distribution beforehand
-double calculateProb0(const std::vector<int> & tail, const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord::covmap & cov_ap2){
+double NewEdgeCalculator::calculateProb0(const std::vector<int> & tail) const{
     double res = 1.0;
     for(auto i : tail){
         //simpson_map is 1-based
         auto k = this->SIMPSON_MAP.find(i);
         if (k != this->SIMPSON_MAP.end()){
-            res *= k;
+            res *= k->second;
         } else {
             res *= 0.25;
         }
@@ -114,13 +114,13 @@ double calculateProb0(const std::vector<int> & tail, const AlignmentRecord::covm
 }
 
 //TO DO: find out whether gaps / insertions are compatible
-bool checkGaps(AlignmentRecord::covmap & cov_ap1,AlignmentRecord::covmap & cov_ap2, std::vector<int> & aub){
-    for (int i = 0; i < aub.size()-1; ++i){
+bool NewEdgeCalculator::checkGaps(const AlignmentRecord::covmap & cov_ap1,const AlignmentRecord::covmap & cov_ap2,const std::vector<int> & aub) const{
+    for (int i = 0; i < (signed)aub.size()-1; ++i){
         int ref_diff = aub[i+1]-aub[i];
-        int pos_diff1 = cov_ap1[aub[i+1]].pir-cov_ap1[aub[i]].pir; //<0 if jump is given
-        int pos_diff2 = cov_ap2[aub[i+1]].pir-cov_ap2[aub[i]].pir; //<0 if jump is given
-        bool jump1 = cov_ap1[aub[i+1]].read-cov_ap1[aub[i]].read; //=0/1 for no jump/jump
-        bool jump2 = cov_ap2[aub[i+1]].read-cov_ap2[aub[i]].read;
+        int pos_diff1 = cov_ap1.at(aub[i+1]).pir-cov_ap1.at(aub[i]).pir; //<0 if jump is given
+        int pos_diff2 = cov_ap2.at(aub[i+1]).pir-cov_ap2.at(aub[i]).pir; //<0 if jump is given
+        bool jump1 = cov_ap1.at(aub[i+1]).read-cov_ap1.at(aub[i]).read; //=0/1 for no jump/jump
+        bool jump2 = cov_ap2.at(aub[i+1]).read-cov_ap2.at(aub[i]).read;
         //insertion
         if(ref_diff == 1 && pos_diff1 != pos_diff2 && (jump1 || jump2) == 0){
             return false;
@@ -132,11 +132,12 @@ bool checkGaps(AlignmentRecord::covmap & cov_ap1,AlignmentRecord::covmap & cov_a
         else if(ref_diff > 1 && pos_diff1 == pos_diff2 && pos_diff1 > 1){
             return false;
         }
-    return true;
     }
+    if (aub.size()<1) return false;
+    return true;
 }
 
-bool similarityCriterion(const AlignmentRecord & a1, const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord & a2, const AlignmentRecord::covmap & cov_ap2, std::vector<int> & aub, std::vector<int> tail){
+bool NewEdgeCalculator::similarityCriterion(const AlignmentRecord & a1, const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord & a2, const AlignmentRecord::covmap & cov_ap2, std::vector<int> & aub, std::vector<int> tail) const{
 
     //Threshold for probability that reads were sampled from same haplotype
     double cutoff = 0;
@@ -157,7 +158,7 @@ bool similarityCriterion(const AlignmentRecord & a1, const AlignmentRecord::covm
     }
     if (aub.size()<=MIN_OVERLAP*std::min(cov_ap1.size(),cov_ap2.size())) return false;
     double p_m = calculateProbM(aub, cov_ap1, cov_ap2);
-    double p_0 = calculateProb0(tail, cov_ap1, cov_ap2);
+    double p_0 = calculateProb0(tail);
     double prob = p_m*p_0;
     int test = aub.size()+tail.size();
     double potence = 1.0/test;
@@ -166,15 +167,36 @@ bool similarityCriterion(const AlignmentRecord & a1, const AlignmentRecord::covm
     return final_prob >= cutoff;
 }
 
-bool NewEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const AlignmentRecord & ap2) {
+bool NewEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const AlignmentRecord & ap2) const{
     AlignmentRecord::covmap cov_ap1 = ap1.coveredPositions();
     AlignmentRecord::covmap cov_ap2 = ap2.coveredPositions();
+/*
+    AlignmentRecord::covmap cov_ap1;
+    AlignmentRecord::covmap cov_ap2;
+    cov_ap1[14]={'A','~',0,0};
+    cov_ap1[15]={'T','~',1,0};
+    cov_ap1[17]={'A','~',2,0};
+    cov_ap1[30]={'A','~',0,1};
+    cov_ap1[31]={'C','~',1,1};
+
+    cov_ap2[15]={'A','~',0,0};
+    cov_ap2[17]={'A','~',1,0};
+    cov_ap2[30]={'A','~',0,1};
+    cov_ap2[31]={'A','~',1,1};
+*/
     std::vector<int> aub = commonPositions(cov_ap1, cov_ap2);
+    //cout << "commonPositions computed" << endl;
     if (!checkGaps(cov_ap1, cov_ap2, aub)){
         return false;
     }
+    cout << "Gaps are checked" << endl;
     std::vector<int> tail = tailPositions(cov_ap1,cov_ap2);
+    cout << "Tail computed" << endl;
     return similarityCriterion(ap1, cov_ap1, ap2, cov_ap2, aub, tail);
+}
+
+void NewEdgeCalculator::getPartnerLengthRange(const AlignmentRecord& ap, unsigned int* min, unsigned int* max) const {
+    assert(false);
 }
 
 

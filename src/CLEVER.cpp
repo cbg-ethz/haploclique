@@ -154,6 +154,7 @@ void CLEVER::addAlignment(std::unique_ptr<AlignmentRecord>& alignment_autoptr) {
 		const AlignmentRecord* alignment2 = alignments[it->second];
 		// cerr << "  comparing to " << alignments[it->second]->getID() << ", length " << it->first << ", read group: " << alignments[it->second]->getReadGroup();
 		bool set_edge = edge_calculator.edgeBetween(*alignment, *alignment2);
+        if (set_edge) cout << "Edge candidates tested positive " << set_edge << endl;
 		if (set_edge && (second_edge_calculator != nullptr)) {
 			set_edge = second_edge_calculator->edgeBetween(*alignment, *alignment2);
 		}

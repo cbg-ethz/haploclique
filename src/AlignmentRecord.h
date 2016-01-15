@@ -61,13 +61,19 @@ private:
 	std::set<int> readNames;
     std::vector<std::string>* readNameMap;
 
+    /** merges sequences in superreads */
     void mergeSequences(std::deque<std::pair<int, int>>, std::vector<ShortDnaSequence>, std::vector<std::vector<BamTools::CigarOp>> cigars);    
     void getCigarInterval(unsigned int start, unsigned int end, std::vector<BamTools::CigarOp>& new_cigar, const std::vector<BamTools::CigarOp>& original_cigar, unsigned int interval_start);
 public:
     AlignmentRecord(const BamTools::BamAlignment& alignment, int id, std::vector<std::string>* readNameMap);
     AlignmentRecord(std::unique_ptr<std::vector<const AlignmentRecord*>>& alignments,unsigned int clique_id);
 
+    /** merges overlapping paired end reads while reading in bam files*/
+    void noOverlapMerge(std::string& dna, std::string& qualities, std::string& nucigar, int& c_pos, int& q_pos, int& ref_pos);
+    void noOverlapMerge(const BamTools::BamAlignment& alignment, std::string& dna, std::string& qualities, std::string& nucigar, std::vector<char>& cigar_temp_unrolled, int& c_pos, int& q_pos, int& ref_pos);
+    void overlapMerge(const BamTools::BamAlignment& alignment, std::string& dna, std::string& qualities, std::string& nucigar, std::vector<char>& cigar_temp_unrolled, int& c_pos1, int& c_pos2, int& q_pos1, int& q_pos2, int& ref_pos);
     void getMergedDnaSequence(const BamTools::BamAlignment& alignment);
+    /** combines to reads belonging to a paired end to one Alignment Record. They are merged if they overlap. */
     void pairWith(const BamTools::BamAlignment& alignment);
 
     unsigned int getRecordNr() const;
@@ -93,19 +99,17 @@ public:
 	  * by getInsertStart() and getInsertEnd(). */
 	size_t internalSegmentIntersectionLength(const AlignmentRecord& ap) const;
 
-    /** Returns a map containing the ref positions of an AlignmentRecord, the base,
-     * the quality score and the position in the read; */
+    /** represents entry for a map containing the ref positions of an AlignmentRecord, the base,
+     * the quality score and the position of the base in the read; */
     struct mapValue{
-        //mapValue() : base(), qual(), pir(0) {}
-        //mapValue(char & base, char & qual, int & pir)
-        //         : base(base), qual(qual), pir(0) {}
         char base;
-        char qual;
+        char qual; //phred score of base (QUALiy+33)
         int pir; //position in read
-        int read; //number of paired end read
+        int read; //number of paired end read 0 for first, 1 for second read
     };
     typedef std::map <int,mapValue> covmap;
-    covmap coveredPositions();
+    /** returns a map containing the reference positions which are covered by a read */
+    covmap coveredPositions() const;
 
 	unsigned int getEnd1() const;
 	unsigned int getEnd2() const;

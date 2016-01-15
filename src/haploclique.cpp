@@ -135,32 +135,34 @@ deque<AlignmentRecord*>* readBamFile(string filename, vector<string>& readNames)
     }
     BamTools::BamAlignment alignment;
 
-    //int readcounter = 0;
-    //int pairedendcounter = 0;
-    //int singletoncounter = 0;
-    //int overlap = 0;
+    int readcounter = 0;
+    int pairedendcounter = 0;
+    int overlap = 0;
 
     while (bamreader.GetNextAlignment(alignment)) {
         if(names_to_reads.count(alignment.Name) > 0) {
             //cout << alignment.Name << endl;
             names_to_reads[alignment.Name]->pairWith(alignment);
-            //if (names_to_reads[alignment.Name]->getStart2() <= names_to_reads[alignment.Name]->getEnd1()){
-                //++overlap;
+            if (names_to_reads[alignment.Name]->isSingleEnd()){
+                ++overlap;
+                ++readcounter;
+            } else {
+                pairedendcounter++;
+                ++readcounter;
+            }
             reads->push_back(names_to_reads[alignment.Name]);
             names_to_reads.erase(alignment.Name);
-            //++pairedendcounter;
-            //++readcounter;
         } else {
             names_to_reads[alignment.Name] = new AlignmentRecord(alignment, readNames.size(), &readNames);
             readNames.push_back(alignment.Name);
-            //++readcounter;
+            ++readcounter;
         }
     }
 
     // Push all single-end reads remaining in names_to_reads into the reads vector
     for (const auto& i : names_to_reads) {
         reads->push_back(i.second);
-        //singletoncounter++;
+        readcounter++;
     }
 
     bamreader.Close();
@@ -168,14 +170,11 @@ deque<AlignmentRecord*>* readBamFile(string filename, vector<string>& readNames)
     auto comp = [](AlignmentRecord* r1, AlignmentRecord* r2) { return r1->getIntervalStart() < r2->getIntervalStart(); };
 
     sort(reads->begin(), reads->end(), comp);
-    cout << "Done with reading BamFile." << endl;
+    cout << "Done with reading BamFile" << endl;
 
-    //cout << "Number of Reads: " << readcounter << endl;
-    //cout << "Number of Pairs: " << pairedendcounter << endl;
-    //cout << "Number of Singletons: " << singletoncounter << endl;
-
-
-    //cout << "Number of Overlapping Pairs: " << overlap << endl;
+    cout << "Number of Reads: " << readcounter << endl;
+    cout << "Number of Pairs: " << pairedendcounter << endl;
+    cout << "Number of Overlapping Pairs: " << overlap << endl;
 
 
 
@@ -250,7 +249,7 @@ int main(int argc, char* argv[]) {
         }
         ia.close();
     }
-    //cerr << "PARSE PRIOR: done" << endl;
+    cout << "PARSE PRIOR: done" << endl;
 
 
     clock_t clock_start = clock();
@@ -301,6 +300,7 @@ int main(int argc, char* argv[]) {
 
     while (ct != iterations) {
         clique_finder->initialize();
+        cout << "Clique_finder initialized " << ct << endl;
         if (lw != nullptr) lw->initialize();
 
         while(not reads->empty()) {
@@ -313,12 +313,15 @@ int main(int argc, char* argv[]) {
             if (filter_fn(al_ptr)) continue;
 
             clique_finder->addAlignment(al_ptr);
+            //cout << "addAlignment " << ct << endl;
         }
 
         delete reads;
-
+        cout << "reads deleted " << ct << endl;
         clique_finder->finish();
+        cout << "clique_finder finished " << ct << endl;
         reads = collector.finish();
+        cout << "collector finish " << ct << endl;
         if (lw != nullptr) lw->finish();
 
         stdev = setProbabilities(*reads);
