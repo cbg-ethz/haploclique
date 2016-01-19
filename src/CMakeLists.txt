@@ -18,9 +18,10 @@
 add_executable (haploclique
 	haploclique.cpp
 	CLEVER.cpp
-    BronKerbosch.cpp
+        BronKerbosch.cpp
 	Clique.cpp
 	QuasispeciesEdgeCalculator.cpp
+        NewEdgeCalculator.cpp
 	GaussianEdgeCalculator.cpp
 	AnyDistributionEdgeCalculator.cpp
 	AlignmentRecord.cpp
