@@ -99,16 +99,16 @@ public:
 	  * by getInsertStart() and getInsertEnd(). */
 	size_t internalSegmentIntersectionLength(const AlignmentRecord& ap) const;
 
-    /** represents entry for a map containing the ref positions of an AlignmentRecord, the base,
+    /** Represents entry for a map containing the ref positions of an AlignmentRecord, the base,
      * the quality score and the position of the base in the read; */
     struct mapValue{
         char base;
         char qual; //phred score of base (QUALiy+33)
         int pir; //position in read
-        int read; //number of paired end read 0 for first, 1 for second read
+        int read; //number of paired end read: 0 for first, 1 for second read
     };
     typedef std::map <int,mapValue> covmap;
-    /** returns a map containing the reference positions which are covered by a read */
+    /** Returns a map containing the reference positions which are covered by a read.  */
     covmap coveredPositions() const;
 
 	unsigned int getEnd1() const;

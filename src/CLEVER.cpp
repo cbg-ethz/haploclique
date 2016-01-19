@@ -150,15 +150,17 @@ void CLEVER::addAlignment(std::unique_ptr<AlignmentRecord>& alignment_autoptr) {
 	iterator_t it = alignments_by_length.begin();
 	iterator_t end = alignments_by_length.end();
 	// iterate through all alignments
+    int counter = 0;
 	for (; it!=end; ++it) {
 		const AlignmentRecord* alignment2 = alignments[it->second];
 		// cerr << "  comparing to " << alignments[it->second]->getID() << ", length " << it->first << ", read group: " << alignments[it->second]->getReadGroup();
 		bool set_edge = edge_calculator.edgeBetween(*alignment, *alignment2);
-        if (set_edge) cout << "Edge candidates tested positive " << set_edge << endl;
 		if (set_edge && (second_edge_calculator != nullptr)) {
 			set_edge = second_edge_calculator->edgeBetween(*alignment, *alignment2);
 		}
 		if (set_edge) {
+            counter++;
+            //cout << "Edge: " << alignment->getName() << " and " << alignment2->getName() << endl;
 			adjacent.set(it->second, true);
 			// cerr << " --> EDGE";
 			if (lw != nullptr) {
@@ -169,6 +171,7 @@ void CLEVER::addAlignment(std::unique_ptr<AlignmentRecord>& alignment_autoptr) {
 		}
 		// cerr << endl;
 	}
+    //cout << "Number of Edges after loop: " << counter << endl;
 
     alignments_by_length.insert(make_pair(0, index));
 
@@ -249,7 +252,7 @@ void CLEVER::addAlignment(std::unique_ptr<AlignmentRecord>& alignment_autoptr) {
 	}
 
 	//cout << cliques->size() << "\t" << alignment_count << "\t" << clique_size_old << "\t" << clique_size_new << "\t" << cpu_time << "\t" << no_sort << endl;
-/*	cout << "  Current Alignments: ";
+    /*cout << "  Current Alignments: ";
 	for (size_t i=0; i<alignment_count; ++i) {
 		cout << alignments[i]->getID() << " ";
 	}
@@ -257,6 +260,6 @@ void CLEVER::addAlignment(std::unique_ptr<AlignmentRecord>& alignment_autoptr) {
 	cout << "  Current cliques:"<<  endl;
 	for (clique_it = cliques->begin();clique_it!=cliques->end(); ++clique_it) {
 		cout << "    " << **clique_it << endl;
-	}
-	*/
+    }*/
+
 }

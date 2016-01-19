@@ -19,6 +19,7 @@
 #include <vector>
 #include <algorithm>
 #include <math.h>
+#include <ctype.h>
 #include <map>
 
 #include <boost/tokenizer.hpp>
@@ -41,6 +42,7 @@ int phred_sum(const string& phred, char phred_base=33) {
 	return result;
 }
 
+//used by getmergedDnaSequence()
 std::vector<BamTools::CigarOp> createCigar(std::string nucigar){
     std::vector<BamTools::CigarOp> res;
     unsigned int counter = 1;
@@ -66,6 +68,7 @@ std::vector<BamTools::CigarOp> createCigar(std::string nucigar){
     return res;
 }
 
+//helper functions to merge DNA sequences
 int agreement(const char& qual1, const char& qual2){
     float prob1 = std::pow(10,(float)-qual1/10);
     float prob2 = std::pow(10,(float)-qual2/10);
@@ -114,7 +117,6 @@ AlignmentRecord::AlignmentRecord(const BamTools::BamAlignment& alignment, int re
     this->single_end = true;
     this->readNames.insert(readRef);
     this->name = alignment.Name;
-    //cout << alignment.Name << endl;
     this->start1 = alignment.Position + 1;
     this->end1 = alignment.GetEndPosition();
     this->cigar1 = alignment.CigarData;
@@ -145,26 +147,6 @@ AlignmentRecord::AlignmentRecord(const BamTools::BamAlignment& alignment, int re
             int k = 0;
         }*/
     }
-
-
-    /*if(this->cigar1_unrolled.size()!=this->sequence1.toString().size()){
-        int k = 0;
-        cout << this->sequence1.toString().size() << endl;
-    }*/
-    /*if (this->name ==  "MISEQ-02:83:000000000-A9WYY:1:2103:2137:13246"){
-        cout << alignment.QueryBases << endl;
-        cout << alignment.QueryBases.size() << endl;
-        cout << alignment.AlignedBases << endl;
-        cout << alignment.AlignedBases.size() << endl;
-        cout << alignment.Qualities << endl;
-        cout << alignment.Qualities.size() << endl;
-        AlignmentRecord::covmap test = AlignmentRecord::coveredPositions();
-        for(auto it = test.cbegin(); it != test.cend(); ++it)
-        {
-            std::cout << it->first << " " << it->second.first << " " << it->second.second << std::endl;
-        }
-    }*/
-
 }
 
 AlignmentRecord::AlignmentRecord(unique_ptr<vector<const AlignmentRecord*>>& alignments, unsigned int clique_id) : cigar1_unrolled(), cigar2_unrolled() {
@@ -352,7 +334,7 @@ void AlignmentRecord::mergeSequences(std::deque<std::pair<int, int>> intervals, 
     }
 }
 
-//helper functions for merging DNA Sequences
+//helper functions for merging DNA Sequences to create combined Alignment Record
 void AlignmentRecord::noOverlapMerge(std::string& dna, std::string& qualities, std::string& nucigar, int& c_pos, int& q_pos, int& ref_pos){
     char c = this->cigar1_unrolled[c_pos];
     if (c == 'H'){
@@ -603,6 +585,9 @@ void AlignmentRecord::pairWith(const BamTools::BamAlignment& alignment) {
         this->single_end = false;
         this->start2 = alignment.Position + 1;
         this->end2 = alignment.GetEndPosition();
+        if (!(this->end2 > 0)){
+            cout << this->name << " end: " << this->end2 << endl;
+        }
         this->cigar2 = alignment.CigarData;
         this->sequence2 = ShortDnaSequence(alignment.QueryBases, alignment.Qualities);
         this->phred_sum2 = phred_sum(alignment.Qualities);
@@ -633,6 +618,9 @@ void AlignmentRecord::pairWith(const BamTools::BamAlignment& alignment) {
 
         this->start1 = alignment.Position + 1;
         this->end1 = alignment.GetEndPosition();
+        //if (!(this->end1 > 0)){
+        //    cout << this->name << " end: " << this->end1 << endl;
+        //}
         this->cigar1 = alignment.CigarData;
         this->sequence1 = ShortDnaSequence(alignment.QueryBases, alignment.Qualities);
         this->phred_sum1 = phred_sum(alignment.Qualities);
@@ -654,11 +642,6 @@ void AlignmentRecord::pairWith(const BamTools::BamAlignment& alignment) {
     else {
         this->getMergedDnaSequence(alignment);
     }
-        /*
-        for(auto it = test.cbegin(); it != test.cend(); ++it)
-        {
-            std::cout << it->first << " " << it->second.first << " " << it->second.second << std::endl;
-        }*/
 }
 
 void AlignmentRecord::getCigarInterval(unsigned int start, unsigned int end, vector<BamTools::CigarOp>& new_cigar, const vector<BamTools::CigarOp>& original_cigar, unsigned int interval_start) {

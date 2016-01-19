@@ -86,10 +86,11 @@ double NewEdgeCalculator::qScore(const AlignmentRecord::mapValue& value, char& x
 }
 
 double NewEdgeCalculator::calculateProbM(const std::vector<int> & aub, const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord::covmap & cov_ap2) const{
-    double res = 0.0;
+    double res = 1.0;
     double sum = 0.0;
-    string bases = "ACTG";
+    std::string bases = "ACTG";
     for (auto i : aub){
+        sum = 0.0;
         for (char j : bases){
             sum += qScore(cov_ap1.at(i),j)*qScore(cov_ap2.at(i),j);
         }
@@ -163,35 +164,20 @@ bool NewEdgeCalculator::similarityCriterion(const AlignmentRecord & a1, const Al
     int test = aub.size()+tail.size();
     double potence = 1.0/test;
     double final_prob = std::pow(prob,potence);
-
+    //cout << "Final prob: " << final_prob << endl;
     return final_prob >= cutoff;
 }
 
 bool NewEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const AlignmentRecord & ap2) const{
     AlignmentRecord::covmap cov_ap1 = ap1.coveredPositions();
     AlignmentRecord::covmap cov_ap2 = ap2.coveredPositions();
-/*
-    AlignmentRecord::covmap cov_ap1;
-    AlignmentRecord::covmap cov_ap2;
-    cov_ap1[14]={'A','~',0,0};
-    cov_ap1[15]={'T','~',1,0};
-    cov_ap1[17]={'A','~',2,0};
-    cov_ap1[30]={'A','~',0,1};
-    cov_ap1[31]={'C','~',1,1};
-
-    cov_ap2[15]={'A','~',0,0};
-    cov_ap2[17]={'A','~',1,0};
-    cov_ap2[30]={'A','~',0,1};
-    cov_ap2[31]={'A','~',1,1};
-*/
     std::vector<int> aub = commonPositions(cov_ap1, cov_ap2);
-    //cout << "commonPositions computed" << endl;
-    if (!checkGaps(cov_ap1, cov_ap2, aub)){
+    if (aub.size() == 0 || (!checkGaps(cov_ap1, cov_ap2, aub))){
         return false;
     }
-    cout << "Gaps are checked" << endl;
+    //cout << "Gaps are compatible" << endl;
     std::vector<int> tail = tailPositions(cov_ap1,cov_ap2);
-    cout << "Tail computed" << endl;
+    //cout << "Tail positions computed" << endl;
     return similarityCriterion(ap1, cov_ap1, ap2, cov_ap2, aub, tail);
 }
 
