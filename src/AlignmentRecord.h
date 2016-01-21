@@ -36,6 +36,16 @@ class Clique;
 
 /** Class that represents alignments of a read pair. */
 class AlignmentRecord {
+    public:
+    /** Represents entry for a map containing the ref positions of an AlignmentRecord, the base,
+     * the quality score and the position of the base in the read; */
+    struct mapValue{
+        char base;
+        char qual; //phred score of base (QUALiy+33)
+        int pir; //position in read
+        int read; //number of paired end read: 0 for first, 1 for second read
+    };
+    typedef std::unordered_map <int,mapValue> covmap;
 private:
 	std::string name;
 	int phred_sum1;
@@ -52,9 +62,10 @@ private:
 	unsigned int end2;
 	std::vector<BamTools::CigarOp> cigar2;
 	std::vector<char> cigar2_unrolled;
-	int length_incl_deletions2;
+    int length_incl_deletions2;
 	int length_incl_longdeletions2;
 	ShortDnaSequence sequence2;
+    covmap cov_pos;
     double probability;
 	alignment_id_t id;
 	bool single_end;
@@ -99,15 +110,6 @@ public:
 	  * by getInsertStart() and getInsertEnd(). */
 	size_t internalSegmentIntersectionLength(const AlignmentRecord& ap) const;
 
-    /** Represents entry for a map containing the ref positions of an AlignmentRecord, the base,
-     * the quality score and the position of the base in the read; */
-    struct mapValue{
-        char base;
-        char qual; //phred score of base (QUALiy+33)
-        int pir; //position in read
-        int read; //number of paired end read: 0 for first, 1 for second read
-    };
-    typedef std::unordered_map <int,mapValue> covmap;
     /** Returns a map containing the reference positions which are covered by a read.  */
     covmap coveredPositions() const;
 
@@ -135,6 +137,7 @@ public:
 	int getLengthInclDeletions2() const;
 	int getLengthInclLongDeletions1() const;
 	int getLengthInclLongDeletions2() const;
+    covmap getCovmap() const;
 
     unsigned int getReadCount() const { return readNames.size(); };
 

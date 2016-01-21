@@ -147,6 +147,7 @@ AlignmentRecord::AlignmentRecord(const BamTools::BamAlignment& alignment, int re
             int k = 0;
         }*/
     }
+    this->cov_pos = this->coveredPositions();
 }
 
 AlignmentRecord::AlignmentRecord(unique_ptr<vector<const AlignmentRecord*>>& alignments, unsigned int clique_id) : cigar1_unrolled(), cigar2_unrolled() {
@@ -228,6 +229,7 @@ AlignmentRecord::AlignmentRecord(unique_ptr<vector<const AlignmentRecord*>>& ali
         }
         assert(length_ct == (unsigned)this->length_incl_deletions2); //DEBUG
     }
+    this->cov_pos=this->coveredPositions();
 }
 
 void AlignmentRecord::mergeSequences(std::deque<std::pair<int, int> > intervals, std::vector<ShortDnaSequence> &to_merge, std::vector<std::vector<BamTools::CigarOp> > &cigars) {
@@ -578,6 +580,7 @@ void AlignmentRecord::getMergedDnaSequence(const BamTools::BamAlignment& alignme
         for (char i : nucigar){
             this->cigar1_unrolled.push_back(i);
         }
+        this->cov_pos = this->coveredPositions();
 }
 
 void AlignmentRecord::pairWith(const BamTools::BamAlignment& alignment) {
@@ -605,6 +608,7 @@ void AlignmentRecord::pairWith(const BamTools::BamAlignment& alignment) {
            		}
            	}
         }
+        this->cov_pos = this->coveredPositions();
     } else if ((unsigned)alignment.GetEndPosition() < this->start1) {
         this->single_end = false;
         this->start2 = this->start1;
@@ -638,6 +642,7 @@ void AlignmentRecord::pairWith(const BamTools::BamAlignment& alignment) {
            		}
            	}
         }
+        this->cov_pos = this->coveredPositions();
     }//merging of overlapping paired ends to single end reads
     else {
         this->getMergedDnaSequence(alignment);
@@ -708,7 +713,7 @@ size_t AlignmentRecord::internalSegmentIntersectionLength(const AlignmentRecord&
 
 //Reads with overlapping paired ends have been merged by pairwith() before this method is called
 AlignmentRecord::covmap AlignmentRecord::coveredPositions() const{
-    AlignmentRecord::covmap cov_positions;
+    covmap cov_positions;
     //position in ref
     int r = this->start1;
     //position in querybases of read
@@ -895,6 +900,10 @@ int AlignmentRecord::getLengthInclLongDeletions1() const {
 }
 int AlignmentRecord::getLengthInclLongDeletions2() const {
 	return this->length_incl_longdeletions2;
+}
+
+AlignmentRecord::covmap AlignmentRecord::getCovmap() const {
+    return this->cov_pos;
 }
 
 double setProbabilities(std::deque<AlignmentRecord*>& reads) {
