@@ -23,8 +23,8 @@
 #include <deque>
 #include <utility>
 #include <set>
-#include <map>
 #include <tuple>
+#include <unordered_map>
 
 #include <api/BamAux.h>
 #include <api/BamAlignment.h>
@@ -62,7 +62,7 @@ private:
     std::vector<std::string>* readNameMap;
 
     /** merges sequences in superreads */
-    void mergeSequences(std::deque<std::pair<int, int>>, std::vector<ShortDnaSequence>, std::vector<std::vector<BamTools::CigarOp>> cigars);    
+    void mergeSequences(std::deque<std::pair<int, int> >, std::vector<ShortDnaSequence>&, std::vector<std::vector<BamTools::CigarOp>>& cigars);
     void getCigarInterval(unsigned int start, unsigned int end, std::vector<BamTools::CigarOp>& new_cigar, const std::vector<BamTools::CigarOp>& original_cigar, unsigned int interval_start);
 public:
     AlignmentRecord(const BamTools::BamAlignment& alignment, int id, std::vector<std::string>* readNameMap);
@@ -107,7 +107,7 @@ public:
         int pir; //position in read
         int read; //number of paired end read: 0 for first, 1 for second read
     };
-    typedef std::map <int,mapValue> covmap;
+    typedef std::unordered_map <int,mapValue> covmap;
     /** Returns a map containing the reference positions which are covered by a read.  */
     covmap coveredPositions() const;
 

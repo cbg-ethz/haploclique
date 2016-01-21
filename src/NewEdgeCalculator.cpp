@@ -56,6 +56,7 @@ std::vector<int> NewEdgeCalculator::commonPositions(const AlignmentRecord::covma
                 res.push_back(it->first);
             }
     }
+    std::sort(res.begin(),res.end());
     return res;
 }
 
@@ -73,11 +74,11 @@ std::vector<int> NewEdgeCalculator::tailPositions(const AlignmentRecord::covmap 
             res.push_back(it->first);
         }
     }
-    std::sort(res.begin(),res.end());
+    //std::sort(res.begin(),res.end());
     return res;
 }
 
-double NewEdgeCalculator::qScore(const AlignmentRecord::mapValue& value, char& x) const{
+double NewEdgeCalculator::qScore(const AlignmentRecord::mapValue& value, char x) const{
     if (value.base == x){
         return 1.0 - std::pow(10, (double)(-value.qual-33)/10.0);
     } else {
@@ -87,13 +88,14 @@ double NewEdgeCalculator::qScore(const AlignmentRecord::mapValue& value, char& x
 
 double NewEdgeCalculator::calculateProbM(const std::vector<int> & aub, const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord::covmap & cov_ap2) const{
     double res = 1.0;
-    double sum = 0.0;
-    std::string bases = "ACTG";
     for (auto i : aub){
-        sum = 0.0;
-        for (char j : bases){
-            sum += qScore(cov_ap1.at(i),j)*qScore(cov_ap2.at(i),j);
-        }
+        auto& v1 = cov_ap1.find(i)->second;
+        auto& v2 = cov_ap2.find(i)->second;
+        double sum = 0.0;
+        sum += qScore(v1,'A')*qScore(v2,'A');
+        sum += qScore(v1,'C')*qScore(v2,'C');
+        sum += qScore(v1,'T')*qScore(v2,'T');
+        sum += qScore(v1,'G')*qScore(v2,'G');
         res *= sum;
     }
     return res;
@@ -118,10 +120,14 @@ double NewEdgeCalculator::calculateProb0(const std::vector<int> & tail) const{
 bool NewEdgeCalculator::checkGaps(const AlignmentRecord::covmap & cov_ap1,const AlignmentRecord::covmap & cov_ap2,const std::vector<int> & aub) const{
     for (int i = 0; i < (signed)aub.size()-1; ++i){
         int ref_diff = aub[i+1]-aub[i];
-        int pos_diff1 = cov_ap1.at(aub[i+1]).pir-cov_ap1.at(aub[i]).pir; //<0 if jump is given
-        int pos_diff2 = cov_ap2.at(aub[i+1]).pir-cov_ap2.at(aub[i]).pir; //<0 if jump is given
-        bool jump1 = cov_ap1.at(aub[i+1]).read-cov_ap1.at(aub[i]).read; //=0/1 for no jump/jump
-        bool jump2 = cov_ap2.at(aub[i+1]).read-cov_ap2.at(aub[i]).read;
+        auto& cov_ap1_i = cov_ap1.find(aub[i])->second;
+        auto& cov_ap1_i1 = cov_ap1.find(aub[i+1])->second;
+        auto& cov_ap2_i = cov_ap2.find(aub[i])->second;
+        auto& cov_ap2_i1 = cov_ap2.find(aub[i+1])->second;
+        int pos_diff1 = cov_ap1_i1.pir-cov_ap1_i.pir; //<0 if jump is given
+        int pos_diff2 = cov_ap2_i1.pir-cov_ap2_i.pir; //<0 if jump is given
+        bool jump1 = cov_ap1_i1.read-cov_ap1_i.read; //=0/1 for no jump/jump
+        bool jump2 = cov_ap2_i1.read-cov_ap2_i.read;
         //insertion
         if(ref_diff == 1 && pos_diff1 != pos_diff2 && (jump1 || jump2) == 0){
             return false;
@@ -134,11 +140,11 @@ bool NewEdgeCalculator::checkGaps(const AlignmentRecord::covmap & cov_ap1,const 
             return false;
         }
     }
-    if (aub.size()<1) return false;
+    if (aub.empty()) return false;
     return true;
 }
 
-bool NewEdgeCalculator::similarityCriterion(const AlignmentRecord & a1, const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord & a2, const AlignmentRecord::covmap & cov_ap2, std::vector<int> & aub, std::vector<int> tail) const{
+bool NewEdgeCalculator::similarityCriterion(const AlignmentRecord & a1, const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord & a2, const AlignmentRecord::covmap & cov_ap2, std::vector<int> & aub, std::vector<int>& tail) const{
 
     //Threshold for probability that reads were sampled from same haplotype
     double cutoff = 0;

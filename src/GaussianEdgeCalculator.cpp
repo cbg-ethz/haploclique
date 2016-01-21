@@ -56,7 +56,7 @@ double GaussianEdgeCalculator::sf(double x) const {
 }
 
 void GaussianEdgeCalculator::getPartnerLengthRange(const AlignmentRecord& ap, unsigned int *min, unsigned int *max) const {
-	if (allowable_insert_size_diff > ap.getInsertLength()) {
+    if ((unsigned)allowable_insert_size_diff > ap.getInsertLength()) {
 		*min = 0;
 	} else {
 		*min = ap.getInsertLength() - allowable_insert_size_diff;

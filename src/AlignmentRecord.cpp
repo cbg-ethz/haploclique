@@ -230,7 +230,7 @@ AlignmentRecord::AlignmentRecord(unique_ptr<vector<const AlignmentRecord*>>& ali
     }
 }
 
-void AlignmentRecord::mergeSequences(std::deque<std::pair<int, int>> intervals, vector<ShortDnaSequence> to_merge, vector<vector<BamTools::CigarOp>> cigars) {
+void AlignmentRecord::mergeSequences(std::deque<std::pair<int, int> > intervals, std::vector<ShortDnaSequence> &to_merge, std::vector<std::vector<BamTools::CigarOp> > &cigars) {
 
     assert(intervals.size() > 2);
 
