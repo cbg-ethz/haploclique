@@ -60,24 +60,6 @@ std::vector<int> NewEdgeCalculator::commonPositions(const AlignmentRecord::covma
     return res;
 }
 
-std::vector<int> NewEdgeCalculator::tailPositions(const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord::covmap & cov_ap2) const{
-    std::vector<int> res;
-    for (auto it = cov_ap1.begin(); it != cov_ap1.end(); ++it){
-        auto fit = cov_ap2.find(it->first);
-        if (fit == cov_ap2.end()){
-            res.push_back(it->first);
-        }
-    }
-    for (auto it = cov_ap2.begin(); it != cov_ap2.end(); ++it){
-        auto fit = cov_ap1.find(it->first);
-        if (fit == cov_ap1.end()){
-            res.push_back(it->first);
-        }
-    }
-    //std::sort(res.begin(),res.end());
-    return res;
-}
-
 double NewEdgeCalculator::qScore(const AlignmentRecord::mapValue& value, char x) const{
     if (value.base == x){
         return 1.0 - std::pow(10, (double)(-value.qual-33)/10.0);
@@ -102,15 +84,31 @@ double NewEdgeCalculator::calculateProbM(const std::vector<int> & aub, const Ali
 }
 
 //TO DO: calculate allel frequency distribution beforehand
-double NewEdgeCalculator::calculateProb0(const std::vector<int> & tail) const{
+double NewEdgeCalculator::calculateProb0(const AlignmentRecord::covmap & cov_ap1,const AlignmentRecord::covmap & cov_ap2, int& counter) const{
     double res = 1.0;
-    for(auto i : tail){
-        //simpson_map is 1-based
-        auto k = this->SIMPSON_MAP.find(i);
-        if (k != this->SIMPSON_MAP.end()){
-            res *= k->second;
-        } else {
-            res *= 0.25;
+    //find positions which are non common positions and look up probability in empirical allele frequency distribution
+    for (auto it = cov_ap1.begin(); it != cov_ap1.end(); ++it){
+        auto fit = cov_ap2.find(it->first);
+        if (fit == cov_ap2.end()){
+            counter++;
+            auto k = this->SIMPSON_MAP.find(it->first);
+            if (k != this->SIMPSON_MAP.end()){
+                res *= k->second;
+            } else {
+                res *= 0.25;
+            }
+        }
+    }
+    for (auto it = cov_ap2.begin(); it != cov_ap2.end(); ++it){
+        auto fit = cov_ap1.find(it->first);
+        if(fit == cov_ap1.end()){
+            counter++;
+            auto k = this->SIMPSON_MAP.find(it->first);
+            if (k != this->SIMPSON_MAP.end()){
+                res *= k->second;
+            } else {
+                res *= 0.25;
+            }
         }
     }
     return res;
@@ -144,10 +142,11 @@ bool NewEdgeCalculator::checkGaps(const AlignmentRecord::covmap & cov_ap1,const 
     return true;
 }
 
-bool NewEdgeCalculator::similarityCriterion(const AlignmentRecord & a1, const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord & a2, const AlignmentRecord::covmap & cov_ap2, std::vector<int> & aub, std::vector<int>& tail) const{
+bool NewEdgeCalculator::similarityCriterion(const AlignmentRecord & a1, const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord & a2, const AlignmentRecord::covmap & cov_ap2, std::vector<int> & aub) const{
 
     //Threshold for probability that reads were sampled from same haplotype
     double cutoff = 0;
+    int tailLength = 0;
     if (a1.getName().find("Clique") != string::npos && a2.getName().find("Clique") != string::npos) {
         cutoff = this->EDGE_QUASI_CUTOFF;
     } else if (a1.getName().find("Clique") != string::npos || a2.getName().find("Clique") != string::npos) {
@@ -165,9 +164,9 @@ bool NewEdgeCalculator::similarityCriterion(const AlignmentRecord & a1, const Al
     }
     if (aub.size()<=MIN_OVERLAP*std::min(cov_ap1.size(),cov_ap2.size())) return false;
     double p_m = calculateProbM(aub, cov_ap1, cov_ap2);
-    double p_0 = calculateProb0(tail);
+    double p_0 = calculateProb0(cov_ap1, cov_ap2,tailLength);
     double prob = p_m*p_0;
-    int test = aub.size()+tail.size();
+    int test = aub.size()+tailLength;
     double potence = 1.0/test;
     double final_prob = std::pow(prob,potence);
     //cout << "Final prob: " << final_prob << endl;
@@ -182,9 +181,9 @@ bool NewEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const Alignment
         return false;
     }
     //cout << "Gaps are compatible" << endl;
-    std::vector<int> tail = tailPositions(cov_ap1,cov_ap2);
+    //std::vector<int> tail = tailPositions(cov_ap1,cov_ap2);
     //cout << "Tail positions computed" << endl;
-    return similarityCriterion(ap1, cov_ap1, ap2, cov_ap2, aub, tail);
+    return similarityCriterion(ap1, cov_ap1, ap2, cov_ap2, aub);
 }
 
 void NewEdgeCalculator::getPartnerLengthRange(const AlignmentRecord& ap, unsigned int* min, unsigned int* max) const {

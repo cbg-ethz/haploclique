@@ -40,12 +40,12 @@ private:
     map<int, double> SIMPSON_MAP;
 
     std::vector<int> commonPositions(const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord::covmap & cov_ap2) const;
-    std::vector<int> tailPositions(const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord::covmap & cov_ap2) const;
+    //std::vector<int> tailPositions(const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord::covmap & cov_ap2) const;
     double qScore(const AlignmentRecord::mapValue& value, char x) const;
     double calculateProbM(const std::vector<int> & aub, const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord::covmap & cov_ap2) const;
-    double calculateProb0(const std::vector<int> & tail) const;
+    double calculateProb0(const AlignmentRecord::covmap &cov_ap1, const AlignmentRecord::covmap &cov_ap2, int& counter) const;
     bool checkGaps(const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord::covmap & cov_ap2, const std::vector<int> & aub) const;
-    bool similarityCriterion(const AlignmentRecord & a1, const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord & a2, const AlignmentRecord::covmap & cov_ap2, std::vector<int> & aub, std::vector<int> & tail) const;
+    bool similarityCriterion(const AlignmentRecord & a1, const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord & a2, const AlignmentRecord::covmap & cov_ap2, std::vector<int> & aub) const;
 
 public:
     NewEdgeCalculator(double Q, double edge_quasi_cutoff, double overlap, bool frameshift_merge, map<int, double>& simpson_map, double edge_quasi_cutoff_single, double overlap_single, double edge_quasi_cutoff_mixed);
