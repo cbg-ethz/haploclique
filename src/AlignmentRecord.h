@@ -42,6 +42,7 @@ class AlignmentRecord {
     struct mapValue{
         char base;
         char qual; //phred score of base (QUALiy+33)
+        double prob; //error probability for qual
         int pir; //position in read
         int read; //number of paired end read: 0 for first, 1 for second read
     };

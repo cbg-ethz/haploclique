@@ -62,9 +62,9 @@ std::vector<int> NewEdgeCalculator::commonPositions(const AlignmentRecord::covma
 
 double NewEdgeCalculator::qScore(const AlignmentRecord::mapValue& value, char x) const{
     if (value.base == x){
-        return 1.0 - std::pow(10, (double)(-value.qual-33)/10.0);
+        return 1.0 - value.prob;
     } else {
-        return std::pow(10, (double)(-value.qual - 33)/10.0)/3.0;
+        return value.prob/3.0;
     }
 }
 

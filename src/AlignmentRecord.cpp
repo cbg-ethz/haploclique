@@ -42,7 +42,7 @@ int phred_sum(const string& phred, char phred_base=33) {
 	return result;
 }
 
-//used by getmergedDnaSequence()
+//called by getmergedDnaSequence() to create new CigarData
 std::vector<BamTools::CigarOp> createCigar(std::string nucigar){
     std::vector<BamTools::CigarOp> res;
     unsigned int counter = 1;
@@ -85,29 +85,24 @@ int disagreement(const char& qual1, const char& qual2){
     return posterior;
 }
 
-AlignmentRecord::mapValue compute_entry(const char& base1, const char& qual1, const char& base2, const char& qual2, const int& pos, const int& read){
-    AlignmentRecord::mapValue result;
-    char qual;
+double phredProb(const char& qual){
+    return std::pow(10, (double)(-qual-33)/10.0);
+}
+
+std::pair<char,char> computeEntry(const char& base1, const char& qual1, const char& base2, const char& qual2){
+    std::pair<char,char> result;
 
     if (base1==base2){
-        qual = std::min(agreement(qual1-33,qual2-33)+33,126);
-        result.base = base1;
-        result.qual = qual;
-        result.pir = pos;
-        result.read = read;
+        result.first = base1;
+        result.second = std::min(agreement(qual1,qual2-33)+33,126);
     }
     else if (qual1>=qual2) {
-        qual = disagreement(qual1-33,qual2-33)+33;
-        result.base = base1;
-        result.qual = qual;
-        result.pir = pos;
-        result.read = read;
+        result.first = base1;
+        result.second = disagreement(qual1-33,qual2-33)+33;
     } else {
-        qual = disagreement(qual2-33,qual1-33)+33;
-        result.base = base1;
-        result.qual = qual;
-        result.pir = pos;
-        result.read = read;
+        result.first = base2;
+        result.second = disagreement(qual2-33,qual1-33)+33;
+        //TO DO base1 or base2?
     }
     return result;
 }
@@ -393,9 +388,9 @@ void AlignmentRecord::overlapMerge(const BamTools::BamAlignment& alignment, std:
     char c1 = this->cigar1_unrolled[c_pos1];
     char c2 = cigar_temp_unrolled[c_pos2];
     if((c1 == 'M' && c2 == 'M') || (c1 == 'S' && c2 == 'S') || (c1 == 'I' && c2 == 'I')){
-        AlignmentRecord::mapValue mapvalue = compute_entry(this->sequence1[q_pos1],this->sequence1.qualityChar(q_pos1),alignment.QueryBases[q_pos2],alignment.Qualities[q_pos2],q_pos1, 0);
-        dna += mapvalue.base;
-        qualities += mapvalue.qual;
+        std::pair<char,char> resPair = computeEntry(this->sequence1[q_pos1],this->sequence1.qualityChar(q_pos1),alignment.QueryBases[q_pos2],alignment.Qualities[q_pos2]);
+        dna += resPair.first;
+        qualities += resPair.second;
         nucigar += c1;
         if (c1 != 'I') ref_pos++;
         q_pos1++;
@@ -722,7 +717,8 @@ AlignmentRecord::covmap AlignmentRecord::coveredPositions() const{
         char c = this->cigar1_unrolled[i];
         switch(c){
             case 'M': {
-                cov_positions[r]={this->sequence1[q],this->sequence1.qualityChar(q),q,0};
+                c = this->sequence1[q];
+                cov_positions[r]={c,this->sequence1.qualityChar(q),phredProb(c),q,0};
                 //char d = this->sequence1[q];
                 ++q;
                 ++r;
@@ -756,7 +752,8 @@ AlignmentRecord::covmap AlignmentRecord::coveredPositions() const{
                 char c = this->cigar2_unrolled[i];
                 switch(c){
                     case 'M': {
-                        cov_positions[r]={this->sequence2[q],this->sequence2.qualityChar(q),q,1};
+                        c = this->sequence2[q];
+                        cov_positions[r]={c,this->sequence2.qualityChar(q),phredProb(c),q,1};
                         ++q;
                         ++r;
                         break;
