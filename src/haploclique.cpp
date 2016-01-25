@@ -256,7 +256,7 @@ int main(int argc, char* argv[]) {
     }
 
     //read allel frequency distributions
-    std::map<int, double> simpson_map;
+    std::unordered_map<int, double> simpson_map;
     //cerr << "PARSE PRIOR";
     cerr.flush();
     if (allel_frequencies_path.size() > 0) {

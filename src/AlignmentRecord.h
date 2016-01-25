@@ -138,7 +138,9 @@ public:
 	int getLengthInclDeletions2() const;
 	int getLengthInclLongDeletions1() const;
 	int getLengthInclLongDeletions2() const;
-    covmap getCovmap() const;
+    const covmap& getCovmap() const {
+        return cov_pos;
+    }
 
     unsigned int getReadCount() const { return readNames.size(); };
 

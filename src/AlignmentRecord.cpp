@@ -899,10 +899,6 @@ int AlignmentRecord::getLengthInclLongDeletions2() const {
 	return this->length_incl_longdeletions2;
 }
 
-AlignmentRecord::covmap AlignmentRecord::getCovmap() const {
-    return this->cov_pos;
-}
-
 double setProbabilities(std::deque<AlignmentRecord*>& reads) {
     double read_usage_ct = 0.0;
     double mean = 1.0 / reads.size();

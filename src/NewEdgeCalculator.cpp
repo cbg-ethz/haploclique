@@ -34,7 +34,7 @@
  const double NewEdgeCalculator::FRAME_SHIFT_WEIGHT = 0.01;
  
 
-NewEdgeCalculator::NewEdgeCalculator(double Q, double edge_quasi_cutoff, double overlap, bool frameshift_merge, map<int, double>& simpson_map, double edge_quasi_cutoff_single, double overlap_single, double edge_quasi_cutoff_mixed) {
+NewEdgeCalculator::NewEdgeCalculator(double Q, double edge_quasi_cutoff, double overlap, bool frameshift_merge, unordered_map<int, double>& simpson_map, double edge_quasi_cutoff_single, double overlap_single, double edge_quasi_cutoff_mixed) {
     this->Q = Q;
     this->EDGE_QUASI_CUTOFF = edge_quasi_cutoff;
     this->EDGE_QUASI_CUTOFF_SINGLE = edge_quasi_cutoff_single;

@@ -37,7 +37,7 @@ private:
     double EDGE_QUASI_CUTOFF_SINGLE;
     double EDGE_QUASI_CUTOFF;
     bool FRAMESHIFT_MERGE;
-    map<int, double> SIMPSON_MAP;
+    std::unordered_map<int, double> SIMPSON_MAP;
 
     std::vector<int> commonPositions(const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord::covmap & cov_ap2) const;
     //std::vector<int> tailPositions(const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord::covmap & cov_ap2) const;
@@ -48,7 +48,7 @@ private:
     bool similarityCriterion(const AlignmentRecord & a1, const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord & a2, const AlignmentRecord::covmap & cov_ap2, std::vector<int> & aub) const;
 
 public:
-    NewEdgeCalculator(double Q, double edge_quasi_cutoff, double overlap, bool frameshift_merge, map<int, double>& simpson_map, double edge_quasi_cutoff_single, double overlap_single, double edge_quasi_cutoff_mixed);
+    NewEdgeCalculator(double Q, double edge_quasi_cutoff, double overlap, bool frameshift_merge, unordered_map<int, double>& simpson_map, double edge_quasi_cutoff_single, double overlap_single, double edge_quasi_cutoff_mixed);
     virtual ~NewEdgeCalculator();
 
     /** Decides whether an edge is to be drawn between the two given nodes. */
