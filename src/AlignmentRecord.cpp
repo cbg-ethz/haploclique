@@ -153,7 +153,7 @@ AlignmentRecord::AlignmentRecord(unique_ptr<vector<const AlignmentRecord*>>& ali
 
     this->readNameMap = (*alignments)[0]->readNameMap;
 
-    for (auto al : *alignments) {
+    for (auto& al : *alignments) {
         if (al->isPairedEnd()) {
             sequences.push_back(al->getSequence1());
             cigars.push_back(al->getCigar1());
