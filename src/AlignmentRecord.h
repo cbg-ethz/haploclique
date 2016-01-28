@@ -47,7 +47,6 @@ class AlignmentRecord {
         int pir; //position in read
         int read; //number of paired end read: 0 for first, 1 for second read
     };
-    std::vector<mapValue> covmap;
 private:
 	std::string name;
 	int phred_sum1;
@@ -67,7 +66,7 @@ private:
     int length_incl_deletions2;
 	int length_incl_longdeletions2;
 	ShortDnaSequence sequence2;
-    covmap cov_pos;
+    std::vector<mapValue> cov_pos;
     double probability;
 	alignment_id_t id;
 	bool single_end;
@@ -113,7 +112,7 @@ public:
 	size_t internalSegmentIntersectionLength(const AlignmentRecord& ap) const;
 
     /** Returns a map containing the reference positions which are covered by a read.  */
-    covmap coveredPositions() const;
+    std::vector<AlignmentRecord::mapValue> coveredPositions() const;
 
 	unsigned int getEnd1() const;
 	unsigned int getEnd2() const;
@@ -139,7 +138,7 @@ public:
 	int getLengthInclDeletions2() const;
 	int getLengthInclLongDeletions1() const;
 	int getLengthInclLongDeletions2() const;
-    const covmap& getCovmap() const {
+    const std::vector<mapValue>& getCovmap() const {
         return cov_pos;
     }
 

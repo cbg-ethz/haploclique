@@ -39,13 +39,11 @@ private:
     bool FRAMESHIFT_MERGE;
     std::unordered_map<int, double> SIMPSON_MAP;
 
-    std::vector<int> commonPositions(const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord::covmap & cov_ap2) const;
-    //std::vector<int> tailPositions(const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord::covmap & cov_ap2) const;
     double qScore(const AlignmentRecord::mapValue& value, char x) const;
-    double calculateProbM(const std::vector<int> & aub, const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord::covmap & cov_ap2) const;
-    double calculateProb0(const AlignmentRecord::covmap &cov_ap1, const AlignmentRecord::covmap &cov_ap2, int& counter) const;
-    bool checkGaps(const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord::covmap & cov_ap2, const std::vector<int> & aub) const;
-    bool similarityCriterion(const AlignmentRecord & a1, const AlignmentRecord::covmap & cov_ap1, const AlignmentRecord & a2, const AlignmentRecord::covmap & cov_ap2, std::vector<int> & aub) const;
+    void calculateProbM(const AlignmentRecord::mapValue &val1, const AlignmentRecord::mapValue &val2, double &res) const;
+    void calculateProb0(const AlignmentRecord::mapValue &val1, double &res) const;
+    bool checkGaps(const std::vector<AlignmentRecord::mapValue> & cov_ap1, const std::vector<AlignmentRecord::mapValue> & cov_ap2, const std::vector<std::pair<int, int> > &aub) const;
+    bool similarityCriterion(const AlignmentRecord & a1, const std::vector<AlignmentRecord::mapValue> & cov_ap1, const AlignmentRecord & a2, const std::vector<AlignmentRecord::mapValue> & cov_ap2, double probM, double prob0, int tc, int cc) const;
 
 public:
     NewEdgeCalculator(double Q, double edge_quasi_cutoff, double overlap, bool frameshift_merge, unordered_map<int, double>& simpson_map, double edge_quasi_cutoff_single, double overlap_single, double edge_quasi_cutoff_mixed);
