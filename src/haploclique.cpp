@@ -141,6 +141,13 @@ deque<AlignmentRecord*>* readBamFile(string filename, vector<string>& readNames)
     //int overlap = 0;
 
     while (bamreader.GetNextAlignment(alignment)) {
+        /*std::size_t found = alignment.QueryBases.find('N');
+        if (found!=std::string::npos){
+            cout << alignment.Name << endl;
+            cout << alignment.QueryBases << endl;
+            cout << alignment.Qualities << endl;
+            cout << endl;
+        }*/
         if(alignment.CigarData.size() > 0){
             if(names_to_reads.count(alignment.Name) > 0) {
                 //cout << alignment.Name << endl;

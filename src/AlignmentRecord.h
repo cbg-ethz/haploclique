@@ -40,6 +40,7 @@ class AlignmentRecord {
     /** Represents entry for a map containing the ref positions of an AlignmentRecord, the base,
      * the quality score and the position of the base in the read; */
     struct mapValue{
+        int ref; //pos in ref
         char base;
         char qual; //phred score of base (QUALiy+33)
         double prob; //error probability for qual
