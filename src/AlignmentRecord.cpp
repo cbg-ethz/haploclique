@@ -94,7 +94,7 @@ std::pair<char,char> computeEntry(const char& base1, const char& qual1, const ch
 
     if (base1==base2){
         result.first = base1;
-        result.second = std::min(agreement(qual1,qual2-33)+33,126);
+        result.second = std::min(agreement(qual1-33,qual2-33)+33,126);
     }
     else if (qual1>=qual2) {
         result.first = base1;
