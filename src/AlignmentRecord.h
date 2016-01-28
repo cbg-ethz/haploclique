@@ -47,7 +47,7 @@ class AlignmentRecord {
         int pir; //position in read
         int read; //number of paired end read: 0 for first, 1 for second read
     };
-    typedef std::unordered_map <int,mapValue> covmap;
+    std::vector<mapValue> covmap;
 private:
 	std::string name;
 	int phred_sum1;

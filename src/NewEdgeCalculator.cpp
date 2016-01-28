@@ -176,6 +176,18 @@ bool NewEdgeCalculator::similarityCriterion(const AlignmentRecord & a1, const Al
 bool NewEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const AlignmentRecord & ap2) const{
     const auto& cov_ap1 = ap1.getCovmap();
     const auto& cov_ap2 = ap2.getCovmap();
+
+    /*int pos1 = 0;
+    int pos2 = 0;
+
+    if (cov_ap1[pos1].ref == cov_ap2[pos2].ref){
+        //compute ProbM
+    }
+    if (cov_ap1[pos1].ref < cov_ap2[pos2].ref){
+        //compute Prob0
+
+    }*/
+
     std::vector<int> aub = commonPositions(cov_ap1, cov_ap2);
     if (aub.size() == 0 || (!checkGaps(cov_ap1, cov_ap2, aub))){
         return false;
