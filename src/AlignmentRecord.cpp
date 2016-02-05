@@ -315,7 +315,10 @@ void AlignmentRecord::mergeSequences(std::deque<std::pair<int, int> > intervals,
                 char c = to_merge[mapit.first][i - mapit.second];
                 if (basemap.find(c) == basemap.end()) basemap[c] = 0.0;
                 basemap[c] += to_merge[mapit.first].qualityCorrect(i - mapit.second) / overlaps.size();
-                if (basemap[c] > max_val) max_key = c;
+                if (basemap[c] > max_val){
+                    max_key = c;
+                    max_val = basemap[c];
+                }
             }
 
             seq.push_back(max_key);
