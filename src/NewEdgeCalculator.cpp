@@ -136,6 +136,20 @@ bool NewEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const Alignment
     const auto& cov_ap1 = ap1.getCovmap();
     const auto& cov_ap2 = ap2.getCovmap();
 
+    /*if(ap1.getName() == "MISEQ-02:83:000000000-A9WYY:1:1101:19916:16016" && ap2.getName()== "MISEQ-02:83:000000000-A9WYY:1:2104:10608:13344"){
+            int k = 0;
+        }*/
+        /*if ((ap1.getName().find("Clique_1174") != string::npos && ap2.getName().find("Clique_1173") != string::npos)){
+            cout << ap1.getName() << " " << ap2.getName() << endl;
+            cout << ap1.isSingleEnd() << " " << ap2.isSingleEnd() << endl;
+            cout << ap1.getSequence1().toString() << endl;
+            cout << ap1.getStart1() << " " << ap1.getEnd1() << endl;
+            cout << cov_ap1.front().ref << " " << cov_ap1.back().ref << endl;
+            cout << ap2.getSequence1().toString() << endl;
+            cout << ap2.getStart1() << " " << ap2.getEnd1() << endl;
+            cout << cov_ap2.front().ref << " " << cov_ap2.back().ref << endl;
+        }*/
+
     //tail position and common position counter
     int tc = 0;
     int cc = 0;
