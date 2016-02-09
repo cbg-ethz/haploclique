@@ -174,6 +174,12 @@ AlignmentRecord::AlignmentRecord(unique_ptr<vector<const AlignmentRecord*>>& ali
 
         this->readNames.insert(al->readNames.begin(), al->readNames.end());
     }
+    /*if(cigars.size() == 3){
+        for(auto& al : *alignments){
+            cout << al->getName() << " " << al->getSequence1().size() << " " << al->getStart1() << " " << al->getEnd1() << endl;
+            cout << al->getSequence1().toString().substr() << endl;
+        }
+    }*/
 
     auto comp = [](pair<int, int> a, pair<int, int> b) { return a.second < b.second; };
     std::sort(interval.begin(), interval.end(), comp);
@@ -229,7 +235,6 @@ AlignmentRecord::AlignmentRecord(unique_ptr<vector<const AlignmentRecord*>>& ali
 void AlignmentRecord::mergeSequences(std::deque<std::pair<int, int> > intervals, std::vector<ShortDnaSequence> &to_merge, std::vector<std::vector<BamTools::CigarOp> > &cigars) {
 
     assert(intervals.size() > 2);
-
     pair<int, int> p = intervals.front();
     intervals.pop_front();
 
@@ -303,6 +308,10 @@ void AlignmentRecord::mergeSequences(std::deque<std::pair<int, int> > intervals,
         auto it = overlaps.find(p.first);
         next = p.second;
 
+        if(cigars.size() == 3){
+            int k = 0;
+        }
+
         getCigarInterval(i, next, cigar, cigars[overlaps.begin()->first], overlaps.begin()->second);
 
         for (; i < next; i++) {
@@ -337,7 +346,6 @@ void AlignmentRecord::mergeSequences(std::deque<std::pair<int, int> > intervals,
 void AlignmentRecord::noOverlapMerge(std::string& dna, std::string& qualities, std::string& nucigar, int& c_pos, int& q_pos, int& ref_pos){
     char c = this->cigar1_unrolled[c_pos];
     if (c == 'H'){
-        nucigar += 'H';
         ref_pos++;
         c_pos++;
     } else if (c == 'I') {
@@ -350,20 +358,25 @@ void AlignmentRecord::noOverlapMerge(std::string& dna, std::string& qualities, s
         nucigar += 'D';
         ref_pos++;
         c_pos++;
-    } else {
+    } else if (c == 'S'){
+        ref_pos++;
+        q_pos++;
+        c_pos++;
+    } else if (c == 'M'){
         dna += this->sequence1[q_pos];
         qualities += this->sequence1.qualityChar(q_pos);
         nucigar += c;
         ref_pos++;
         q_pos++;
         c_pos++;
+    } else {
+        cout << "Cigar string contains inappropriate character: " << c << endl;
     }
 }
 
 void AlignmentRecord::noOverlapMerge(const BamTools::BamAlignment& alignment, std::string& dna, std::string& qualities, std::string& nucigar, std::vector<char>& cigar_temp_unrolled, int& c_pos, int& q_pos, int& ref_pos){
     char c = cigar_temp_unrolled[c_pos];
     if (c == 'H'){
-        nucigar += 'H';
         ref_pos++;
         c_pos++;
     } else if (c == 'I') {
@@ -376,13 +389,19 @@ void AlignmentRecord::noOverlapMerge(const BamTools::BamAlignment& alignment, st
         nucigar += 'D';
         ref_pos++;
         c_pos++;
-    } else {
+    } else if (c == 'S'){
+        ref_pos++;
+        q_pos++;
+        c_pos++;
+    } else if (c == 'M'){
         dna += alignment.QueryBases[q_pos];
         qualities += alignment.Qualities[q_pos];
         nucigar += c;
         ref_pos++;
         q_pos++;
         c_pos++;
+    } else {
+        cout << "Cigar string contains inappropriate character: " << c << endl;
     }
 }
 
@@ -390,10 +409,12 @@ void AlignmentRecord::overlapMerge(const BamTools::BamAlignment& alignment, std:
     char c1 = this->cigar1_unrolled[c_pos1];
     char c2 = cigar_temp_unrolled[c_pos2];
     if((c1 == 'M' && c2 == 'M') || (c1 == 'S' && c2 == 'S') || (c1 == 'I' && c2 == 'I')){
-        std::pair<char,char> resPair = computeEntry(this->sequence1[q_pos1],this->sequence1.qualityChar(q_pos1),alignment.QueryBases[q_pos2],alignment.Qualities[q_pos2]);
-        dna += resPair.first;
-        qualities += resPair.second;
-        nucigar += c1;
+        if (c1 != 'S'){
+            std::pair<char,char> resPair = computeEntry(this->sequence1[q_pos1],this->sequence1.qualityChar(q_pos1),alignment.QueryBases[q_pos2],alignment.Qualities[q_pos2]);
+            dna += resPair.first;
+            qualities += resPair.second;
+            nucigar += c1;
+        }
         if (c1 != 'I') ref_pos++;
         q_pos1++;
         q_pos2++;
@@ -405,8 +426,6 @@ void AlignmentRecord::overlapMerge(const BamTools::BamAlignment& alignment, std:
         ref_pos++;
         if (c1 == 'D' || c2 == 'D'){
             nucigar += 'D';
-        } else {
-            nucigar += 'H';
         }
         if (c1 == 'S'){
             q_pos1++;
@@ -433,17 +452,11 @@ void AlignmentRecord::overlapMerge(const BamTools::BamAlignment& alignment, std:
             q_pos2++;
             if (c1 == 'S') q_pos1++;
         } else if (c1 == 'S'){
-            nucigar += 'S';
-            dna += this->sequence1[q_pos1];
-            qualities += this->sequence1.qualityChar(q_pos1);
             ref_pos++;
             c_pos1++;
             c_pos2++;
             q_pos1++;
         } else {
-            nucigar += 'S';
-            dna +=  alignment.QueryBases[q_pos2];
-            qualities += alignment.Qualities[q_pos2];
             ref_pos++;
             c_pos1++;
             c_pos2++;
