@@ -74,12 +74,11 @@ private:
     std::vector<std::string>* readNameMap;
 
     /** merges sequences in superreads */
-    void mergeSequences(std::deque<std::pair<int, int> >, std::vector<ShortDnaSequence>&, std::vector<std::vector<BamTools::CigarOp>>& cigars);
-    void getCigarInterval(unsigned int start, unsigned int end, std::vector<BamTools::CigarOp>& new_cigar, const std::vector<BamTools::CigarOp>& original_cigar, unsigned int interval_start);
+    void mergeAlignmentRecords(const AlignmentRecord& al1, const AlignmentRecord& al2);
+    void mergeAlignmentRecords(const AlignmentRecord& al1);
 public:
     AlignmentRecord(const BamTools::BamAlignment& alignment, int id, std::vector<std::string>* readNameMap);
     AlignmentRecord(std::unique_ptr<std::vector<const AlignmentRecord*>>& alignments,unsigned int clique_id);
-
     /** merges overlapping paired end reads while reading in bam files*/
     void noOverlapMerge(std::string& dna, std::string& qualities, std::string& nucigar, int& c_pos, int& q_pos, int& ref_pos);
     void noOverlapMerge(const BamTools::BamAlignment& alignment, std::string& dna, std::string& qualities, std::string& nucigar, std::vector<char>& cigar_temp_unrolled, int& c_pos, int& q_pos, int& ref_pos);

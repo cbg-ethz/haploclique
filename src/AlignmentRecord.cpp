@@ -43,7 +43,7 @@ int phred_sum(const string& phred, char phred_base=33) {
 }
 
 //called by getmergedDnaSequence() to create new CigarData
-std::vector<BamTools::CigarOp> createCigar(std::string nucigar){
+std::vector<BamTools::CigarOp> createCigar(std::string& nucigar){
     std::vector<BamTools::CigarOp> res;
     unsigned int counter = 1;
     unsigned int pos = 0;
@@ -145,47 +145,25 @@ AlignmentRecord::AlignmentRecord(const BamTools::BamAlignment& alignment, int re
 }
 
 AlignmentRecord::AlignmentRecord(unique_ptr<vector<const AlignmentRecord*>>& alignments, unsigned int clique_id) : cigar1_unrolled(), cigar2_unrolled() {
-    deque<pair<int, int>> interval;
-    vector<ShortDnaSequence> sequences;
-    vector<vector<BamTools::CigarOp>> cigars;
-    int ct = 0;
-
-    this->readNameMap = (*alignments)[0]->readNameMap;
-
-    for (auto& al : *alignments) {
-        if (al->isPairedEnd()) {
-            sequences.push_back(al->getSequence1());
-            cigars.push_back(al->getCigar1());
-            interval.push_back(pair<int, int>(ct, al->getStart1() - 1));
-            interval.push_back(pair<int, int>(ct, al->getStart1() - 1 + al->getSequence1().size()));
-            ct++;
-            sequences.push_back(al->getSequence2());
-            cigars.push_back(al->getCigar2());
-            interval.push_back(pair<int, int>(ct, al->getStart2() - 1));
-            interval.push_back(pair<int, int>(ct, al->getStart2() - 1 + al->getSequence2().size()));
-            ct++;
-        } else {
-            sequences.push_back(al->getSequence1());
-            cigars.push_back(al->getCigar1());
-            interval.push_back(pair<int, int>(ct, al->getStart1() - 1));
-            interval.push_back(pair<int, int>(ct, al->getStart1() - 1 + al->getSequence1().size()));
-            ct++;
-        }
-
-        this->readNames.insert(al->readNames.begin(), al->readNames.end());
+    assert ((*alignments).size()>1);
+    //get first AlignmentRecord
+    auto& al1 = (*alignments)[0];
+    this->start1 = al1->getStart1();
+    this->end1 = al1->getEnd1();
+    this->cigar1 = al1->getCigar1();
+    this->cigar1_unrolled = al1->getCigar1Unrolled();
+    this->readNameMap = al1->readNameMap;
+    if(al1->isPairedEnd()){
+        this->start2 = al1->getStart2();
+        this->end2 = al1->getEnd2();
+        this->cigar2 = al1->getCigar2();
+        this->cigar2_unrolled = al1->getCigar2Unrolled();
     }
-    /*if(cigars.size() == 3){
-        for(auto& al : *alignments){
-            cout << al->getName() << " " << al->getSequence1().size() << " " << al->getStart1() << " " << al->getEnd1() << endl;
-            cout << al->getSequence1().toString().substr() << endl;
-        }
-    }*/
 
-    auto comp = [](pair<int, int> a, pair<int, int> b) { return a.second < b.second; };
-    std::sort(interval.begin(), interval.end(), comp);
-
-    //changes this->sequence, this->cigar, this->single_end, this->phredsum, this->cigar, this->sequence
-    mergeSequences(interval, sequences, cigars);
+    //merge recent AlignmentRecord with all other alignments
+    for (int i = 1; i < (*alignments).size(); i++){
+        mergeAlignmentRecords((*alignments)[i]);
+    }
 
     this->name = "Clique_" + to_string(clique_id);
 
@@ -193,18 +171,18 @@ AlignmentRecord::AlignmentRecord(unique_ptr<vector<const AlignmentRecord*>>& ali
     this->length_incl_longdeletions1 = this->sequence1.size();
 
     unsigned int length_ct = 0; // DEBUG
-	for (const auto& it : cigar1) { //DEBUG
-        length_ct += it.Length;        
+    for (const auto& it : cigar1) { //DEBUG
+        length_ct += it.Length;
 
         for (unsigned int s = 0; s < it.Length; ++s) {
-          	this->cigar1_unrolled.push_back(it.Type);
+            this->cigar1_unrolled.push_back(it.Type);
         }
         if (it.Type == 'D') {
-      		this->length_incl_deletions1+=it.Length;
-       		if (it.Length > 1) {
-       			this->length_incl_longdeletions1+=it.Length;
-       		}
-       	}
+            this->length_incl_deletions1+=it.Length;
+            if (it.Length > 1) {
+                this->length_incl_longdeletions1+=it.Length;
+            }
+        }
     }
     assert(length_ct == (unsigned)this->length_incl_deletions1); //DEBUG
 
@@ -214,132 +192,71 @@ AlignmentRecord::AlignmentRecord(unique_ptr<vector<const AlignmentRecord*>>& ali
         this->length_incl_longdeletions2 = this->sequence2.size();
 
         length_ct = 0; //DEBUG
-	    for (const auto& it : cigar2) {
+        for (const auto& it : cigar2) {
             length_ct += it.Length; //DEBUG
 
             for (unsigned int s = 0; s < it.Length; ++s) {
-              	this->cigar2_unrolled.push_back(it.Type);
+                this->cigar2_unrolled.push_back(it.Type);
             }
             if (it.Type == 'D') {
-          		this->length_incl_deletions2+=it.Length;
-           		if (it.Length > 1) {
-           			this->length_incl_longdeletions2+=it.Length;
-           		}
-           	}
+                this->length_incl_deletions2+=it.Length;
+                if (it.Length > 1) {
+                    this->length_incl_longdeletions2+=it.Length;
+                }
+            }
         }
         assert(length_ct == (unsigned)this->length_incl_deletions2); //DEBUG
     }
     this->cov_pos=this->coveredPositions();
+    //no longer majority vote mehr, phred scores are updated according to Edgar
+
+    /*
+    for (auto& al : *alignments) {
+        if (al->isPairedEnd()) {
+            sequences.push_back(al->getSequence1());
+            cigars.push_back(al->getCigar1());
+            interval.push_back(pair<int, int>(ct, al->getStart1()));
+            interval.push_back(pair<int, int>(ct, al->getEnd1()));
+            ct++;
+            sequences.push_back(al->getSequence2());
+            cigars.push_back(al->getCigar2());
+            interval.push_back(pair<int, int>(ct, al->getStart2()));
+            interval.push_back(pair<int, int>(ct, al->getEnd2()));
+            ct++;
+        } else {
+            sequences.push_back(al->getSequence1());
+            cigars.push_back(al->getCigar1());
+            interval.push_back(pair<int, int>(ct, al->getStart1()));
+            interval.push_back(pair<int, int>(ct, al->getEnd1()));
+            ct++;
+        }
+
+        this->readNames.insert(al->readNames.begin(), al->readNames.end());
+    }
+    if(cigars.size() == 3){
+        for(auto& al : *alignments){
+            cout << al->getName() << " " << al->getSequence1().size() << " " << al->getStart1() << " " << al->getEnd1() << endl;
+            cout << al->getSequence1().toString().substr() << endl;
+        }
+    }
+
+    auto comp = [](pair<int, int> a, pair<int, int> b) { return a.second < b.second; };
+    std::sort(interval.begin(), interval.end(), comp);
+
+    //changes this->sequence, this->cigar, this->single_end, this->phredsum, this->cigar, this->sequence
+    mergeSequences(interval, sequences, cigars);
+
+
+
+*/
 }
 
-void AlignmentRecord::mergeSequences(std::deque<std::pair<int, int> > intervals, std::vector<ShortDnaSequence> &to_merge, std::vector<std::vector<BamTools::CigarOp> > &cigars) {
+void AlignmentRecord::mergeAlignmentRecords(const AlignmentRecord &al1){
+    if (this->isSingleEnd() && al1.isSingleEnd()){
 
-    assert(intervals.size() > 2);
-    pair<int, int> p = intervals.front();
-    intervals.pop_front();
 
-    map<int, int> overlaps;
-    overlaps.insert(p);
-    int next = p.second;
-
-    // Find first overlapping interval
-    while(overlaps.size() < 2) {
-        p = intervals.front();
-        intervals.pop_front();
-        auto it = overlaps.find(p.first);
-        if (it == overlaps.end()) {
-            overlaps.insert(p);
-        } else {
-            overlaps.erase(it);
-        }
-        next = p.second;
     }
 
-    bool paired = false;
-
-    string seq;
-    string qual;
-    vector<BamTools::CigarOp> cigar;
-
-    this->start1 = next + 1;
-    this->single_end = true;
-
-    // Go over all intervals
-    while(not intervals.empty()) {
-        if (overlaps.size() < 2) {
-            if (paired) {
-                this->end2 = next + 1;
-                this->phred_sum2 = phred_sum(qual);
-                this->sequence2 = ShortDnaSequence(seq, qual);
-                this->cigar2 = cigar;
-                this->single_end = false;
-                break;
-            } else {
-                this->phred_sum1 = phred_sum(qual);
-                this->sequence1 = ShortDnaSequence(seq, qual);
-                this->end1 = next + 1;
-                this->cigar1 = cigar;
-                seq = "";
-                qual = "";
-                cigar.clear();
-
-                paired = true;
-
-                // Find next overlapping interval
-                while(overlaps.size() < 2 and not intervals.empty()) {
-                    p = intervals.front();
-                    intervals.pop_front();
-                    auto it = overlaps.find(p.first);
-                    if (it == overlaps.end()) {
-                        overlaps.insert(p);
-                    } else {
-                        overlaps.erase(it);
-                    }
-                    next = p.second;
-                }
-                if (intervals.empty()) break;
-                this->start2 = next + 1;
-            }
-        }
-
-        int i = next;
-        p = intervals.front();
-        intervals.pop_front();
-        auto it = overlaps.find(p.first);
-        next = p.second;
-
-        if(cigars.size() == 3){
-            int k = 0;
-        }
-
-        getCigarInterval(i, next, cigar, cigars[overlaps.begin()->first], overlaps.begin()->second);
-
-        for (; i < next; i++) {
-            map<char, double> basemap;
-            
-            double max_val = 0.0;
-            char max_key = 0;
-
-            for ( auto mapit : overlaps) {
-                char c = to_merge[mapit.first][i - mapit.second];
-                if (basemap.find(c) == basemap.end()) basemap[c] = 0.0;
-                basemap[c] += to_merge[mapit.first].qualityCorrect(i - mapit.second) / overlaps.size();
-                if (basemap[c] > max_val){
-                    max_key = c;
-                    max_val = basemap[c];
-                }
-            }
-
-            seq.push_back(max_key);
-            qual.push_back( (char) round(-10*log10(1-basemap[max_key]) + 33) );           
-        }
-
-        if (it == overlaps.end()) {
-            overlaps.insert(p);
-        } else {
-            overlaps.erase(it);
-        }
-    }
 }
 
 //helper functions for merging DNA Sequences to create combined Alignment Record
