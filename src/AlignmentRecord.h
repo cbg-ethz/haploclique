@@ -74,15 +74,17 @@ private:
     std::vector<std::string>* readNameMap;
 
     /** merges sequences in superreads */
-    void mergeAlignmentRecords(const AlignmentRecord& al1, const AlignmentRecord& al2);
-    void mergeAlignmentRecords(const AlignmentRecord& al1);
+    void mergeAlignmentRecordsSingle(const AlignmentRecord& ar);
+    void mergeAlignmentRecordsPaired(const AlignmentRecord& ar);
+    void mergeAlignmentRecordsMixed(const AlignmentRecord& ar);
 public:
     AlignmentRecord(const BamTools::BamAlignment& alignment, int id, std::vector<std::string>* readNameMap);
     AlignmentRecord(std::unique_ptr<std::vector<const AlignmentRecord*>>& alignments,unsigned int clique_id);
     /** merges overlapping paired end reads while reading in bam files*/
-    void noOverlapMerge(std::string& dna, std::string& qualities, std::string& nucigar, int& c_pos, int& q_pos, int& ref_pos);
-    void noOverlapMerge(const BamTools::BamAlignment& alignment, std::string& dna, std::string& qualities, std::string& nucigar, std::vector<char>& cigar_temp_unrolled, int& c_pos, int& q_pos, int& ref_pos);
-    void overlapMerge(const BamTools::BamAlignment& alignment, std::string& dna, std::string& qualities, std::string& nucigar, std::vector<char>& cigar_temp_unrolled, int& c_pos1, int& c_pos2, int& q_pos1, int& q_pos2, int& ref_pos);
+    void noOverlapMerge(std::string& dna, std::string& qualities, std::string& nucigar, int& c_pos, int& q_pos, int& ref_pos) const;
+    void noOverlapMerge(const BamTools::BamAlignment& alignment, std::string& dna, std::string& qualities, std::string& nucigar, std::vector<char>& cigar_temp_unrolled, int& c_pos, int& q_pos, int& ref_pos) const;
+    void overlapMerge(const BamTools::BamAlignment& alignment, std::string& dna, std::string& qualities, std::string& nucigar, std::vector<char>& cigar_temp_unrolled, int& c_pos1, int& c_pos2, int& q_pos1, int& q_pos2, int& ref_pos) const;
+    void overlapMerge(const AlignmentRecord& alignment, std::string& dna, std::string& qualities, std::string& nucigar, int& c_pos1, int& c_pos2, int& q_pos1, int& q_pos2, int& ref_pos) const;
     void getMergedDnaSequence(const BamTools::BamAlignment& alignment);
     /** combines to reads belonging to a paired end to one Alignment Record. They are merged if they overlap. */
     void pairWith(const BamTools::BamAlignment& alignment);
@@ -131,8 +133,8 @@ public:
 	bool isSingleEnd() const;
 	bool isPairedEnd() const;
 	std::vector<std::string> getReadNames() const;
-	const std::vector<char> getCigar1Unrolled() const;
-	const std::vector<char> getCigar2Unrolled() const;
+    const std::vector<char>& getCigar1Unrolled() const;
+    const std::vector<char>& getCigar2Unrolled() const;
 	int getLengthInclDeletions1() const;
 	int getLengthInclDeletions2() const;
 	int getLengthInclLongDeletions1() const;

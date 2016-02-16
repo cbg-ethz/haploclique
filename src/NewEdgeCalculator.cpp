@@ -135,7 +135,9 @@ bool NewEdgeCalculator::similarityCriterion(const AlignmentRecord & a1, const st
 bool NewEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const AlignmentRecord & ap2) const{
     const auto& cov_ap1 = ap1.getCovmap();
     const auto& cov_ap2 = ap2.getCovmap();
-
+    //if (ap1.getName().find("Clique_1218") != string::npos && ap2.getName().find("Clique_1219") != string::npos){
+    //    int k = 0;
+    //}
     /*if(ap1.getName() == "MISEQ-02:83:000000000-A9WYY:1:1101:19916:16016" && ap2.getName()== "MISEQ-02:83:000000000-A9WYY:1:2104:10608:13344"){
             int k = 0;
         }*/
@@ -157,6 +159,7 @@ bool NewEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const Alignment
     double prob0 = 1.0;
     int pos1 = 0;
     int pos2 = 0;
+    int equalBase = 0;
     std::vector<std::pair<int,int>> aub;
 
     //iterating the covered positions and computing ProbM and Prob0 simultaneously
@@ -164,6 +167,9 @@ bool NewEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const Alignment
         auto& v1 = cov_ap1[pos1];
         auto& v2 = cov_ap2[pos2];
         if (v1.ref == v2.ref){
+            if(v1.base == v2.base){
+                equalBase++;
+            }
             calculateProbM(v1,v2,probM);
             aub.push_back(std::make_pair(pos1,pos2));
             pos1++;
@@ -181,6 +187,9 @@ bool NewEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const Alignment
             pos2++;
             tc++;
         }
+    }
+    if(equalBase == cov_ap1.size() || equalBase == cov_ap2.size()){
+        return true;
     }
     //add remaining entrys
     while(pos1<cov_ap1.size()){
