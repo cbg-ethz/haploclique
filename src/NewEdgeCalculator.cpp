@@ -191,18 +191,22 @@ bool NewEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const Alignment
     if(equalBase == cov_ap1.size() || equalBase == cov_ap2.size()){
         return true;
     }
-    //add remaining entrys
+    //add remaining entrys but only if they are both on the same read in the case of paired ends
     while(pos1<cov_ap1.size()){
         auto& v1 = cov_ap1[pos1];
-        calculateProb0(v1,prob0);
-        pos1++;
-        tc++;
+        if (v1.read == cov_ap2.back().read){
+            calculateProb0(v1,prob0);
+            pos1++;
+            tc++;
+        } else break;
     }
     while(pos2<cov_ap2.size()){
         auto& v2 = cov_ap2[pos2];
-        calculateProb0(v2,prob0);
-        pos2++;
-        tc++;
+        if (v2.read == cov_ap1.back().read){
+            calculateProb0(v2,prob0);
+            pos2++;
+            tc++;
+        } else break;
     }
 
     if (cc == 0 || (!checkGaps(cov_ap1, cov_ap2, aub))){

@@ -89,6 +89,26 @@ double phredProb(const char& qual){
     return std::pow(10, (double)(-qual+33)/10.0);
 }
 
+int computeOffset(std::vector<char>& cigar){
+    int offset = 0;
+    for(auto i : cigar){
+        if (i == 'S' || i == 'H'){
+            offset++;
+        } else break;
+    }
+    return offset;
+}
+
+int computeRevOffset(std::vector<char>& cigar){
+    int offset = 0;
+    for (std::vector<char>::reverse_iterator it = cigar.rbegin(); it != cigar.rend(); ++it){
+        if (*it == 'S' || *it == 'H'){
+            offset++;
+        } else break;
+    }
+    return offset;
+}
+
 std::pair<char,char> computeEntry(const char& base1, const char& qual1, const char& base2, const char& qual2){
     std::pair<char,char> result;
 
@@ -166,10 +186,10 @@ AlignmentRecord::AlignmentRecord(unique_ptr<vector<const AlignmentRecord*>>& ali
         this->sequence2 = al1->getSequence2();
     }
 
-    //merge recent AlignmentRecord with all other alignments
+    //merge recent AlignmentRecord with all other alignments of Clique
     for (int i = 1; i < (*alignments).size(); i++){
         auto& al = (*alignments)[i];
-        if (this->single_end && al->isSingleEnd()) mergeAlignmentRecordsSingle(*al);
+        if (this->single_end && al->isSingleEnd()) mergeAlignmentRecordsSingle(*al,1,1);
         else if (!(this->single_end) && al->isPairedEnd()){
             cout << "Paired Ends" << endl;
             mergeAlignmentRecordsPaired(*al);
@@ -219,42 +239,53 @@ AlignmentRecord::AlignmentRecord(unique_ptr<vector<const AlignmentRecord*>>& ali
     this->cov_pos=this->coveredPositions();
 }
 
-void AlignmentRecord::mergeAlignmentRecordsSingle(const AlignmentRecord& ar){
+void AlignmentRecord::mergeAlignmentRecordsSingle(const AlignmentRecord& ar, int i, int j){
     std::string dna = "";
     std::string qualities = "";
     std::string nucigar = "";
-    std::vector<char> cigar = ar.getCigar1Unrolled();
+    int offset_f1, offset_f2, offset_b1, offset_b2, ref_s_pos1, ref_e_pos1, ref_s_pos2, ref_e_pos2 = 0;
+    if (i == 1){
+         //get starting position and ending position according to ref position, paying attention to clipped bases
+         //updated ref position including clips
+         offset_f1 = computeOffset(this->cigar1_unrolled);
+         offset_b1 = computeRevOffset(this->cigar1_unrolled);
+         ref_e_pos1 = this->end1+offset_b1;
+         ref_s_pos1 = this->start1-offset_f1;
+         if(j == 1){
+             std::vector<char> cigar = ar.getCigar1Unrolled();
+             offset_f2 = computeOffset(cigar);
+             offset_b2 = computeRevOffset(cigar);
+             ref_s_pos2 = ar.getStart1()-offset_f2;
+             ref_e_pos2 = ar.getEnd1()+offset_b2;
+         } else {
+             std::vector<char> cigar = ar.getCigar2Unrolled();
+             offset_f2 = computeOffset(cigar);
+             offset_b2 = computeRevOffset(cigar);
+             ref_s_pos2 = ar.getStart2()-offset_f2;
+             ref_e_pos2 = ar.getEnd2()+offset_b2;
+         }
+    } else {
+         //get starting position and ending position according to ref position, paying attention to clipped bases
+         //updated ref position including clips
+         offset_f1 = computeOffset(this->cigar2_unrolled);
+         offset_b1 = computeRevOffset(this->cigar2_unrolled);
+         ref_s_pos1 = this->start2-offset_f1;
+         ref_e_pos1 = this->end2+offset_b1;
+         if(j == 1){
+             std::vector<char> cigar = ar.getCigar1Unrolled();
+             offset_f2 = computeOffset(cigar);
+             offset_b2 = computeRevOffset(cigar);
+             ref_s_pos2 = ar.getStart1()-offset_f2;
+             ref_e_pos2 = ar.getEnd1()+offset_b2;
+         } else {
+             std::vector<char> cigar = ar.getCigar2Unrolled();
+             offset_f2 = computeOffset(cigar);
+             offset_b2 = computeRevOffset(cigar);
+             ref_s_pos2 = ar.getStart2()-offset_f2;
+             ref_e_pos2 = ar.getEnd2()+offset_b2;
+         }
+    }
 
-    //get starting position and ending position according to ref position, paying attention to clipped bases
-    int offset_f1 = 0;
-    int offset_f2 = 0;
-    int offset_b1 = 0;
-    int offset_b2 = 0;
-    for(auto i : this->cigar1_unrolled){
-        if (i == 'S' || i == 'H'){
-            offset_f1++;
-        } else break;
-    }
-    for (auto i : cigar){
-        if (i == 'S' || i == 'H'){
-            offset_f2++;
-        } else break;
-    }
-    for (std::vector<char>::reverse_iterator it = this->cigar1_unrolled.rbegin(); it != this->cigar1_unrolled.rend(); ++it){
-      if (*it == 'S' || *it == 'H'){
-          offset_b1++;
-      } else break;
-    }
-    for (std::vector<char>::reverse_iterator it = cigar.rbegin(); it != cigar.rend(); ++it){
-      if (*it == 'S' || *it == 'H'){
-          offset_b2++;
-      } else break;
-    }
-    //updated ref position including clips
-    int ref_s_pos1 = this->start1-offset_f1;
-    int ref_e_pos1 = this->end1+offset_b1;
-    int ref_s_pos2 = ar.getStart1()-offset_f2;
-    int ref_e_pos2 = ar.getEnd1()+offset_b2;
     //position in query sequences // phred scores
     int q_pos1 = 0;
     int q_pos2 = 0;
@@ -266,63 +297,97 @@ void AlignmentRecord::mergeAlignmentRecordsSingle(const AlignmentRecord& ar){
     //     ------------
     if(ref_s_pos1 <= ref_s_pos2 && ref_e_pos1 <= ref_e_pos2){
         while(ref_s_pos1<ref_s_pos2){
-            noOverlapMerge(dna,qualities,nucigar,c_pos1,q_pos1,ref_s_pos1);
+            noOverlapMerge(dna,qualities,nucigar,c_pos1,q_pos1,ref_s_pos1,i);
         }
         while(ref_s_pos1<=ref_e_pos1){
-            overlapMerge(ar,dna,qualities,nucigar,c_pos1,c_pos2,q_pos1,q_pos2,ref_s_pos1);
+            overlapMerge(ar,dna,qualities,nucigar,c_pos1,c_pos2,q_pos1,q_pos2,ref_s_pos1,i,j);
         }
         while(ref_s_pos1<=ref_e_pos2){
-            ar.noOverlapMerge(dna, qualities, nucigar, c_pos2, q_pos2, ref_s_pos1);
+            ar.noOverlapMerge(dna, qualities, nucigar, c_pos2, q_pos2, ref_s_pos1,j);
         }
     }//------------------------------
         //           ----------
      else if (ref_s_pos1 <= ref_s_pos2 && ref_e_pos1 > ref_e_pos2){
         while(ref_s_pos1<ref_s_pos2){
-            noOverlapMerge(dna,qualities,nucigar,c_pos1,q_pos1,ref_s_pos1);
+            noOverlapMerge(dna,qualities,nucigar,c_pos1,q_pos1,ref_s_pos1,i);
         }
         while(ref_s_pos1<=ref_e_pos2){
-            overlapMerge(ar,dna,qualities,nucigar,c_pos1,c_pos2,q_pos1,q_pos2,ref_s_pos1);
+            overlapMerge(ar,dna,qualities,nucigar,c_pos1,c_pos2,q_pos1,q_pos2,ref_s_pos1,i,j);
         }
         while(ref_s_pos1<=ref_e_pos1){
-            noOverlapMerge(dna,qualities,nucigar,c_pos1,q_pos1,ref_s_pos1);
+            noOverlapMerge(dna,qualities,nucigar,c_pos1,q_pos1,ref_s_pos1,i);
         }
         //         ----------
         //--------------------------
     } else if (ref_s_pos1 > ref_s_pos2 && ref_e_pos1 <= ref_e_pos2){
         while(ref_s_pos2<ref_s_pos1){
-            ar.noOverlapMerge(dna, qualities, nucigar, c_pos2, q_pos2, ref_s_pos2);
+            ar.noOverlapMerge(dna, qualities, nucigar, c_pos2, q_pos2, ref_s_pos2,j);
         }
         while(ref_s_pos2<=ref_e_pos1){
-            overlapMerge(ar,dna,qualities,nucigar,c_pos1,c_pos2,q_pos1,q_pos2,ref_s_pos2);
+            overlapMerge(ar,dna,qualities,nucigar,c_pos1,c_pos2,q_pos1,q_pos2,ref_s_pos2,i,j);
         }
         while(ref_s_pos2<=ref_e_pos2){
-            ar.noOverlapMerge(dna, qualities, nucigar, c_pos2, q_pos2, ref_s_pos2);
+            ar.noOverlapMerge(dna, qualities, nucigar, c_pos2, q_pos2, ref_s_pos2,j);
         }
         //           --------------------
         //---------------------
     } else {
         assert(ref_s_pos1 > ref_s_pos2 && ref_e_pos1 > ref_e_pos2);
         while(ref_s_pos2<ref_s_pos1){
-            ar.noOverlapMerge(dna, qualities, nucigar, c_pos2, q_pos2, ref_s_pos2);
+            ar.noOverlapMerge(dna, qualities, nucigar, c_pos2, q_pos2, ref_s_pos2,j);
         }
         while(ref_s_pos2<=ref_e_pos2){
-            overlapMerge(ar,dna,qualities,nucigar, c_pos1,c_pos2,q_pos1,q_pos2,ref_s_pos2);
+            overlapMerge(ar,dna,qualities,nucigar, c_pos1,c_pos2,q_pos1,q_pos2,ref_s_pos2,i,j);
         }
         while(ref_s_pos2<=ref_e_pos1){
-            noOverlapMerge(dna,qualities,nucigar, c_pos1,q_pos1,ref_s_pos2);
+            noOverlapMerge(dna,qualities,nucigar, c_pos1,q_pos1,ref_s_pos2,i);
         }
     }
-    this->start1 = std::min(this->start1,ar.getStart1());
-    this->end1=std::max(ar.getEnd1(),this->end1);
-    this->single_end= true;
-    this->cigar1 = createCigar(nucigar);
-    this->sequence1=ShortDnaSequence(dna,qualities);
-    this->phred_sum1=phred_sum(qualities);
-    this->length_incl_deletions1 = this->sequence1.size();
-    this->length_incl_longdeletions1 = this->sequence1.size();
-    this->cigar1_unrolled.clear();
-    for (char i : nucigar){
-        this->cigar1_unrolled.push_back(i);
+    if (i == 1){
+        if(j == 1){
+            this->start1 = std::min(this->start1,ar.getStart1());
+            this->end1=std::max(ar.getEnd1(),this->end1);
+            this->single_end= true;
+            this->cigar1 = createCigar(nucigar);
+            this->sequence1=ShortDnaSequence(dna,qualities);
+            this->phred_sum1=phred_sum(qualities);
+            this->length_incl_deletions1 = this->sequence1.size();
+            this->length_incl_longdeletions1 = this->sequence1.size();
+            this->cigar1_unrolled.clear();
+            for (char i : nucigar){
+                this->cigar1_unrolled.push_back(i);
+            }
+        } else {
+            this->start2 = std::min(this->start1,ar.getStart2());
+            this->end2 = std::max(this->end1,ar.getEnd2());
+            this->cigar2 = createCigar(nucigar);
+            this->sequence2=ShortDnaSequence(dna,qualities);
+            this->phred_sum2=phred_sum(qualities);
+            this->length_incl_deletions2 = this->sequence2.size();
+            this->length_incl_longdeletions2 = this->sequence2.size();
+            this->cigar2_unrolled.clear();
+            for (char i : nucigar){
+                this->cigar2_unrolled.push_back(i);
+            }
+        }
+    } else {
+        if(j == 1){
+            this->start2 = std::min(this->start2,ar.getStart1());
+            this->end2=std::max(ar.getEnd1(),this->end2);
+        } else {
+            this->start2 = std::min(this->start2,ar.getStart2());
+            this->end2=std::max(ar.getEnd2(),this->end2);
+        }
+        this->single_end= false;
+        this->cigar2 = createCigar(nucigar);
+        this->sequence2=ShortDnaSequence(dna,qualities);
+        this->phred_sum2=phred_sum(qualities);
+        this->length_incl_deletions2 = this->sequence2.size();
+        this->length_incl_longdeletions2 = this->sequence2.size();
+        this->cigar2_unrolled.clear();
+        for (char i : nucigar){
+            this->cigar2_unrolled.push_back(i);
+        }
     }
 }
 
@@ -331,22 +396,94 @@ void AlignmentRecord::mergeAlignmentRecordsPaired(const AlignmentRecord& ar){
     std::string qualities = "";
     std::string nucigar = "";
     std::vector<char> cigar1 = ar.getCigar1Unrolled();
+    std::vector<char> cigar2 = ar.getCigar2Unrolled();
+    //get starting position and ending position according to ref position, paying attention to clipped bases
+    /*
+    int offset_f1_c1 = computeOffset(this->cigar1_unrolled);
+    int offset_f1_c2 = computeOffset(this->cigar2_unrolled);
+    int offset_f2_c1 = computeOffset(cigar1);
+    int offset_f2_c2 = computeOffset(cigar2);
+    int offset_b1_c1 = computeRevOffset(this->cigar1_unrolled);
+    int offset_b1_c2 = computeRevOffset(this->cigar2_unrolled);
+    int offset_b2_c1 = computeRevOffset(cigar1);
+    int offset_b2_c2 = computeRevOffset(cigar2);
+    //updated ref position including clips
+    int ref_s_pos1_c1 = this->start1-offset_f1_c1;
+    int ref_e_pos1_c1 = this->end1+offset_b1_c1;
+    int ref_s_pos1_c2 = this->start2-offset_f1_c2;
+    int ref_e_pos1_c2 = this->end2+offset_b1_c2;
+    int ref_s_pos2_c1 = ar.getStart1()-offset_f2_c1;
+    int ref_e_pos2_c1 = ar.getEnd1()+offset_b2_c1;
+    int ref_e_pos2_c2 = ar.getStart2()-offset_f2_c2;
+    int ref_e_pos2_c2 = ar.getEnd2()+offset_b2_c2;
+    */
+    // --------      -----------
+    //   --------       ----------
+    if(this->end1 < ar.getStart2() && this->start2 > ar.getEnd1()){
+        mergeAlignmentRecordsSingle(ar,1,1);
+        mergeAlignmentRecordsSingle(ar,2,2);
+    } else {
+
+    }
 
 }
 
 void AlignmentRecord::mergeAlignmentRecordsMixed(const AlignmentRecord& ar){
-
+    // ---------     --------
+    //----------
+    if(ar.isSingleEnd()){
+        if(ar.getEnd1() < this->start2){
+            mergeAlignmentRecordsSingle(ar,1,1);
+            this->single_end = false;
+        } else if (ar.getStart1() > this->end1){
+            mergeAlignmentRecordsSingle(ar,2,1);
+        }
+    } // ---------  -----------
+     // ---------
+    else if (ar.isPairedEnd()){
+        if(this->end1 < ar.getStart2()){
+            mergeAlignmentRecordsSingle(ar,1,1);
+            this->start2 = ar.getStart2();
+            this->end2=ar.getEnd2();
+            this->single_end= false;
+            this->cigar2 = ar.getCigar2();
+            this->sequence2=ar.getSequence2();
+            this->phred_sum2=ar.getPhredSum2();
+            this->length_incl_deletions2 = ar.getLengthInclDeletions2();
+            this->length_incl_longdeletions2 = ar.getLengthInclLongDeletions2();
+            this->cigar2_unrolled = ar.getCigar2Unrolled();
+        } else if (this->start1 > ar.getEnd1()){
+            mergeAlignmentRecordsSingle(ar,1,2);
+            this->start1= ar.getStart1();
+            this->end1=ar.getEnd1();
+            this->single_end= false;
+            this->cigar1 = ar.getCigar1();
+            this->sequence1=ar.getSequence1();
+            this->phred_sum1=ar.getPhredSum1();
+            this->length_incl_deletions1 = ar.getLengthInclDeletions1();
+            this->length_incl_longdeletions1 = ar.getLengthInclLongDeletions1();
+            this->cigar1_unrolled = ar.getCigar1Unrolled();
+        }
+    }
 }
 
 //helper functions for merging DNA Sequences to create combined Alignment Record
-void AlignmentRecord::noOverlapMerge(std::string& dna, std::string& qualities, std::string& nucigar, int& c_pos, int& q_pos, int& ref_pos) const{
-    char c = this->cigar1_unrolled[c_pos];
+void AlignmentRecord::noOverlapMerge(std::string& dna, std::string& qualities, std::string& nucigar, int& c_pos, int& q_pos, int& ref_pos, int i) const{
+    char c;
+    const ShortDnaSequence* s = 0;
+    if (i == 1){
+        c = this->cigar1_unrolled[c_pos];
+        s = &this->sequence1;
+    } else {
+        c = this->cigar2_unrolled[c_pos];
+        s = &this->sequence2;
+    }
     if (c == 'H'){
         ref_pos++;
         c_pos++;
     } else if (c == 'I') {
-        dna += this->sequence1[q_pos];
-        qualities += this->sequence1.qualityChar(q_pos);
+        dna += (*s)[q_pos];
+        qualities += s->qualityChar(q_pos);
         nucigar += 'I';
         q_pos++;
         c_pos++;
@@ -359,8 +496,8 @@ void AlignmentRecord::noOverlapMerge(std::string& dna, std::string& qualities, s
         q_pos++;
         c_pos++;
     } else if (c == 'M'){
-        dna += this->sequence1[q_pos];
-        qualities += this->sequence1.qualityChar(q_pos);
+        dna += (*s)[q_pos];
+        qualities += s->qualityChar(q_pos);
         nucigar += c;
         ref_pos++;
         q_pos++;
@@ -477,12 +614,35 @@ void AlignmentRecord::overlapMerge(const BamTools::BamAlignment& alignment, std:
     }
 }
 
-void AlignmentRecord::overlapMerge(const AlignmentRecord& ar, std::string& dna, std::string& qualities, std::string& nucigar, int& c_pos1, int& c_pos2, int& q_pos1, int& q_pos2, int& ref_pos) const{
-    char c1 = this->cigar1_unrolled[c_pos1];
-    char c2 = ar.getCigar1Unrolled()[c_pos2];
+//helper function for mergeAlignmentRecords function
+void AlignmentRecord::overlapMerge(const AlignmentRecord& ar, std::string& dna, std::string& qualities, std::string& nucigar, int& c_pos1, int& c_pos2, int& q_pos1, int& q_pos2, int& ref_pos, int i, int j) const{
+    char c1, c2;
+    const ShortDnaSequence* s1,* s2 = 0;
+    if (i == 1){
+        c1 = this->cigar1_unrolled[c_pos1];
+        s1 = &this->sequence1;
+        if(j == 1){
+            c2 = ar.getCigar1Unrolled()[c_pos2];
+            s2 = &ar.getSequence1();
+        } else {
+            c2 = ar.getCigar2Unrolled()[c_pos2];
+            s2 = &ar.getSequence2();
+        }
+    } else {
+        c1 = this->cigar2_unrolled[c_pos1];
+        s1 = &this->sequence2;
+        if(j == 1){
+            c2 = ar.getCigar1Unrolled()[c_pos2];
+            s2 = &ar.getSequence1();
+        } else {
+            c2 = ar.getCigar2Unrolled()[c_pos2];
+            s2 = &ar.getSequence2();
+        }
+    }
+
     if((c1 == 'M' && c2 == 'M') || (c1 == 'S' && c2 == 'S') || (c1 == 'I' && c2 == 'I')){
         if (c1 != 'S'){
-            std::pair<char,char> resPair = computeEntry(this->sequence1[q_pos1],this->sequence1.qualityChar(q_pos1),ar.getSequence1()[q_pos2],ar.getSequence1().qualityChar(q_pos2));
+            std::pair<char,char> resPair = computeEntry((*s1)[q_pos1],s1->qualityChar(q_pos1),(*s2)[q_pos2],s2->qualityChar(q_pos2));
             dna += resPair.first;
             qualities += resPair.second;
             nucigar += c1;
@@ -507,8 +667,8 @@ void AlignmentRecord::overlapMerge(const AlignmentRecord& ar, std::string& dna, 
     } else if ((c1 == 'M' && (c2 == 'D' || c2 == 'H' || c2 == 'S')) || ((c1 == 'D' || c1 == 'H' || c1 == 'S') && c2 == 'M') || (c1 == 'S' && c2 == 'H') || (c1 == 'H' && c2 == 'S')) {
         if (c1 == 'M'){
             nucigar += 'M';
-            dna += this->sequence1[q_pos1];
-            qualities += this->sequence1.qualityChar(q_pos1);
+            dna += (*s1)[q_pos1];
+            qualities += s1->qualityChar(q_pos1);
             ref_pos++;
             c_pos1++;
             c_pos2++;
@@ -516,8 +676,8 @@ void AlignmentRecord::overlapMerge(const AlignmentRecord& ar, std::string& dna, 
             if (c2 == 'S') q_pos2++;
         } else if (c2 == 'M'){
             nucigar += 'M';
-            dna +=  ar.getSequence1()[q_pos2];
-            qualities += ar.getSequence1().qualityChar(q_pos2);
+            dna +=  (*s2)[q_pos2];
+            qualities += s2->qualityChar(q_pos2);
             ref_pos++;
             c_pos1++;
             c_pos2++;
@@ -537,14 +697,14 @@ void AlignmentRecord::overlapMerge(const AlignmentRecord& ar, std::string& dna, 
     } else if (c1 == 'I' || c2 == 'I'){
         if(c1 == 'I'){
             nucigar += 'I';
-            dna += this->sequence1[q_pos1];
-            qualities += this->sequence1.qualityChar(q_pos1);
+            dna += (*s1)[q_pos1];
+            qualities += s1->qualityChar(q_pos1);
             c_pos1++;
             q_pos1++;
         } else {
             nucigar += 'I';
-            dna +=  ar.getSequence1()[q_pos2];
-            qualities += ar.getSequence1().qualityChar(q_pos2);
+            dna +=  (*s2)[q_pos2];
+            qualities += s2->qualityChar(q_pos2);
             c_pos2++;
             q_pos2++;
         }
@@ -564,30 +724,11 @@ void AlignmentRecord::getMergedDnaSequence(const BamTools::BamAlignment& alignme
             }
         }
         //get starting position and ending position according to ref position, paying attention to clipped bases
-        int offset_f1 = 0;
-        int offset_f2 = 0;
-        int offset_b1 = 0;
-        int offset_b2 = 0;
-        for(auto i : this->cigar1_unrolled){
-            if (i == 'S' || i == 'H'){
-                offset_f1++;
-            } else break;
-        }
-        for (auto i : cigar_temp_unrolled){
-            if (i == 'S' || i == 'H'){
-                offset_f2++;
-            } else break;
-        }
-        for (std::vector<char>::reverse_iterator it = this->cigar1_unrolled.rbegin(); it != this->cigar1_unrolled.rend(); ++it){
-          if (*it == 'S' || *it == 'H'){
-              offset_b1++;
-          } else break;
-        }
-        for (std::vector<char>::reverse_iterator it = cigar_temp_unrolled.rbegin(); it != cigar_temp_unrolled.rend(); ++it){
-          if (*it == 'S' || *it == 'H'){
-              offset_b2++;
-          } else break;
-        }
+        int offset_f1 = computeOffset(this->cigar1_unrolled);
+        int offset_f2 = computeOffset(cigar_temp_unrolled);
+        int offset_b1 = computeRevOffset(this->cigar1_unrolled);
+        int offset_b2 = computeRevOffset(cigar_temp_unrolled);
+
         //updated ref position including clips
         int ref_s_pos1 = this->start1-offset_f1;
         int ref_e_pos1 = this->end1+offset_b1;
@@ -604,7 +745,7 @@ void AlignmentRecord::getMergedDnaSequence(const BamTools::BamAlignment& alignme
         //     ------------
         if(ref_s_pos1 <= ref_s_pos2 && ref_e_pos1 <= ref_e_pos2){
             while(ref_s_pos1<ref_s_pos2){
-                noOverlapMerge(dna,qualities,nucigar,c_pos1,q_pos1,ref_s_pos1);
+                noOverlapMerge(dna,qualities,nucigar,c_pos1,q_pos1,ref_s_pos1,1);
             }
             while(ref_s_pos1<=ref_e_pos1){
                 overlapMerge(alignment,dna,qualities,nucigar,cigar_temp_unrolled,c_pos1,c_pos2,q_pos1,q_pos2,ref_s_pos1);
@@ -616,13 +757,13 @@ void AlignmentRecord::getMergedDnaSequence(const BamTools::BamAlignment& alignme
             //           ----------
          else if (ref_s_pos1 <= ref_s_pos2 && ref_e_pos1 > ref_e_pos2){
             while(ref_s_pos1<ref_s_pos2){
-                noOverlapMerge(dna,qualities,nucigar,c_pos1,q_pos1,ref_s_pos1);
+                noOverlapMerge(dna,qualities,nucigar,c_pos1,q_pos1,ref_s_pos1,1);
             }
             while(ref_s_pos1<=ref_e_pos2){
                 overlapMerge(alignment,dna,qualities,nucigar,cigar_temp_unrolled,c_pos1,c_pos2,q_pos1,q_pos2,ref_s_pos1);
             }
             while(ref_s_pos1<=ref_e_pos1){
-                noOverlapMerge(dna,qualities,nucigar,c_pos1,q_pos1,ref_s_pos1);
+                noOverlapMerge(dna,qualities,nucigar,c_pos1,q_pos1,ref_s_pos1,1);
             }
             //         ----------
             //--------------------------
@@ -647,7 +788,7 @@ void AlignmentRecord::getMergedDnaSequence(const BamTools::BamAlignment& alignme
                 overlapMerge(alignment,dna,qualities,nucigar,cigar_temp_unrolled,c_pos1,c_pos2,q_pos1,q_pos2,ref_s_pos2);
             }
             while(ref_s_pos2<=ref_e_pos1){
-                noOverlapMerge(dna,qualities,nucigar,c_pos1,q_pos1,ref_s_pos2);
+                noOverlapMerge(dna,qualities,nucigar,c_pos1,q_pos1,ref_s_pos2,1);
             }
         }
         this->start1 = std::min(this->start1,(unsigned int)alignment.Position+1);
