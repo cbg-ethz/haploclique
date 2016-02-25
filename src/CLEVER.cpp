@@ -154,7 +154,7 @@ void CLEVER::addAlignment(std::unique_ptr<AlignmentRecord>& alignment_autoptr) {
 	for (; it!=end; ++it) {
 		const AlignmentRecord* alignment2 = alignments[it->second];
 		// cerr << "  comparing to " << alignments[it->second]->getID() << ", length " << it->first << ", read group: " << alignments[it->second]->getReadGroup();
-		bool set_edge = edge_calculator.edgeBetween(*alignment, *alignment2);
+        bool set_edge = edge_calculator.edgeBetween(*alignment, *alignment2);
         //if(a1.getName().find("Clique") != string::npos && a2.getName().find("Clique") != string::npos){
         //FOR DEBUGGING
         //}

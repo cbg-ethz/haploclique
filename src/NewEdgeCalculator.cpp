@@ -157,9 +157,9 @@ bool NewEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const Alignment
     int cc = 0;
     double probM = 1.0;
     double prob0 = 1.0;
-    int pos1 = 0;
-    int pos2 = 0;
-    int equalBase = 0;
+    unsigned int pos1 = 0;
+    unsigned int pos2 = 0;
+    unsigned int equalBase = 0;
     std::vector<std::pair<int,int>> aub;
 
     //iterating the covered positions and computing ProbM and Prob0 simultaneously
@@ -178,14 +178,14 @@ bool NewEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const Alignment
         }
         else if (v1.ref < v2.ref){
             calculateProb0(v1,prob0);
-            pos1++;
             tc++;
-
+            pos1++;
         }
         else if(v1.ref > v2.ref){
             calculateProb0(v2,prob0);
-            pos2++;
             tc++;
+            pos2++;
+
         }
     }
     if(equalBase == cov_ap1.size() || equalBase == cov_ap2.size()){
@@ -208,6 +208,11 @@ bool NewEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const Alignment
             tc++;
         } else break;
     }
+
+    // special case paired ends
+    //--------   ---------                              ---------     ----------
+    //           ---------  --------- OR ----------      ---------
+    if(ap1.isPairedEnd() && ap2.isPairedEnd() && ((ap1.getEnd1() < ap2.getStart1() && ap1.getEnd2() < ap1.getStart2()) || (ap2.getEnd1() < ap1.getStart1() && ap2.getEnd2() < ap1.getStart2()))) return false;
 
     if (cc == 0 || (!checkGaps(cov_ap1, cov_ap2, aub))){
         return false;
