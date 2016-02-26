@@ -162,6 +162,35 @@ bool NewEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const Alignment
     unsigned int equalBase = 0;
     std::vector<std::pair<int,int>> aub;
 
+    // special cases of paired end reads for which no edge is allowed
+    if(ap1.isPairedEnd() && ap2.isPairedEnd()){
+        //--------   ---------
+        //           ---------   -------
+        if(ap1.getEnd1() < ap2.getStart1() && ap1.getEnd2() < ap1.getStart2()){
+            return false;
+        } //         ---------    ---------
+        //-------    ---------
+        else if(ap2.getEnd1() < ap1.getStart1() && ap2.getEnd2() < ap1.getStart2()){
+            return false;
+        } // ------------     ----------
+        //   -----------                  ---------
+        else if(ap2.getEnd1() < ap1.getStart2() && ap1.getEnd2() < ap2.getStart2()){
+            return false;
+        }//-----------            ----------
+        //-----------  ----------
+        else if(ap1.getEnd1() < ap2.getStart2() && ap2.getEnd2() < ap1.getStart2()){
+            return false;
+        }//          --------- ---------
+        //----------           ---------
+        else if (ap2.getEnd1() < ap1.getStart1() && ap1.getEnd1() < ap2.getStart2()){
+            return false;
+        }//--------             --------
+        //           --------   --------
+        else if(ap1.getEnd1() < ap2.getStart1() && ap2.getEnd1() < ap1.getStart2()){
+            return false;
+        }
+    }
+
     //iterating the covered positions and computing ProbM and Prob0 simultaneously
     while(pos1<cov_ap1.size() && pos2<cov_ap2.size()){
         auto& v1 = cov_ap1[pos1];
@@ -188,10 +217,12 @@ bool NewEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const Alignment
 
         }
     }
+
+    //given the case that one read is contained in another
     if(equalBase == cov_ap1.size() || equalBase == cov_ap2.size()){
         return true;
     }
-    //add remaining entrys but only if they are both on the same read in the case of paired ends
+    //add remaining entries, but only if they are both in the same read in the case of paired ends
     while(pos1<cov_ap1.size()){
         auto& v1 = cov_ap1[pos1];
         if (v1.read == cov_ap2.back().read){
@@ -208,18 +239,10 @@ bool NewEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const Alignment
             tc++;
         } else break;
     }
-
-    // special case paired ends
-    //--------   ---------                              ---------     ----------
-    //           ---------  --------- OR ----------      ---------
-    if(ap1.isPairedEnd() && ap2.isPairedEnd() && ((ap1.getEnd1() < ap2.getStart1() && ap1.getEnd2() < ap1.getStart2()) || (ap2.getEnd1() < ap1.getStart1() && ap2.getEnd2() < ap1.getStart2()))) return false;
-
+    //no edge if there are no common positions or incompatible gaps
     if (cc == 0 || (!checkGaps(cov_ap1, cov_ap2, aub))){
         return false;
     }
-    //cout << "Gaps are compatible" << endl;
-    //std::vector<int> tail = tailPositions(cov_ap1,cov_ap2);
-    //cout << "Tail positions computed" << endl;
     return similarityCriterion(ap1, cov_ap1, ap2, cov_ap2, probM, prob0, tc, cc);
 }
 
