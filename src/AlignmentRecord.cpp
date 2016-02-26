@@ -908,7 +908,7 @@ void AlignmentRecord::mergeAlignmentRecordsPaired(const AlignmentRecord& ar){
         c_c2_pos2 += i;
         q_c2_pos2 += i;
         while(ref_s_pos2_c1 <= ref_e_pos2_c2 && ref_s_pos2_c1 <= ref_e_pos1_c2){
-            overlapMerge(ar,dna,qualities,nucigar,c_c2_pos1,c_c2_pos2,q_c2_pos1,q_c2_pos2,ref_s_pos2_c2,2,2);
+            overlapMerge(ar,dna,qualities,nucigar,c_c2_pos1,c_c2_pos2,q_c2_pos1,q_c2_pos2,ref_s_pos2_c1,2,2);
         }
         if(ref_s_pos2_c1-1 == ref_e_pos2_c2){
             while(ref_s_pos2_c1<=ref_e_pos1_c2){

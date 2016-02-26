@@ -73,7 +73,7 @@ private:
 	std::set<int> readNames;
     std::vector<std::string>* readNameMap;
 
-    /** merges sequences in superreads, i and j correspond to sequence/cigar 1 or 2*/
+    /** merges sequences to superreads, i and j correspond to sequence/cigar 1 or 2*/
     void mergeAlignmentRecordsSingle(const AlignmentRecord& ar, int i, int j);
     void mergeAlignmentRecordsPaired(const AlignmentRecord& ar);
     void mergeAlignmentRecordsMixed(const AlignmentRecord& ar);
