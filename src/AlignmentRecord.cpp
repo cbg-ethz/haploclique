@@ -208,9 +208,9 @@ AlignmentRecord::AlignmentRecord(unique_ptr<vector<const AlignmentRecord*>>& ali
         this->cigar2_unrolled = al1->getCigar2Unrolled();
         this->sequence2 = al1->getSequence2();
     }
-    //if(clique_id == 40150){
-    //    int k = 0;
-    //}
+    if(clique_id == 313627){
+        int k = 0;
+    }
     //merge recent AlignmentRecord with all other alignments of Clique
     for (int i = 1; i < (*alignments).size(); i++){
         auto& al = (*alignments)[i];
@@ -1872,7 +1872,7 @@ void printReads(std::ostream& outfile, std::deque<AlignmentRecord*>& reads) {
     for (auto&& r : reads) {
         outfile << r->name;
         if (not r->single_end) outfile << "|paired";
-        outfile << "|ht_freq:" << r->probability;
+        outfile << "|ht_freq:" << r->probability << endl;
         outfile << "|start1:" << r->getStart1();
         outfile << "|end1:" << r->getEnd1();
         if (not r->single_end){
@@ -1880,6 +1880,7 @@ void printReads(std::ostream& outfile, std::deque<AlignmentRecord*>& reads) {
             outfile << "|end2:" << r->getEnd2();
         }
         outfile << endl;
+
         outfile << r->sequence1;
 
         if (not r->single_end) {
