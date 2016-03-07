@@ -132,6 +132,9 @@ public:
 	void setID(alignment_id_t id);
 	bool isSingleEnd() const;
 	bool isPairedEnd() const;
+    const std::set<int>& getReadNamesSet() const{
+        return readNames;
+    }
 	std::vector<std::string> getReadNames() const;
     const std::vector<char>& getCigar1Unrolled() const;
     const std::vector<char>& getCigar2Unrolled() const;

@@ -185,6 +185,9 @@ AlignmentRecord::AlignmentRecord(const BamTools::BamAlignment& alignment, int re
         }*/
     }
     this->cov_pos = this->coveredPositions();
+    if(readRef == 14){
+        int k = 0;
+    }
 }
 
 AlignmentRecord::AlignmentRecord(unique_ptr<vector<const AlignmentRecord*>>& alignments, unsigned int clique_id) : cigar1_unrolled(), cigar2_unrolled() {
@@ -208,12 +211,21 @@ AlignmentRecord::AlignmentRecord(unique_ptr<vector<const AlignmentRecord*>>& ali
         this->cigar2_unrolled = al1->getCigar2Unrolled();
         this->sequence2 = al1->getSequence2();
     }
+    if(this->name == "MISEQ-02:36:000000000-A5LJB:1:2104:14734:7626"){
+        int k = 0;
+    }
+    if(this->readNames.count(14)){
+        int k = 0;
+    }
     if(clique_id == 313627){
         int k = 0;
     }
     //merge recent AlignmentRecord with all other alignments of Clique
     for (int i = 1; i < (*alignments).size(); i++){
         auto& al = (*alignments)[i];
+        if(al->getReadNamesSet().count(14)){
+            int k = 0;
+        }
         if (this->single_end && al->isSingleEnd()){
             mergeAlignmentRecordsSingle(*al,1,1);
         }

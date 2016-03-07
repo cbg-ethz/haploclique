@@ -206,15 +206,54 @@ bool NewEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const Alignment
             cc++;
         }
         else if (v1.ref < v2.ref){
-            calculateProb0(v1,prob0);
-            tc++;
-            pos1++;
+           if (ap1.isSingleEnd() && ap2.isSingleEnd()){
+               calculateProb0(v1,prob0);
+               tc++;
+               pos1++;
+           } else if (ap1.isPairedEnd() && ap2.isSingleEnd()){
+                if (ap2.getStart1() > ap1.getEnd1() && v1.ref < ap1.getStart2()) pos1++;
+                else{
+                    calculateProb0(v1,prob0);
+                    tc++;
+                    pos1++;
+                }
+           } else if (ap1.isSingleEnd() && ap2.isPairedEnd()){
+                calculateProb0(v1,prob0);
+                tc++;
+                pos1++;
+           } else if (ap1.isPairedEnd() && ap2.isPairedEnd()){
+                if(ap1.getEnd1() < ap2.getStart1() && v1.ref < ap1.getStart2()) pos1++;
+                else{
+                    calculateProb0(v1,prob0);
+                    tc++;
+                    pos1++;
+                }
+           }
         }
         else if(v1.ref > v2.ref){
-            calculateProb0(v2,prob0);
-            tc++;
-            pos2++;
-
+               if (ap1.isSingleEnd() && ap2.isSingleEnd()){
+                   calculateProb0(v2,prob0);
+                   tc++;
+                   pos2++;
+               } else if (ap1.isPairedEnd() && ap2.isSingleEnd()){
+                   calculateProb0(v2,prob0);
+                   tc++;
+                   pos2++;
+               } else if (ap1.isSingleEnd() && ap2.isPairedEnd()){
+                   if (ap1.getStart1() > ap2.getEnd1() && v1.ref < ap2.getStart2()) pos2++;
+                   else{
+                       calculateProb0(v2,prob0);
+                       tc++;
+                       pos2++;
+                   }
+               } else if (ap1.isPairedEnd() && ap2.isPairedEnd()){
+                    if(ap2.getEnd1() < ap1.getStart1() && v1.ref < ap2.getStart2()) pos2++;
+                    else{
+                        calculateProb0(v2,prob0);
+                        tc++;
+                        pos2++;
+                    }
+               }
         }
     }
 
@@ -225,7 +264,15 @@ bool NewEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const Alignment
     //add remaining entries, but only if they are both in the same read in the case of paired ends
     while(pos1<cov_ap1.size()){
         auto& v1 = cov_ap1[pos1];
-        if (v1.read == cov_ap2.back().read){
+        if(ap1.isPairedEnd() && ap2.isPairedEnd()){
+            if(ap1.getStart2()>ap2.getEnd2()) pos1++;
+            else {
+                calculateProb0(v1,prob0);
+                pos1++;
+                tc++;
+            }
+        }
+        else if (v1.read == cov_ap2.back().read){
             calculateProb0(v1,prob0);
             pos1++;
             tc++;
@@ -233,7 +280,15 @@ bool NewEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const Alignment
     }
     while(pos2<cov_ap2.size()){
         auto& v2 = cov_ap2[pos2];
-        if (v2.read == cov_ap1.back().read){
+        if(ap1.isPairedEnd() && ap2.isPairedEnd()){
+            if(ap2.getStart2()>ap1.getEnd2()) pos2++;
+            else {
+                calculateProb0(v2,prob0);
+                pos2++;
+                tc++;
+            }
+        }
+       else if (v2.read == cov_ap1.back().read){
             calculateProb0(v2,prob0);
             pos2++;
             tc++;
