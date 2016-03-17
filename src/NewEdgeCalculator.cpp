@@ -89,9 +89,11 @@ bool NewEdgeCalculator::checkGaps(const std::vector<AlignmentRecord::mapValue> &
         int pos_diff2 = cov_ap2_i1.pir-cov_ap2_i.pir; //<0 if jump is given
         bool jump1 = cov_ap1_i1.read-cov_ap1_i.read; //=0/1 for no jump/jump
         bool jump2 = cov_ap2_i1.read-cov_ap2_i.read;
+        int num_inserts=0;
         //insertion
         if(ref_diff == 1 && pos_diff1 != pos_diff2 && (jump1 || jump2) == 0){
-            return false;
+            if(num_inserts == 0) num_inserts+= std::abs(pos_diff1-pos_diff2);
+            else return false;
         }
         //deletion
         else if(ref_diff > 1 && pos_diff1 != pos_diff2 && (jump1 || jump2) == 0){
@@ -138,9 +140,9 @@ bool NewEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const Alignment
     //if (ap1.getName().find("Clique_1218") != string::npos && ap2.getName().find("Clique_1219") != string::npos){
     //    int k = 0;
     //}
-    /*if(ap1.getName() == "MISEQ-02:83:000000000-A9WYY:1:1101:19916:16016" && ap2.getName()== "MISEQ-02:83:000000000-A9WYY:1:2104:10608:13344"){
-            int k = 0;
-        }*/
+    //if(ap1.getName() == "Clique_1037" || ap2.getName() == "Clique_1037"){
+    //        int k = 0;
+    //}
         /*if ((ap1.getName().find("Clique_1174") != string::npos && ap2.getName().find("Clique_1173") != string::npos)){
             cout << ap1.getName() << " " << ap2.getName() << endl;
             cout << ap1.isSingleEnd() << " " << ap2.isSingleEnd() << endl;
@@ -262,10 +264,10 @@ bool NewEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const Alignment
         return true;
     }
     //add remaining entries, but only if they are both in the same read in the case of paired ends
-    while(pos1<cov_ap1.size()){
+    while(pos1 < cov_ap1.size()){
         auto& v1 = cov_ap1[pos1];
         if(ap1.isPairedEnd() && ap2.isPairedEnd()){
-            if(ap1.getStart2()>ap2.getEnd2()) pos1++;
+            if(ap1.getStart2() > ap2.getEnd2() && v1.ref >= ap1.getStart2()) break;
             else {
                 calculateProb0(v1,prob0);
                 pos1++;
@@ -278,10 +280,10 @@ bool NewEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const Alignment
             tc++;
         } else break;
     }
-    while(pos2<cov_ap2.size()){
+    while(pos2 < cov_ap2.size()){
         auto& v2 = cov_ap2[pos2];
         if(ap1.isPairedEnd() && ap2.isPairedEnd()){
-            if(ap2.getStart2()>ap1.getEnd2()) pos2++;
+            if(ap2.getStart2() > ap1.getEnd2() && v2.ref >= ap2.getStart2()) break;
             else {
                 calculateProb0(v2,prob0);
                 pos2++;

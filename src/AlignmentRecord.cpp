@@ -68,7 +68,7 @@ std::vector<BamTools::CigarOp> createCigar(std::string& nucigar){
     return res;
 }
 
-//helper functions to merge DNA sequences
+//helper functions to merge DNA sequences; +33 is substracted beforehand
 int agreement(const char& qual1, const char& qual2){
     float prob1 = std::pow(10,(float)-qual1/10);
     float prob2 = std::pow(10,(float)-qual2/10);
@@ -185,9 +185,6 @@ AlignmentRecord::AlignmentRecord(const BamTools::BamAlignment& alignment, int re
         }*/
     }
     this->cov_pos = this->coveredPositions();
-    if(readRef == 14){
-        int k = 0;
-    }
 }
 
 AlignmentRecord::AlignmentRecord(unique_ptr<vector<const AlignmentRecord*>>& alignments, unsigned int clique_id) : cigar1_unrolled(), cigar2_unrolled() {
@@ -203,6 +200,9 @@ AlignmentRecord::AlignmentRecord(unique_ptr<vector<const AlignmentRecord*>>& ali
     this->readNameMap = al1->readNameMap;
     this->readNames.insert(al1->readNames.begin(), al1->readNames.end());
     this->single_end = al1->isSingleEnd();
+    //if (clique_id == 1037){
+    //    int k = 0;
+    //}
 
     if(al1->isPairedEnd()){
         this->start2 = al1->getStart2();
@@ -210,22 +210,9 @@ AlignmentRecord::AlignmentRecord(unique_ptr<vector<const AlignmentRecord*>>& ali
         this->cigar2 = al1->getCigar2();
         this->cigar2_unrolled = al1->getCigar2Unrolled();
         this->sequence2 = al1->getSequence2();
-    }
-    if(this->name == "MISEQ-02:36:000000000-A5LJB:1:2104:14734:7626"){
-        int k = 0;
-    }
-    if(this->readNames.count(14)){
-        int k = 0;
-    }
-    if(clique_id == 313627){
-        int k = 0;
-    }
-    //merge recent AlignmentRecord with all other alignments of Clique
+    }    //merge recent AlignmentRecord with all other alignments of Clique
     for (int i = 1; i < (*alignments).size(); i++){
         auto& al = (*alignments)[i];
-        if(al->getReadNamesSet().count(14)){
-            int k = 0;
-        }
         if (this->single_end && al->isSingleEnd()){
             mergeAlignmentRecordsSingle(*al,1,1);
         }
@@ -1882,9 +1869,12 @@ void printReads(std::ostream& outfile, std::deque<AlignmentRecord*>& reads) {
     outfile << std::fixed;
 
     for (auto&& r : reads) {
+        //if(r->name == "Clique_100206"){
+        //    int k = 0;
+        //}
         outfile << r->name;
         if (not r->single_end) outfile << "|paired";
-        outfile << "|ht_freq:" << r->probability << endl;
+        outfile << "|ht_freq:" << r->probability;
         outfile << "|start1:" << r->getStart1();
         outfile << "|end1:" << r->getEnd1();
         if (not r->single_end){

@@ -329,23 +329,32 @@ int main(int argc, char* argv[]) {
     // Main loop
     int ct = 0;
     double stdev = 1.0;
-    auto filter_fn = [&](unique_ptr<AlignmentRecord>& read) {
-        return (ct == 1 and filter_singletons and read->getReadCount() <= 1) or (ct > 1 and significance != 0.0 and read->getProbability() < 1.0 / reads->size() - significance*stdev);
+    auto filter_fn = [&](unique_ptr<AlignmentRecord>& read, int size) {
+        //if (ct == 8){
+        //    cout << read->getName() << " " <<read->getProbability() << " " << 1.0 /(size) << " " << significance*stdev << endl;
+        //    bool t =  read->getProbability() < 1.0 /size - significance*stdev;
+        //    cout << t << endl;
+        //}
+        return (ct == 1 and filter_singletons and read->getReadCount() <= 1) or (ct > 1 and significance != 0.0 and read->getProbability() < 1.0 / size - significance*stdev);
     };
 
     while (ct != iterations) {
         clique_finder->initialize();
         //cout << "Clique_finder initialized " << ct << endl;
+        //if(ct == 12){
+        //    int k = 0;
+        //}
         if (lw != nullptr) lw->initialize();
-
+        int size = reads->size();
         while(not reads->empty()) {
             assert(reads->front() != nullptr);
 
             unique_ptr<AlignmentRecord> al_ptr(reads->front());
-
+            //if(al_ptr->getName() == "Clique_1037"){
+            //    int k = 0;
+            //}
             reads->pop_front();
-
-            if (filter_fn(al_ptr)) continue;
+            if (filter_fn(al_ptr,size)) continue;
 
             clique_finder->addAlignment(al_ptr);
             //cout << "addAlignment " << ct << endl;
@@ -360,7 +369,7 @@ int main(int argc, char* argv[]) {
         if (lw != nullptr) lw->finish();
 
         stdev = setProbabilities(*reads);
-
+        //if(ct == 5) break;
         if (clique_finder->hasConverged()) break;
         cout << ct++ << ": " << reads->size() << endl;
     }
