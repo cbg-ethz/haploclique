@@ -37,16 +37,21 @@ private:
     double EDGE_QUASI_CUTOFF_SINGLE;
     double EDGE_QUASI_CUTOFF;
     bool FRAMESHIFT_MERGE;
-    std::unordered_map<int, double> SIMPSON_MAP;
+    //std::unordered_map<int, double> SIMPSON_MAP;
+    std::vector<double> SIMPSON_MAP;
+    mutable std::vector<std::pair<int,int>> aub;
 
-    double qScore(const AlignmentRecord::mapValue& value, char x) const;
     void calculateProbM(const AlignmentRecord::mapValue &val1, const AlignmentRecord::mapValue &val2, double &res) const;
     void calculateProb0(const AlignmentRecord::mapValue &val1, double &res) const;
-    bool checkGaps(const std::vector<AlignmentRecord::mapValue> & cov_ap1, const std::vector<AlignmentRecord::mapValue> & cov_ap2, const std::vector<std::pair<int, int> > &aub) const;
+    bool checkGaps(const std::vector<AlignmentRecord::mapValue> & cov_ap1, const std::vector<AlignmentRecord::mapValue> & cov_ap2, const std::vector<std::pair<int,int>>& aub) const;
     bool similarityCriterion(const AlignmentRecord & a1, const std::vector<AlignmentRecord::mapValue> & cov_ap1, const AlignmentRecord & a2, const std::vector<AlignmentRecord::mapValue> & cov_ap2, double probM, double prob0, int tc, int cc) const;
+    void iterateCovAp(bool pe1, unsigned int& pos2, double& probM, unsigned int& pos1, unsigned int& equalBase, bool pe2, const std::vector<AlignmentRecord::mapValue>& cov_ap2, int& tc, double& prob0, const AlignmentRecord& ap2, const std::vector<AlignmentRecord::mapValue>& cov_ap1, const AlignmentRecord& ap1, int& cc) const;
+    void iterateRemainingCovAp(int& tc, bool pe1, const std::vector<AlignmentRecord::mapValue>& cov_ap2, bool pe2, double& prob0, const AlignmentRecord& ap1, const AlignmentRecord& ap2, const std::vector<AlignmentRecord::mapValue>& cov_ap1, unsigned int& pos1) const;
+    void iterateRemainingCovAp2(const AlignmentRecord& ap2, const std::vector<AlignmentRecord::mapValue>& cov_ap2, bool pe1, const AlignmentRecord& ap1, int& tc, double& prob0, const std::vector<AlignmentRecord::mapValue>& cov_ap1, bool pe2, unsigned int& pos2) const;
+
 
 public:
-    NewEdgeCalculator(double Q, double edge_quasi_cutoff, double overlap, bool frameshift_merge, unordered_map<int, double>& simpson_map, double edge_quasi_cutoff_single, double overlap_single, double edge_quasi_cutoff_mixed);
+    NewEdgeCalculator(double Q, double edge_quasi_cutoff, double overlap, bool frameshift_merge, unordered_map<int, double>& simpson_map, double edge_quasi_cutoff_single, double overlap_single, double edge_quasi_cutoff_mixed, unsigned int maxPosition);
     virtual ~NewEdgeCalculator();
 
     /** Decides whether an edge is to be drawn between the two given nodes. */
@@ -55,6 +60,8 @@ public:
     /** Compute a length range. An alignment pair with a length outside this range is
      *  guaranteed not to have an edge to the given pair ap. */
     virtual void getPartnerLengthRange(const AlignmentRecord& ap, unsigned int* min, unsigned int* max) const;
-};
 
+    void setOverlapCliques(double d);
+
+};
 #endif /* NEWEDGECALCULATOR_H_ */

@@ -124,7 +124,7 @@ bool read_mean_and_sd(const string& filename, double* mean, double* sd) {
     return true;
 }
 
-deque<AlignmentRecord*>* readBamFile(string filename, vector<string>& readNames) {
+deque<AlignmentRecord*>* readBamFile(string filename, vector<string>& readNames, unsigned int& maxPosition) {
     typedef std::unordered_map<std::string, AlignmentRecord*> name_map_t;
     name_map_t names_to_reads;
     deque<AlignmentRecord*>* reads = new deque<AlignmentRecord*>;
@@ -210,7 +210,10 @@ deque<AlignmentRecord*>* readBamFile(string filename, vector<string>& readNames)
     }
     cout << singleendcounter << " " << pairedendcounter << " " <<  counter << endl;
     */
-
+    maxPosition = (*std::max_element(std::begin(*reads), std::end(*reads),
+                              [](const AlignmentRecord* lhs,const AlignmentRecord* rhs){
+        return lhs->getIntervalEnd() < rhs->getIntervalEnd();
+    }))->getIntervalEnd();
 
 
     return reads;
@@ -288,10 +291,13 @@ int main(int argc, char* argv[]) {
 
 
     clock_t clock_start = clock();
+    vector<string> originalReadNames;
+    unsigned int maxPosition;
+    deque<AlignmentRecord*>* reads = readBamFile(bamfile, originalReadNames, maxPosition);
     EdgeCalculator* edge_calculator = nullptr;
     EdgeCalculator* indel_edge_calculator = nullptr;
     unique_ptr<vector<mean_and_stddev_t> > readgroup_params(nullptr);
-    edge_calculator = new NewEdgeCalculator(Q, edge_quasi_cutoff_cliques, overlap_cliques, frameshift_merge, simpson_map, edge_quasi_cutoff_single, overlap_single, edge_quasi_cutoff_mixed);
+    edge_calculator = new NewEdgeCalculator(Q, edge_quasi_cutoff_cliques, overlap_cliques, frameshift_merge, simpson_map, edge_quasi_cutoff_single, overlap_single, edge_quasi_cutoff_mixed, maxPosition);
     if (call_indels) {
         double insert_mean = -1.0;
         double insert_stddev = -1.0;
@@ -323,8 +329,7 @@ int main(int argc, char* argv[]) {
 
     ofstream* reads_ofstream = 0;
 
-    vector<string> originalReadNames;
-    deque<AlignmentRecord*>* reads = readBamFile(bamfile, originalReadNames);
+
 
     // Main loop
     int ct = 0;
@@ -341,9 +346,12 @@ int main(int argc, char* argv[]) {
     while (ct != iterations) {
         clique_finder->initialize();
         //cout << "Clique_finder initialized " << ct << endl;
-        //if(ct == 12){
-        //    int k = 0;
-        //}
+        if(ct == 5){
+            edge_calculator->setOverlapCliques(0.1);
+        }
+        if(ct==8){
+            int k = 0;
+        }
         if (lw != nullptr) lw->initialize();
         int size = reads->size();
         while(not reads->empty()) {

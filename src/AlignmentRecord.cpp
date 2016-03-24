@@ -192,6 +192,7 @@ AlignmentRecord::AlignmentRecord(unique_ptr<vector<const AlignmentRecord*>>& ali
     assert ((*alignments).size()>1);
     //get first AlignmentRecord
     auto& al1 = (*alignments)[0];
+    //auto& al1 = (*alignments)[(*alignments).size()-1];
     this->start1 = al1->getStart1();
     this->end1 = al1->getEnd1();
     this->cigar1 = al1->getCigar1();
@@ -212,6 +213,7 @@ AlignmentRecord::AlignmentRecord(unique_ptr<vector<const AlignmentRecord*>>& ali
         this->sequence2 = al1->getSequence2();
     }    //merge recent AlignmentRecord with all other alignments of Clique
     for (int i = 1; i < (*alignments).size(); i++){
+    //for (int i = (*alignments).size()-2; i >= 0; i--){
         auto& al = (*alignments)[i];
         if (this->single_end && al->isSingleEnd()){
             mergeAlignmentRecordsSingle(*al,1,1);

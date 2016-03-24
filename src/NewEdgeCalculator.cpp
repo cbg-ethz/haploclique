@@ -34,7 +34,7 @@
  const double NewEdgeCalculator::FRAME_SHIFT_WEIGHT = 0.01;
  
 
-NewEdgeCalculator::NewEdgeCalculator(double Q, double edge_quasi_cutoff, double overlap, bool frameshift_merge, unordered_map<int, double>& simpson_map, double edge_quasi_cutoff_single, double overlap_single, double edge_quasi_cutoff_mixed) {
+NewEdgeCalculator::NewEdgeCalculator(double Q, double edge_quasi_cutoff, double overlap, bool frameshift_merge, unordered_map<int, double>& simpson_map, double edge_quasi_cutoff_single, double overlap_single, double edge_quasi_cutoff_mixed, unsigned int maxPosition) {
     this->Q = Q;
     this->EDGE_QUASI_CUTOFF = edge_quasi_cutoff;
     this->EDGE_QUASI_CUTOFF_SINGLE = edge_quasi_cutoff_single;
@@ -42,38 +42,39 @@ NewEdgeCalculator::NewEdgeCalculator(double Q, double edge_quasi_cutoff, double 
     this->MIN_OVERLAP_CLIQUES = overlap;
     this->MIN_OVERLAP_SINGLE = overlap_single;
     this->FRAMESHIFT_MERGE = frameshift_merge;
-    this->SIMPSON_MAP = simpson_map;
+    this->SIMPSON_MAP.resize(maxPosition+1);
+    for(auto& k_v : simpson_map){
+        this->SIMPSON_MAP[k_v.first] = k_v.second;
+    }
 }
 
 NewEdgeCalculator::~NewEdgeCalculator() {
 }
 
-double NewEdgeCalculator::qScore(const AlignmentRecord::mapValue& value, char x) const{
-    if (value.base == x){
-        return 1.0 - value.prob;
-    } else {
-        return value.prob/3.0;
-    }
-}
-
 void NewEdgeCalculator::calculateProbM(const AlignmentRecord::mapValue & val1,const AlignmentRecord::mapValue & val2, double& res) const{
     double sum = 0.0;
-    sum += qScore(val1,'A')*qScore(val2,'A');
-    sum += qScore(val1,'C')*qScore(val2,'C');
-    sum += qScore(val1,'T')*qScore(val2,'T');
-    sum += qScore(val1,'G')*qScore(val2,'G');
-    res *= sum;
+    if(val1.base==val2.base){
+        sum+=(1.0-val1.prob)*(1.0-val2.prob)+(val1.prob)*(val2.prob/3);
+    } else  {
+        sum+=(1.0-val1.prob)*(val2.prob/3)+(1.0-val2.prob)*(val1.prob/3)+2*(val1.prob/3)*(val2.prob/3);
+    }
+    res*=sum;
 }
+
 
 
 void NewEdgeCalculator::calculateProb0(const AlignmentRecord::mapValue & val1, double& res) const{
     //find positions which are non common positions and look up probability in empirical allele frequency distribution
-    const auto& k = this->SIMPSON_MAP.find(val1.ref);
-    if (k != this->SIMPSON_MAP.end()){
-        res *= k->second;
+    //const auto& k = this->SIMPSON_MAP.find(val1.ref);
+    auto d = this->SIMPSON_MAP[val1.ref];
+    if (d!=0){
+        res*=d;
+    //if (k != this->SIMPSON_MAP.end()){
+    //    res *= k->second;
     } else {
         res *= 0.25;
     }
+
 }
 
 //TO DO: find out whether gaps / insertions are compatible
@@ -125,22 +126,136 @@ bool NewEdgeCalculator::similarityCriterion(const AlignmentRecord & a1, const st
     } else {
         MIN_OVERLAP = MIN_OVERLAP_SINGLE;
     }
+    //double ratio = (float)cc/tc;
     if (cc<=MIN_OVERLAP*std::min(cov_ap1.size(),cov_ap2.size())) return false;
-    double prob = probM*prob0;
-    int test = cc+tc;
-    double potence = 1.0/test;
+    double prob;
+    double potence;
+    if((double)cc/tc<=0.15 && probM >= 0.8 && MIN_OVERLAP==0.1){
+        prob = probM;
+        potence = 1.0/(cc);
+    } else {
+        prob = probM * prob0;
+        potence = 1.0/(cc+tc);
+    }
     double final_prob = std::pow(prob,potence);
     //cout << "Final prob: " << final_prob << endl;
     return final_prob >= cutoff;
 }
 
+void NewEdgeCalculator::iterateCovAp(bool pe1, unsigned int& pos2, double& probM, unsigned int& pos1, unsigned int& equalBase, bool pe2, const std::vector<AlignmentRecord::mapValue>& cov_ap2, int& tc, double& prob0, const AlignmentRecord& ap2, const std::vector<AlignmentRecord::mapValue>& cov_ap1, const AlignmentRecord& ap1, int& cc) const
+{
+    while(pos1<cov_ap1.size() && pos2<cov_ap2.size()){
+        auto& v1 = cov_ap1[pos1];
+        auto& v2 = cov_ap2[pos2];
+        if (v1.ref == v2.ref){
+            if(v1.base == v2.base){
+                equalBase++;
+            }
+            calculateProbM(v1,v2,probM);
+            aub.emplace_back(pos1,pos2);
+            pos1++;
+            pos2++;
+            cc++;
+        }
+        else if (v1.ref < v2.ref){
+           if (!pe1){
+               calculateProb0(v1,prob0);
+               tc++;
+               pos1++;
+           } else {
+                if (ap2.getStart1() > ap1.getEnd1() && v1.ref < ap1.getStart2()) pos1++;
+                else{
+                    calculateProb0(v1,prob0);
+                    tc++;
+                    pos1++;
+                }
+           } /*else if (!pe1 && pe2){
+                calculateProb0(v1,prob0);
+                tc++;
+                pos1++;
+           }*//*else if (pe1 && pe2){
+                if(ap1.getEnd1() < ap2.getStart1() && v1.ref < ap1.getStart2()) pos1++;
+                else{
+                    calculateProb0(v1,prob0);
+                    tc++;
+                    pos1++;
+                }
+           }*/
+        }
+        else {
+               if (!pe2){
+                   calculateProb0(v2,prob0);
+                   tc++;
+                   pos2++;
+               } else {
+                   if (ap1.getStart1() > ap2.getEnd1() && v2.ref < ap2.getStart2()) pos2++;
+                   else{
+                       calculateProb0(v2,prob0);
+                       tc++;
+                       pos2++;
+                   }
+               } /*else if (pe1 && pe2){
+                    if(ap2.getEnd1() < ap1.getStart1() && v1.ref < ap2.getStart2()) pos2++;
+                    else{
+                        calculateProb0(v2,prob0);
+                        tc++;
+                        pos2++;
+                    }
+               }*/
+        }
+    }
+}
+
+void NewEdgeCalculator::iterateRemainingCovAp(int& tc, bool pe1, const std::vector<AlignmentRecord::mapValue>& cov_ap2, bool pe2, double& prob0, const AlignmentRecord& ap1, const AlignmentRecord& ap2, const std::vector<AlignmentRecord::mapValue>& cov_ap1, unsigned int& pos1) const
+{
+    while(pos1 < cov_ap1.size()){
+        auto& v1 = cov_ap1[pos1];
+        if(pe1 && pe2){
+            if(ap1.getStart2() > ap2.getEnd2() && v1.ref >= ap1.getStart2()) break;
+            else {
+                calculateProb0(v1,prob0);
+                pos1++;
+                tc++;
+            }
+        }
+        else if (v1.read == cov_ap2.back().read){
+            calculateProb0(v1,prob0);
+            pos1++;
+            tc++;
+        } else break;
+    }
+}
+
+void NewEdgeCalculator::iterateRemainingCovAp2(const AlignmentRecord& ap2, const std::vector<AlignmentRecord::mapValue>& cov_ap2, bool pe1, const AlignmentRecord& ap1, int& tc, double& prob0, const std::vector<AlignmentRecord::mapValue>& cov_ap1, bool pe2, unsigned int& pos2) const
+{
+    while(pos2 < cov_ap2.size()){
+        auto& v2 = cov_ap2[pos2];
+        if(pe1 && pe2){
+            if(ap2.getStart2() > ap1.getEnd2() && v2.ref >= ap2.getStart2()) break;
+            else {
+                calculateProb0(v2,prob0);
+                pos2++;
+                tc++;
+            }
+        }
+       else if (v2.read == cov_ap1.back().read){
+            calculateProb0(v2,prob0);
+            pos2++;
+            tc++;
+        } else break;
+    }
+}
+
 bool NewEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const AlignmentRecord & ap2) const{
     const auto& cov_ap1 = ap1.getCovmap();
     const auto& cov_ap2 = ap2.getCovmap();
+    if(cov_ap1.back().ref < cov_ap2[0].ref  || cov_ap2.back().ref < cov_ap1[0].ref){
+        return false;
+    }
     //if (ap1.getName().find("Clique_1218") != string::npos && ap2.getName().find("Clique_1219") != string::npos){
     //    int k = 0;
     //}
-    //if(ap1.getName() == "Clique_1037" || ap2.getName() == "Clique_1037"){
+    //if(ap1.getName() == "mutant67" && ap2.getName() == "mutant683"){
     //        int k = 0;
     //}
         /*if ((ap1.getName().find("Clique_1174") != string::npos && ap2.getName().find("Clique_1173") != string::npos)){
@@ -162,140 +277,59 @@ bool NewEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const Alignment
     unsigned int pos1 = 0;
     unsigned int pos2 = 0;
     unsigned int equalBase = 0;
-    std::vector<std::pair<int,int>> aub;
+    bool pe1 = ap1.isPairedEnd();
+    bool pe2 = ap2.isPairedEnd();
+    aub.clear();
 
     // special cases of paired end reads for which no edge is allowed
-    if(ap1.isPairedEnd() && ap2.isPairedEnd()){
+    if(pe1 && pe2){
+        unsigned int e11= ap1.getEnd1();
+        unsigned int e12= ap1.getEnd2();
+        unsigned int s11= ap1.getStart1();
+        unsigned int s12= ap1.getStart2();
+        unsigned int e21= ap2.getEnd1();
+        unsigned int e22= ap2.getEnd2();
+        unsigned int s21= ap2.getStart1();
+        unsigned int s22= ap2.getStart2();
         //--------   ---------
         //           ---------   -------
-        if(ap1.getEnd1() < ap2.getStart1() && ap1.getEnd2() < ap1.getStart2()){
+        if(e11 < s21 && e12 < s12){
             return false;
         } //         ---------    ---------
         //-------    ---------
-        else if(ap2.getEnd1() < ap1.getStart1() && ap2.getEnd2() < ap1.getStart2()){
+        else if(e21 < s11 && e22 < s12){
             return false;
         } // ------------     ----------
         //   -----------                  ---------
-        else if(ap2.getEnd1() < ap1.getStart2() && ap1.getEnd2() < ap2.getStart2()){
+        else if(e21 < s12 && e12 < s22){
             return false;
         }//-----------            ----------
         //-----------  ----------
-        else if(ap1.getEnd1() < ap2.getStart2() && ap2.getEnd2() < ap1.getStart2()){
+        else if(e11 < s22 && e22 < s12){
             return false;
         }//          --------- ---------
         //----------           ---------
-        else if (ap2.getEnd1() < ap1.getStart1() && ap1.getEnd1() < ap2.getStart2()){
+        else if (e21 < s11 && e11 < s22){
             return false;
         }//--------             --------
         //           --------   --------
-        else if(ap1.getEnd1() < ap2.getStart1() && ap2.getEnd1() < ap1.getStart2()){
+        else if(e11 < s21 && e21 < s12){
             return false;
         }
     }
-
-    //iterating the covered positions and computing ProbM and Prob0 simultaneously
-    while(pos1<cov_ap1.size() && pos2<cov_ap2.size()){
-        auto& v1 = cov_ap1[pos1];
-        auto& v2 = cov_ap2[pos2];
-        if (v1.ref == v2.ref){
-            if(v1.base == v2.base){
-                equalBase++;
-            }
-            calculateProbM(v1,v2,probM);
-            aub.push_back(std::make_pair(pos1,pos2));
-            pos1++;
-            pos2++;
-            cc++;
-        }
-        else if (v1.ref < v2.ref){
-           if (ap1.isSingleEnd() && ap2.isSingleEnd()){
-               calculateProb0(v1,prob0);
-               tc++;
-               pos1++;
-           } else if (ap1.isPairedEnd() && ap2.isSingleEnd()){
-                if (ap2.getStart1() > ap1.getEnd1() && v1.ref < ap1.getStart2()) pos1++;
-                else{
-                    calculateProb0(v1,prob0);
-                    tc++;
-                    pos1++;
-                }
-           } else if (ap1.isSingleEnd() && ap2.isPairedEnd()){
-                calculateProb0(v1,prob0);
-                tc++;
-                pos1++;
-           } else if (ap1.isPairedEnd() && ap2.isPairedEnd()){
-                if(ap1.getEnd1() < ap2.getStart1() && v1.ref < ap1.getStart2()) pos1++;
-                else{
-                    calculateProb0(v1,prob0);
-                    tc++;
-                    pos1++;
-                }
-           }
-        }
-        else if(v1.ref > v2.ref){
-               if (ap1.isSingleEnd() && ap2.isSingleEnd()){
-                   calculateProb0(v2,prob0);
-                   tc++;
-                   pos2++;
-               } else if (ap1.isPairedEnd() && ap2.isSingleEnd()){
-                   calculateProb0(v2,prob0);
-                   tc++;
-                   pos2++;
-               } else if (ap1.isSingleEnd() && ap2.isPairedEnd()){
-                   if (ap1.getStart1() > ap2.getEnd1() && v1.ref < ap2.getStart2()) pos2++;
-                   else{
-                       calculateProb0(v2,prob0);
-                       tc++;
-                       pos2++;
-                   }
-               } else if (ap1.isPairedEnd() && ap2.isPairedEnd()){
-                    if(ap2.getEnd1() < ap1.getStart1() && v1.ref < ap2.getStart2()) pos2++;
-                    else{
-                        calculateProb0(v2,prob0);
-                        tc++;
-                        pos2++;
-                    }
-               }
-        }
+    if(ap1.getName() == "Clique_2268" || ap2.getName() == "Clique_2268"){
+                int k = 0;
     }
+    //iterating the covered positions and computing ProbM and Prob0 simultaneously
+    iterateCovAp(pe1, pos2, probM, pos1, equalBase, pe2, cov_ap2, tc, prob0, ap2, cov_ap1, ap1, cc);
 
     //given the case that one read is contained in another
     if(equalBase == cov_ap1.size() || equalBase == cov_ap2.size()){
         return true;
     }
     //add remaining entries, but only if they are both in the same read in the case of paired ends
-    while(pos1 < cov_ap1.size()){
-        auto& v1 = cov_ap1[pos1];
-        if(ap1.isPairedEnd() && ap2.isPairedEnd()){
-            if(ap1.getStart2() > ap2.getEnd2() && v1.ref >= ap1.getStart2()) break;
-            else {
-                calculateProb0(v1,prob0);
-                pos1++;
-                tc++;
-            }
-        }
-        else if (v1.read == cov_ap2.back().read){
-            calculateProb0(v1,prob0);
-            pos1++;
-            tc++;
-        } else break;
-    }
-    while(pos2 < cov_ap2.size()){
-        auto& v2 = cov_ap2[pos2];
-        if(ap1.isPairedEnd() && ap2.isPairedEnd()){
-            if(ap2.getStart2() > ap1.getEnd2() && v2.ref >= ap2.getStart2()) break;
-            else {
-                calculateProb0(v2,prob0);
-                pos2++;
-                tc++;
-            }
-        }
-       else if (v2.read == cov_ap1.back().read){
-            calculateProb0(v2,prob0);
-            pos2++;
-            tc++;
-        } else break;
-    }
+    iterateRemainingCovAp(tc, pe1, cov_ap2, pe2, prob0, ap1, ap2, cov_ap1, pos1);
+    iterateRemainingCovAp2(ap2, cov_ap2, pe1, ap1, tc, prob0, cov_ap1, pe2, pos2);
     //no edge if there are no common positions or incompatible gaps
     if (cc == 0 || (!checkGaps(cov_ap1, cov_ap2, aub))){
         return false;
@@ -305,6 +339,10 @@ bool NewEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const Alignment
 
 void NewEdgeCalculator::getPartnerLengthRange(const AlignmentRecord& ap, unsigned int* min, unsigned int* max) const {
     assert(false);
+}
+
+void NewEdgeCalculator::setOverlapCliques(double d){
+    this->MIN_OVERLAP_CLIQUES=d;
 }
 
 
