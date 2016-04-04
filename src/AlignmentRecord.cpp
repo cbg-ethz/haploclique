@@ -227,11 +227,16 @@ AlignmentRecord::AlignmentRecord(unique_ptr<vector<const AlignmentRecord*>>& ali
             mergeAlignmentRecordsMixed(*al);
         }
 
-        this->readNames.insert(al->readNames.begin(),al->readNames.end());
+        //this->readNames.insert(al->readNames.begin(),al->readNames.end());
+        //if(this->isPairedEnd() && this->end2 - this->start1 > 5000){
+        //   std::vector<std::string> names = this->getReadNames();
+        //    for (auto& i : names){
+        //        cout << i << endl;
+        //    }
+        //}
     }
     //update name of new Clique Superread
     this->name = "Clique_" + to_string(clique_id);
-
     /*
     unsigned int length_ct = 0; // DEBUG
     for (const auto& it : cigar1) { //DEBUG
@@ -1871,9 +1876,6 @@ void printReads(std::ostream& outfile, std::deque<AlignmentRecord*>& reads) {
     outfile << std::fixed;
 
     for (auto&& r : reads) {
-        //if(r->name == "Clique_100206"){
-        //    int k = 0;
-        //}
         outfile << r->name;
         if (not r->single_end) outfile << "|paired";
         outfile << "|ht_freq:" << r->probability;

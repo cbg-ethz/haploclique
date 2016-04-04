@@ -267,6 +267,7 @@ int main(int argc, char* argv[]) {
 
     //read allel frequency distributions
     std::unordered_map<int, double> simpson_map;
+    unsigned int maxPosition2 = 0;
     //cerr << "PARSE PRIOR";
     cerr.flush();
     if (allel_frequencies_path.size() > 0) {
@@ -282,6 +283,7 @@ int main(int argc, char* argv[]) {
             if (insertion_words.size() > 1) {
             } else {
                 simpson_map[atoi(words[0].c_str())] = pow(atof(words[1].c_str()),2)+pow(atof(words[2].c_str()),2)+pow(atof(words[3].c_str()),2)+pow(atof(words[4].c_str()),2);
+                maxPosition2=atoi(words[0].c_str());
                 //cerr << simpson_map[atoi(words[0].c_str())] << endl;
             }
         }
@@ -292,12 +294,13 @@ int main(int argc, char* argv[]) {
 
     clock_t clock_start = clock();
     vector<string> originalReadNames;
-    unsigned int maxPosition;
-    deque<AlignmentRecord*>* reads = readBamFile(bamfile, originalReadNames, maxPosition);
+    unsigned int maxPosition1;
+    deque<AlignmentRecord*>* reads = readBamFile(bamfile, originalReadNames,maxPosition1);
     EdgeCalculator* edge_calculator = nullptr;
     EdgeCalculator* indel_edge_calculator = nullptr;
     unique_ptr<vector<mean_and_stddev_t> > readgroup_params(nullptr);
-    edge_calculator = new NewEdgeCalculator(Q, edge_quasi_cutoff_cliques, overlap_cliques, frameshift_merge, simpson_map, edge_quasi_cutoff_single, overlap_single, edge_quasi_cutoff_mixed, maxPosition);
+    maxPosition1 = (maxPosition1>maxPosition2) ? maxPosition1 : maxPosition2;
+    edge_calculator = new NewEdgeCalculator(Q, edge_quasi_cutoff_cliques, overlap_cliques, frameshift_merge, simpson_map, edge_quasi_cutoff_single, overlap_single, edge_quasi_cutoff_mixed, maxPosition1);
     if (call_indels) {
         double insert_mean = -1.0;
         double insert_stddev = -1.0;
@@ -346,12 +349,13 @@ int main(int argc, char* argv[]) {
     while (ct != iterations) {
         clique_finder->initialize();
         //cout << "Clique_finder initialized " << ct << endl;
-        if(ct == 5){
+        //if(ct >= 5 && reads->size()<100 ){
+        if(ct== 5){
             edge_calculator->setOverlapCliques(0.1);
         }
-        if(ct==8){
-            int k = 0;
-        }
+        //if(ct==8){
+        //    int k = 0;
+        //}
         if (lw != nullptr) lw->initialize();
         int size = reads->size();
         while(not reads->empty()) {
@@ -399,6 +403,11 @@ int main(int argc, char* argv[]) {
     cout << "final: " << reads->size() << endl;
 
     for (auto&& r : *reads) {
+    //    if(r->getName() == "Clique_3370"){
+    //        for (auto& i : r->getReadNames()){
+    //            cout << i << endl;
+    //       }
+    //    }
         delete r;
     }
 

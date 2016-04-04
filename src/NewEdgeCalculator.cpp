@@ -255,7 +255,7 @@ bool NewEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const Alignment
     //if (ap1.getName().find("Clique_1218") != string::npos && ap2.getName().find("Clique_1219") != string::npos){
     //    int k = 0;
     //}
-    //if(ap1.getName() == "mutant67" && ap2.getName() == "mutant683"){
+    //if(ap1.getName() == "MISEQ-02:63:000000000-A8NP3:1:2102:21435:26782" || ap2.getName() == "MISEQ-02:63:000000000-A8NP3:1:2102:21435:26782"){
     //        int k = 0;
     //}
         /*if ((ap1.getName().find("Clique_1174") != string::npos && ap2.getName().find("Clique_1173") != string::npos)){
@@ -317,9 +317,9 @@ bool NewEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const Alignment
             return false;
         }
     }
-    if(ap1.getName() == "Clique_2268" || ap2.getName() == "Clique_2268"){
-                int k = 0;
-    }
+    //if(ap1.getName() == "Clique_2268" || ap2.getName() == "Clique_2268"){
+    //            int k = 0;
+    //}
     //iterating the covered positions and computing ProbM and Prob0 simultaneously
     iterateCovAp(pe1, pos2, probM, pos1, equalBase, pe2, cov_ap2, tc, prob0, ap2, cov_ap1, ap1, cc);
 
