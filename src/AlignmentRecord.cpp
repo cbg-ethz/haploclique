@@ -227,7 +227,8 @@ AlignmentRecord::AlignmentRecord(unique_ptr<vector<const AlignmentRecord*>>& ali
             mergeAlignmentRecordsMixed(*al);
         }
 
-        //this->readNames.insert(al->readNames.begin(),al->readNames.end());
+        this->readNames.insert(al->readNames.begin(),al->readNames.end());
+
         //if(this->isPairedEnd() && this->end2 - this->start1 > 5000){
         //   std::vector<std::string> names = this->getReadNames();
         //    for (auto& i : names){
