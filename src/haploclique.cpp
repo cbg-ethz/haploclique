@@ -350,9 +350,9 @@ int main(int argc, char* argv[]) {
         clique_finder->initialize();
         //cout << "Clique_finder initialized " << ct << endl;
         //if(ct >= 5 && reads->size()<100 ){
-        if(ct== 5){
-            edge_calculator->setOverlapCliques(0.1);
-        }
+        //if(ct== 5){
+        //    edge_calculator->setOverlapCliques(0.1);
+        //}
         //if(ct==8){
         //    int k = 0;
         //}

@@ -79,6 +79,7 @@ void NewEdgeCalculator::calculateProb0(const AlignmentRecord::mapValue & val1, d
 
 //TO DO: find out whether gaps / insertions are compatible
 bool NewEdgeCalculator::checkGaps(const std::vector<AlignmentRecord::mapValue> & cov_ap1,const std::vector<AlignmentRecord::mapValue> & cov_ap2,const std::vector<std::pair<int,int>> & aub) const{
+    int num_inserts=0;
     for (int i = 0; i < (signed)aub.size()-1; ++i){
         auto& cov_ap1_i = cov_ap1[aub[i].first];
         auto& cov_ap1_i1 = cov_ap1[aub[i+1].first];
@@ -90,10 +91,9 @@ bool NewEdgeCalculator::checkGaps(const std::vector<AlignmentRecord::mapValue> &
         int pos_diff2 = cov_ap2_i1.pir-cov_ap2_i.pir; //<0 if jump is given
         bool jump1 = cov_ap1_i1.read-cov_ap1_i.read; //=0/1 for no jump/jump
         bool jump2 = cov_ap2_i1.read-cov_ap2_i.read;
-        int num_inserts=0;
         //insertion
         if(ref_diff == 1 && pos_diff1 != pos_diff2 && (jump1 || jump2) == 0){
-            if(num_inserts == 0) num_inserts+= std::abs(pos_diff1-pos_diff2);
+            if(num_inserts == 0) num_inserts+= pos_diff1-pos_diff2;
             else return false;
         }
         //deletion
@@ -130,13 +130,13 @@ bool NewEdgeCalculator::similarityCriterion(const AlignmentRecord & a1, const st
     if (cc<=MIN_OVERLAP*std::min(cov_ap1.size(),cov_ap2.size())) return false;
     double prob;
     double potence;
-    if((double)cc/tc<=0.15 && probM >= 0.8 && MIN_OVERLAP==0.1){
+    /*if((double)cc/tc<=0.15 && probM >= 0.8 && MIN_OVERLAP==0.1){
         prob = probM;
         potence = 1.0/(cc);
-    } else {
+    } else {*/
         prob = probM * prob0;
         potence = 1.0/(cc+tc);
-    }
+    //}
     double final_prob = std::pow(prob,potence);
     //cout << "Final prob: " << final_prob << endl;
     return final_prob >= cutoff;
