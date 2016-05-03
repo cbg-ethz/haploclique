@@ -201,7 +201,7 @@ AlignmentRecord::AlignmentRecord(unique_ptr<vector<const AlignmentRecord*>>& ali
     this->readNameMap = al1->readNameMap;
     this->readNames.insert(al1->readNames.begin(), al1->readNames.end());
     this->single_end = al1->isSingleEnd();
-    //if (clique_id == 1037){
+    //if (clique_id == 693){
     //    int k = 0;
     //}
 
@@ -1260,7 +1260,7 @@ void AlignmentRecord::mergeAlignmentRecordsPaired(const AlignmentRecord& ar){
                    noOverlapMerge(dna,qualities,nucigar,c_c2_pos1,q_c2_pos1,ref_s_pos2_c1,2);
             }
         } else if(ref_s_pos2_c1-1==ref_e_pos1_c2){
-            while(ref_s_pos2_c1<=ref_s_pos2_c2){
+            while(ref_s_pos2_c1<=ref_e_pos2_c2){
                 ar.noOverlapMerge(dna,qualities,nucigar,c_c2_pos2,q_c2_pos2,ref_s_pos2_c1,2);
             }
         }
@@ -1290,7 +1290,7 @@ void AlignmentRecord::mergeAlignmentRecordsPaired(const AlignmentRecord& ar){
         }
         computeSOffset(ar.getCigar2Unrolled(),c_c2_pos2,q_c2_pos2);
         while(ref_s_pos2_c1<=ref_e_pos1_c1 && ref_s_pos2_c1<=ref_e_pos2_c2){
-            overlapMerge(ar,dna,qualities,nucigar,c_c1_pos1,c_c2_pos2,q_c1_pos1,q_c2_pos2,ref_s_pos1_c1,1,2);
+            overlapMerge(ar,dna,qualities,nucigar,c_c1_pos1,c_c2_pos2,q_c1_pos1,q_c2_pos2,ref_s_pos2_c1,1,2);
         }
         if(ref_s_pos2_c1-1==ref_e_pos1_c1){
             while(ref_s_pos2_c1<=ref_e_pos2_c2){

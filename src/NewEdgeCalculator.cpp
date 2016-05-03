@@ -79,7 +79,7 @@ void NewEdgeCalculator::calculateProb0(const AlignmentRecord::mapValue & val1, d
 
 //TO DO: find out whether gaps / insertions are compatible
 bool NewEdgeCalculator::checkGaps(const std::vector<AlignmentRecord::mapValue> & cov_ap1,const std::vector<AlignmentRecord::mapValue> & cov_ap2,const std::vector<std::pair<int,int>> & aub) const{
-    int num_inserts=0;
+    //int num_inserts=0;
     for (int i = 0; i < (signed)aub.size()-1; ++i){
         auto& cov_ap1_i = cov_ap1[aub[i].first];
         auto& cov_ap1_i1 = cov_ap1[aub[i+1].first];
@@ -93,8 +93,8 @@ bool NewEdgeCalculator::checkGaps(const std::vector<AlignmentRecord::mapValue> &
         bool jump2 = cov_ap2_i1.read-cov_ap2_i.read;
         //insertion
         if(ref_diff == 1 && pos_diff1 != pos_diff2 && (jump1 || jump2) == 0){
-            if(num_inserts == 0) num_inserts+= pos_diff1-pos_diff2;
-            else return false;
+            /*if(num_inserts == 0) num_inserts+= pos_diff1-pos_diff2;
+            else*/ return false;
         }
         //deletion
         else if(ref_diff > 1 && pos_diff1 != pos_diff2 && (jump1 || jump2) == 0){
