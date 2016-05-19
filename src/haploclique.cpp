@@ -95,6 +95,9 @@ Options:
                                               <num> standard deviations.
                                               [default: 3.0]
   -L FILE, --log=FILE                      Write log to <file>.
+  -d --doc_haplotypes                      Use for Simulation Study with known
+                                           haplotypes to document which reads
+                                           contributed to which final cliques.
 )";
 
 void usage() {
@@ -257,6 +260,7 @@ int main(int argc, char* argv[]) {
     bool filter_singletons = args["--no_singletons"].asBool();
     string logfile = "";
     if (args["--log"]) logfile = args["--log"].asString();
+    bool doc_haplotypes = args["--doc_haplotypes"].asBool();
     // END PARAMETERS
 
     bool call_indels = indel_output_file.size() > 0;
@@ -398,7 +402,7 @@ int main(int argc, char* argv[]) {
     }
     ofstream os(outfile, std::ofstream::out);
     setProbabilities(*reads);
-    printReads(os, *reads);
+    printReads(os, *reads, doc_haplotypes);
 
     cout << "final: " << reads->size() << endl;
 

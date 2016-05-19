@@ -188,7 +188,7 @@ AlignmentRecord::AlignmentRecord(const BamTools::BamAlignment& alignment, int re
 }
 
 AlignmentRecord::AlignmentRecord(unique_ptr<vector<const AlignmentRecord*>>& alignments, unsigned int clique_id) : cigar1_unrolled(), cigar2_unrolled() {
-    //no longer majority vote mehr, phred scores are updated according to Edgar
+    //no longer majority vote, phred scores are updated according to Edgar et al.
     assert ((*alignments).size()>1);
     //get first AlignmentRecord
     auto& al1 = (*alignments)[0];
@@ -201,9 +201,6 @@ AlignmentRecord::AlignmentRecord(unique_ptr<vector<const AlignmentRecord*>>& ali
     this->readNameMap = al1->readNameMap;
     this->readNames.insert(al1->readNames.begin(), al1->readNames.end());
     this->single_end = al1->isSingleEnd();
-    //if (clique_id == 693){
-    //    int k = 0;
-    //}
 
     if(al1->isPairedEnd()){
         this->start2 = al1->getStart2();
@@ -212,7 +209,7 @@ AlignmentRecord::AlignmentRecord(unique_ptr<vector<const AlignmentRecord*>>& ali
         this->cigar2_unrolled = al1->getCigar2Unrolled();
         this->sequence2 = al1->getSequence2();
     }    //merge recent AlignmentRecord with all other alignments of Clique
-    for (int i = 1; i < (*alignments).size(); i++){
+    for (unsigned int i = 1; i < (*alignments).size(); i++){
     //for (int i = (*alignments).size()-2; i >= 0; i--){
         auto& al = (*alignments)[i];
         if (this->single_end && al->isSingleEnd()){
@@ -1869,33 +1866,83 @@ double setProbabilities(std::deque<AlignmentRecord*>& reads) {
     return sqrt(1.0 / (reads.size() - 1) * stdev);
 }
 
-void printReads(std::ostream& outfile, std::deque<AlignmentRecord*>& reads) {
+void printReads(std::ostream& outfile, std::deque<AlignmentRecord*>& reads, bool doc_haplotypes) {
     auto comp = [](AlignmentRecord* al1, AlignmentRecord* al2) { return al1->probability > al2->probability; };
     std::sort(reads.begin(), reads.end(), comp);
 
     outfile.precision(5);
     outfile << std::fixed;
 
-    for (auto&& r : reads) {
-        outfile << r->name;
-        if (not r->single_end) outfile << "|paired";
-        outfile << "|ht_freq:" << r->probability;
-        outfile << "|start1:" << r->getStart1();
-        outfile << "|end1:" << r->getEnd1();
-        if (not r->single_end){
-            outfile << "|start2:" << r->getStart2();
-            outfile << "|end2:" << r->getEnd2();
-        }
-        outfile << endl;
-
-        outfile << r->sequence1;
-
-        if (not r->single_end) {
-            for(unsigned int i = r->end1; i < r->start2; i++) {
-                outfile << "N";
+    if (!doc_haplotypes){
+        for (auto&& r : reads) {
+            outfile << r->name;
+            if (not r->single_end) outfile << "|paired";
+            outfile << "|ht_freq:" << r->probability;
+            outfile << "|start1:" << r->getStart1();
+            outfile << "|end1:" << r->getEnd1();
+            if (not r->single_end){
+                outfile << "|start2:" << r->getStart2();
+                outfile << "|end2:" << r->getEnd2();
             }
-            outfile << r->sequence2;
+            outfile << endl;
+
+            outfile << r->sequence1;
+
+            if (not r->single_end) {
+                for(unsigned int i = r->end1; i < r->start2; i++) {
+                    outfile << "N";
+                }
+                outfile << r->sequence2;
+            }
+            outfile << endl;
         }
-        outfile << endl;
+    } else {
+        std::vector<std::string> names;
+        for (auto&& r : reads) {
+            names = r->getReadNames();
+            int haplo1counter = 0;
+            int haplo2counter = 0;
+            //int haplo3counter = 0;
+            //int haplo4counter = 0;
+            //int haplo5counter = 0;
+            outfile << r->name;
+            if (not r->single_end) outfile << "|paired";
+            outfile << "|ht_freq:" << r->probability;
+            outfile << "|start1:" << r->getStart1();
+            outfile << "|end1:" << r->getEnd1();
+            if (not r->single_end){
+                outfile << "|start2:" << r->getStart2();
+                outfile << "|end2:" << r->getEnd2();
+            }
+            for(auto& i: names){
+                 if (i.find("normal") != std::string::npos){
+                    haplo1counter++;
+                 } else if (i.find("mutant1") != std::string::npos) {
+                    haplo2counter++;
+                 } /*else if (i.find("mutant3") != std::string::npos) {
+                    haplo3counter++;
+                 } else if (i.find("mutant4") != std::string::npos) {
+                    haplo4counter++;
+                 } else if (i.find("mutant5") != std::string::npos) {
+                    haplo5counter++;
+                 }*/
+            }
+            outfile << "|ht1:" << haplo1counter;
+            outfile << "|ht2:" << haplo2counter;
+            //outfile << "|ht3:" << haplo3counter;
+            //outfile << "|ht4:" << haplo4counter;
+            //outfile << "|ht5:" << haplo5counter;
+            outfile << endl;
+
+            outfile << r->sequence1;
+
+            if (not r->single_end) {
+                for(unsigned int i = r->end1; i < r->start2; i++) {
+                    outfile << "N";
+                }
+                outfile << r->sequence2;
+            }
+            outfile << endl;
+        }
     }
 }
