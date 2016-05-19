@@ -55,10 +55,10 @@ make install
 ```
 
 ### Contributions
- [Armin Töpfer](http://www.armintoepfer.com)  
- [Tobias Marschall](https://bioinf.mpi-inf.mpg.de/homepage/index.php?&account=marschal)
- Bernhard Lang
- Marcel Meyerheim
+ - [Armin Töpfer](http://www.armintoepfer.com)  
+ - [Tobias Marschall](https://bioinf.mpi-inf.mpg.de/homepage/index.php?&account=marschal)
+ - Bernhard Lang
+ - Marcel Meyerheim
  
 ###Contact
 ```
