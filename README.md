@@ -46,7 +46,7 @@ If you want to install HaploClique to a non-standard directory, change it with `
 ```bash
 git clone https://github.com/armintoepfer/haploclique
 cd haploclique
-sh install-additional-software.sh
+git submodule init && git submodule update
 mkdir build
 cd build
 cmake ..
@@ -54,46 +54,11 @@ make
 make install
 ```
 
-### USAGE
-Please use HaploClique in an empty directory.  
-Please create an <b>index</b> for your alignment `samtools index alignment.bam`
-
-##### Error correction
-For error correction, HaploClique takes a BAM alignment and the reference as input:  
-`haploclique-assembly -r ../reference.fasta -i ../alignment.bam` 
-
-######All command-line options:
-```bash 
-USAGE:     haploclique-assembly options...
-
-OPTIONS:
-   -h      Show this message
-   -H      Show extended help
-   -r      Path to the reference genome (required)
-   -i      Path to the alignment in BAM format (required)
-```
-
-#####Quasispecies assembly of long-range haplotypes 
-For quasispecies assembly, HaploClique has to be executed iteratively. Currently, this procedure cannot be automated to handle any input alignment. Manual assembly can be performed by calling the same command until number of haplotypes has converged:
-```bash
-haploclique-assembly -r ../reference.fasta -i ../alignment.bam
-haploclique-assembly -r ../reference.fasta -i ../alignment.bam
-haploclique-assembly -r ../reference.fasta -i ../alignment.bam
-```
-
-#####Structural variation
-For the prediction of large insertion and deletions, please only use alignments in which *all reads are paired-end* and they are *not allowed to overlap*:  
-`haploclique-assembly -r ../reference.fasta -i ../alignment.bam -l`  
-The detected indels are saved as indels.vcf.
-
-###Ultra-deep next-generation sequencing data workflow
-<p align="center">
-  <img src="https://github.com/armintoepfer/haploclique/blob/master/haploclique_workflow.png?raw=true" alt="HaploClique workflow"/>
-</p>
-
 ### Contributions
  [Armin Töpfer](http://www.armintoepfer.com)  
- [Tobias Marschall](http://homepages.cwi.nl/~tm/)
+ [Tobias Marschall](https://bioinf.mpi-inf.mpg.de/homepage/index.php?&account=marschal)
+ Bernhard Lang
+ Marcel Meyerheim
  
 ###Contact
 ```
