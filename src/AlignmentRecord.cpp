@@ -1902,10 +1902,10 @@ void printReads(std::ostream& outfile, std::deque<AlignmentRecord*>& reads, bool
             names = r->getReadNames();
             int haplo1counter = 0;
             int haplo2counter = 0;
-            //int haplo3counter = 0;
-            //int haplo4counter = 0;
-            //int haplo5counter = 0;
-            outfile << r->name;
+            int haplo3counter = 0;
+            int haplo4counter = 0;
+            int haplo5counter = 0;
+            outfile << ">" << r->name;
             if (not r->single_end) outfile << "|paired";
             outfile << "|ht_freq:" << r->probability;
             outfile << "|start1:" << r->getStart1();
@@ -1915,29 +1915,29 @@ void printReads(std::ostream& outfile, std::deque<AlignmentRecord*>& reads, bool
                 outfile << "|end2:" << r->getEnd2();
             }
             for(auto& i: names){
-                 if (i.find("normal") != std::string::npos){
+                 if (i.find("mutant1") != std::string::npos){
                     haplo1counter++;
-                 } else if (i.find("mutant1") != std::string::npos) {
+                 } else if (i.find("mutant2") != std::string::npos) {
                     haplo2counter++;
-                 } /*else if (i.find("mutant3") != std::string::npos) {
+                 } else if (i.find("mutant3") != std::string::npos) {
                     haplo3counter++;
                  } else if (i.find("mutant4") != std::string::npos) {
                     haplo4counter++;
                  } else if (i.find("mutant5") != std::string::npos) {
                     haplo5counter++;
-                 }*/
+                 }
             }
             outfile << "|ht1:" << haplo1counter;
             outfile << "|ht2:" << haplo2counter;
-            //outfile << "|ht3:" << haplo3counter;
-            //outfile << "|ht4:" << haplo4counter;
-            //outfile << "|ht5:" << haplo5counter;
+            outfile << "|ht3:" << haplo3counter;
+            outfile << "|ht4:" << haplo4counter;
+            outfile << "|ht5:" << haplo5counter;
             outfile << endl;
 
             outfile << r->sequence1;
 
             if (not r->single_end) {
-                for(unsigned int i = r->end1; i < r->start2; i++) {
+                for(unsigned int i = r->end1+1; i < r->start2; i++) {
                     outfile << "N";
                 }
                 outfile << r->sequence2;

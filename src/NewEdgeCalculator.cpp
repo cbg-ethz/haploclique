@@ -68,11 +68,11 @@ void NewEdgeCalculator::calculateProb0(const AlignmentRecord::mapValue & val1, d
     //const auto& k = this->SIMPSON_MAP.find(val1.ref);
     auto d = this->SIMPSON_MAP[val1.ref];
     if (d!=0){
-        res*=d;
+        res+=d;
     //if (k != this->SIMPSON_MAP.end()){
     //    res *= k->second;
     } else {
-        res *= 0.25;
+        res +=std::log10(0.25);
     }
 
 }
@@ -112,11 +112,11 @@ bool NewEdgeCalculator::similarityCriterion(const AlignmentRecord & a1, const st
     //Threshold for probability that reads were sampled from same haplotype
     double cutoff = 0;
     if (a1.getName().find("Clique") != string::npos && a2.getName().find("Clique") != string::npos) {
-        cutoff = this->EDGE_QUASI_CUTOFF;
+        cutoff = std::log10(this->EDGE_QUASI_CUTOFF);
     } else if (a1.getName().find("Clique") != string::npos || a2.getName().find("Clique") != string::npos) {
-        cutoff = this->EDGE_QUASI_CUTOFF_MIXED;
+        cutoff = std::log10(this->EDGE_QUASI_CUTOFF_MIXED);
     } else {
-        cutoff = this->EDGE_QUASI_CUTOFF_SINGLE;
+        cutoff = std::log10(this->EDGE_QUASI_CUTOFF_SINGLE);
     }
 
     //Threshold for Overlap of Read Alignments
@@ -134,10 +134,13 @@ bool NewEdgeCalculator::similarityCriterion(const AlignmentRecord & a1, const st
         prob = probM;
         potence = 1.0/(cc);
     } else {*/
-        prob = probM * prob0;
-        potence = 1.0/(cc+tc);
+    //TEST to see what happens if prob0 is neglected
+    //prob = std::log10(probM);
+    //potence = 1.0/cc;
+    prob = std::log10(probM) + prob0;
+    potence = 1.0/(cc+tc);
     //}
-    double final_prob = std::pow(prob,potence);
+    double final_prob = prob*potence;
     //cout << "Final prob: " << final_prob << endl;
     return final_prob >= cutoff;
 }
@@ -273,7 +276,7 @@ bool NewEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const Alignment
     int tc = 0;
     int cc = 0;
     double probM = 1.0;
-    double prob0 = 1.0;
+    double prob0 = 0.0;
     unsigned int pos1 = 0;
     unsigned int pos2 = 0;
     unsigned int equalBase = 0;
@@ -334,6 +337,10 @@ bool NewEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const Alignment
     if (cc == 0 || (!checkGaps(cov_ap1, cov_ap2, aub))){
         return false;
     }
+    /*TEST to see how often Prob0 is set to zero
+    if(prob0 == 0.0){
+        cout << "Prob0 is zero" << endl;
+    }*/
     return similarityCriterion(ap1, cov_ap1, ap2, cov_ap2, probM, prob0, tc, cc);
 }
 

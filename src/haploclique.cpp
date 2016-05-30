@@ -172,7 +172,7 @@ deque<AlignmentRecord*>* readBamFile(string filename, vector<string>& readNames,
         }
     }
 
-    // Push all single-end reads remaining in names_to_reads into the reads vector. Unmapped reads are filtere out in advance.
+    // Push all single-end reads remaining in names_to_reads into the reads vector. Unmapped reads are filtered out in advance.
     for (const auto& i : names_to_reads) {
         reads->push_back(i.second);
         //readcounter++;
@@ -286,7 +286,7 @@ int main(int argc, char* argv[]) {
             boost::split(insertion_words, words[0], boost::is_any_of("\\."), boost::token_compress_on);
             if (insertion_words.size() > 1) {
             } else {
-                simpson_map[atoi(words[0].c_str())] = pow(atof(words[1].c_str()),2)+pow(atof(words[2].c_str()),2)+pow(atof(words[3].c_str()),2)+pow(atof(words[4].c_str()),2);
+                simpson_map[atoi(words[0].c_str())] = std::log10(pow(atof(words[1].c_str()),2)+pow(atof(words[2].c_str()),2)+pow(atof(words[3].c_str()),2)+pow(atof(words[4].c_str()),2));
                 maxPosition2=atoi(words[0].c_str());
                 //cerr << simpson_map[atoi(words[0].c_str())] << endl;
             }
@@ -349,7 +349,7 @@ int main(int argc, char* argv[]) {
         //}
         return (ct == 1 and filter_singletons and read->getReadCount() <= 1) or (ct > 1 and significance != 0.0 and read->getProbability() < 1.0 / size - significance*stdev);
     };
-
+    cout << "start: " << originalReadNames.size() << endl;
     while (ct != iterations) {
         clique_finder->initialize();
         //cout << "Clique_finder initialized " << ct << endl;
