@@ -1866,14 +1866,15 @@ double setProbabilities(std::deque<AlignmentRecord*>& reads) {
     return sqrt(1.0 / (reads.size() - 1) * stdev);
 }
 
-void printReads(std::ostream& outfile, std::deque<AlignmentRecord*>& reads, bool doc_haplotypes) {
+void printReads(std::ostream& outfile, std::deque<AlignmentRecord*>& reads, int doc_haplotypes) {
     auto comp = [](AlignmentRecord* al1, AlignmentRecord* al2) { return al1->probability > al2->probability; };
     std::sort(reads.begin(), reads.end(), comp);
 
     outfile.precision(5);
     outfile << std::fixed;
 
-    if (!doc_haplotypes){
+
+    if (doc_haplotypes == 0){
         for (auto&& r : reads) {
             outfile << r->name;
             if (not r->single_end) outfile << "|paired";
@@ -1887,16 +1888,15 @@ void printReads(std::ostream& outfile, std::deque<AlignmentRecord*>& reads, bool
             outfile << endl;
 
             outfile << r->sequence1;
-
             if (not r->single_end) {
-                for(unsigned int i = r->end1; i < r->start2; i++) {
+                for(unsigned int i = r->end1+1; i < r->start2; i++) {
                     outfile << "N";
                 }
                 outfile << r->sequence2;
             }
             outfile << endl;
         }
-    } else {
+    } else if(doc_haplotypes == 5) {
         std::vector<std::string> names;
         for (auto&& r : reads) {
             names = r->getReadNames();
@@ -1906,13 +1906,24 @@ void printReads(std::ostream& outfile, std::deque<AlignmentRecord*>& reads, bool
             int haplo4counter = 0;
             int haplo5counter = 0;
             outfile << ">" << r->name;
-            if (not r->single_end) outfile << "|paired";
-            outfile << "|ht_freq:" << r->probability;
-            outfile << "|start1:" << r->getStart1();
-            outfile << "|end1:" << r->getEnd1();
-            if (not r->single_end){
+
+            if(r->single_end){
+                outfile << "|ht_freq:" << r->probability;
+                outfile << "|start1:" << r->getStart1();
+                outfile << "|end1:" << r->getEnd1();
+            }
+            else if(!r->single_end && (r->getEnd1()+1 < r->getStart2())){
+                outfile << "|paired";
+                outfile << "|ht_freq:" << r->probability;
+                outfile << "|start1:" << r->getStart1();
+                outfile << "|end1:" << r->getEnd1();
                 outfile << "|start2:" << r->getStart2();
                 outfile << "|end2:" << r->getEnd2();
+            }
+            else if (!r->single_end && (r->getEnd1()+1 == r->getStart2())){
+                outfile << "|ht_freq:" << r->probability;
+                outfile << "|start1:" << r->getStart1();
+                outfile << "|end1:" << r->getEnd2();
             }
             for(auto& i: names){
                  if (i.find("mutant1") != std::string::npos){
@@ -1932,6 +1943,53 @@ void printReads(std::ostream& outfile, std::deque<AlignmentRecord*>& reads, bool
             outfile << "|ht3:" << haplo3counter;
             outfile << "|ht4:" << haplo4counter;
             outfile << "|ht5:" << haplo5counter;
+            outfile << endl;
+
+            outfile << r->sequence1;
+
+            if (not r->single_end) {
+                for(unsigned int i = r->end1+1; i < r->start2; i++) {
+                    outfile << "N";
+                }
+                outfile << r->sequence2;
+            }
+            outfile << endl;
+        }
+    } else if(doc_haplotypes == 2){
+        std::vector<std::string> names;
+        for (auto&& r : reads) {
+            names = r->getReadNames();
+            int haplo1counter = 0;
+            int haplo2counter = 0;
+            outfile << ">" << r->name;
+
+            if(r->single_end){
+                outfile << "|ht_freq:" << r->probability;
+                outfile << "|start1:" << r->getStart1();
+                outfile << "|end1:" << r->getEnd1();
+            }
+            else if(!r->single_end && (r->getEnd1()+1 < r->getStart2())){
+                outfile << "|paired";
+                outfile << "|ht_freq:" << r->probability;
+                outfile << "|start1:" << r->getStart1();
+                outfile << "|end1:" << r->getEnd1();
+                outfile << "|start2:" << r->getStart2();
+                outfile << "|end2:" << r->getEnd2();
+            }
+            else if (!r->single_end && (r->getEnd1()+1 == r->getStart2())){
+                outfile << "|ht_freq:" << r->probability;
+                outfile << "|start1:" << r->getStart1();
+                outfile << "|end1:" << r->getEnd2();
+            }
+            for(auto& i: names){
+                 if (i.find("normal") != std::string::npos){
+                    haplo1counter++;
+                 } else if (i.find("mutant") != std::string::npos) {
+                    haplo2counter++;
+                 }
+            }
+            outfile << "|ht1:" << haplo1counter;
+            outfile << "|ht2:" << haplo2counter;
             outfile << endl;
 
             outfile << r->sequence1;

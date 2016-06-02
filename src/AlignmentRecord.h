@@ -149,7 +149,7 @@ public:
     unsigned int getReadCount() const { return readNames.size(); }
 
     friend double setProbabilities(std::deque<AlignmentRecord*>& reads);
-    friend void printReads(std::ostream& output, std::deque<AlignmentRecord*>&, bool doc_haplotypes);
+    friend void printReads(std::ostream& output, std::deque<AlignmentRecord*>&, int doc_haplotypes);
 };
 
 #endif /* ALIGNMENTRECORD_H_ */

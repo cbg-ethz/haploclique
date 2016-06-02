@@ -95,9 +95,9 @@ Options:
                                               <num> standard deviations.
                                               [default: 3.0]
   -L FILE, --log=FILE                      Write log to <file>.
-  -d --doc_haplotypes                      Use for Simulation Study with known
+  -d NUM --doc_haplotypes=NUM              Use for Simulation Study with known
                                            haplotypes to document which reads
-                                           contributed to which final cliques.
+                                           contributed to which final cliques (3 or 5).
 )";
 
 void usage() {
@@ -260,7 +260,8 @@ int main(int argc, char* argv[]) {
     bool filter_singletons = args["--no_singletons"].asBool();
     string logfile = "";
     if (args["--log"]) logfile = args["--log"].asString();
-    bool doc_haplotypes = args["--doc_haplotypes"].asBool();
+    int doc_haplotypes = 0;
+    if (args["--doc_haplotypes"]) doc_haplotypes = stoi(args["--doc_haplotypes"].asString());
     // END PARAMETERS
 
     bool call_indels = indel_output_file.size() > 0;
