@@ -98,6 +98,8 @@ Options:
   -d NUM --doc_haplotypes=NUM              Use for Simulation Study with known
                                            haplotypes to document which reads
                                            contributed to which final cliques (3 or 5).
+  -p0 --noProb0                            ignore the tail probabilites during edge
+                                           calculation.
 )";
 
 void usage() {
@@ -151,7 +153,11 @@ deque<AlignmentRecord*>* readBamFile(string filename, vector<string>& readNames,
             cout << alignment.Qualities << endl;
             cout << endl;
         }*/
-        if(alignment.CigarData.size() > 0){
+        bool valid = false;
+        for (auto& i : alignment.CigarData){
+            if (i.Type == 'M' && i.Length > 0) valid = true;
+        }
+        if(alignment.CigarData.size() > 0 && valid){
             if(names_to_reads.count(alignment.Name) > 0) {
                 //cout << alignment.Name << endl;
                 names_to_reads[alignment.Name]->pairWith(alignment);
@@ -262,6 +268,7 @@ int main(int argc, char* argv[]) {
     if (args["--log"]) logfile = args["--log"].asString();
     int doc_haplotypes = 0;
     if (args["--doc_haplotypes"]) doc_haplotypes = stoi(args["--doc_haplotypes"].asString());
+    bool noProb0 = args["--noProb0"].asBool();
     // END PARAMETERS
 
     bool call_indels = indel_output_file.size() > 0;
@@ -305,7 +312,7 @@ int main(int argc, char* argv[]) {
     EdgeCalculator* indel_edge_calculator = nullptr;
     unique_ptr<vector<mean_and_stddev_t> > readgroup_params(nullptr);
     maxPosition1 = (maxPosition1>maxPosition2) ? maxPosition1 : maxPosition2;
-    edge_calculator = new NewEdgeCalculator(Q, edge_quasi_cutoff_cliques, overlap_cliques, frameshift_merge, simpson_map, edge_quasi_cutoff_single, overlap_single, edge_quasi_cutoff_mixed, maxPosition1);
+    edge_calculator = new NewEdgeCalculator(Q, edge_quasi_cutoff_cliques, overlap_cliques, frameshift_merge, simpson_map, edge_quasi_cutoff_single, overlap_single, edge_quasi_cutoff_mixed, maxPosition1, noProb0);
     if (call_indels) {
         double insert_mean = -1.0;
         double insert_stddev = -1.0;

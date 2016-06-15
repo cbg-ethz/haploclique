@@ -37,6 +37,7 @@ private:
     double EDGE_QUASI_CUTOFF_SINGLE;
     double EDGE_QUASI_CUTOFF;
     bool FRAMESHIFT_MERGE;
+    bool NOPROB0;
     //std::unordered_map<int, double> SIMPSON_MAP;
     std::vector<double> SIMPSON_MAP;
     mutable std::vector<std::pair<int,int>> aub;
@@ -51,7 +52,7 @@ private:
 
 
 public:
-    NewEdgeCalculator(double Q, double edge_quasi_cutoff, double overlap, bool frameshift_merge, unordered_map<int, double>& simpson_map, double edge_quasi_cutoff_single, double overlap_single, double edge_quasi_cutoff_mixed, unsigned int maxPosition);
+    NewEdgeCalculator(double Q, double edge_quasi_cutoff, double overlap, bool frameshift_merge, unordered_map<int, double>& simpson_map, double edge_quasi_cutoff_single, double overlap_single, double edge_quasi_cutoff_mixed, unsigned int maxPosition, bool noProb0);
     virtual ~NewEdgeCalculator();
 
     /** Decides whether an edge is to be drawn between the two given nodes. */

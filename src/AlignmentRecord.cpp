@@ -1076,7 +1076,9 @@ void AlignmentRecord::mergeAlignmentRecordsPaired(const AlignmentRecord& ar){
                 ar.noOverlapMerge(dna,qualities,nucigar,c_c2_pos2,q_c2_pos2,ref_s_pos2_c1,2);
             }
         } else if(ref_s_pos2_c1-1 == ref_e_pos2_c2){
-            noOverlapMerge(dna,qualities,nucigar,c_c2_pos1,q_c2_pos1,ref_s_pos2_c1,2);
+            while(ref_s_pos2_c1<=ref_e_pos1_c2){
+                noOverlapMerge(dna,qualities,nucigar,c_c2_pos1,q_c2_pos1,ref_s_pos2_c1,2);
+            }
         }
         this->start1=std::min(this->start1,ar.getStart1());
         this->end1=std::max(ar.getEnd2(),this->end2);
@@ -1876,7 +1878,7 @@ void printReads(std::ostream& outfile, std::deque<AlignmentRecord*>& reads, int 
 
     if (doc_haplotypes == 0){
         for (auto&& r : reads) {
-            outfile << r->name;
+            outfile << ">" <<r->name;
             if (not r->single_end) outfile << "|paired";
             outfile << "|ht_freq:" << r->probability;
             outfile << "|start1:" << r->getStart1();

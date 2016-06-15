@@ -34,7 +34,7 @@
  const double NewEdgeCalculator::FRAME_SHIFT_WEIGHT = 0.01;
  
 
-NewEdgeCalculator::NewEdgeCalculator(double Q, double edge_quasi_cutoff, double overlap, bool frameshift_merge, unordered_map<int, double>& simpson_map, double edge_quasi_cutoff_single, double overlap_single, double edge_quasi_cutoff_mixed, unsigned int maxPosition) {
+NewEdgeCalculator::NewEdgeCalculator(double Q, double edge_quasi_cutoff, double overlap, bool frameshift_merge, unordered_map<int, double>& simpson_map, double edge_quasi_cutoff_single, double overlap_single, double edge_quasi_cutoff_mixed, unsigned int maxPosition, bool noProb0) {
     this->Q = Q;
     this->EDGE_QUASI_CUTOFF = edge_quasi_cutoff;
     this->EDGE_QUASI_CUTOFF_SINGLE = edge_quasi_cutoff_single;
@@ -46,6 +46,7 @@ NewEdgeCalculator::NewEdgeCalculator(double Q, double edge_quasi_cutoff, double 
     for(auto& k_v : simpson_map){
         this->SIMPSON_MAP[k_v.first] = k_v.second;
     }
+    this->NOPROB0 = noProb0;
 }
 
 NewEdgeCalculator::~NewEdgeCalculator() {
@@ -135,10 +136,13 @@ bool NewEdgeCalculator::similarityCriterion(const AlignmentRecord & a1, const st
         potence = 1.0/(cc);
     } else {*/
     //TEST to see what happens if prob0 is neglected
-    //prob = std::log10(probM);
-    //potence = 1.0/cc;
-    prob = std::log10(probM) + prob0;
-    potence = 1.0/(cc+tc);
+    if(this->NOPROB0){
+        prob = std::log10(probM);
+        potence = 1.0/cc;
+    } else {
+        prob = std::log10(probM) + prob0;
+        potence = 1.0/(cc+tc);
+    }
     //}
     double final_prob = prob*potence;
     //cout << "Final prob: " << final_prob << endl;
