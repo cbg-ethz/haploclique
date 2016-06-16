@@ -150,6 +150,8 @@ public:
 
     friend double setProbabilities(std::deque<AlignmentRecord*>& reads);
     friend void printReads(std::ostream& output, std::deque<AlignmentRecord*>&, int doc_haplotypes);
+    friend void printGFF(std::ostream& output, std::deque<AlignmentRecord*>&);
+    friend void printBAM(std::ostream& output, std::deque<AlignmentRecord*>&);
 };
 
 #endif /* ALIGNMENTRECORD_H_ */

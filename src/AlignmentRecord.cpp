@@ -2006,3 +2006,12 @@ void printReads(std::ostream& outfile, std::deque<AlignmentRecord*>& reads, int 
         }
     }
 }
+
+void printGFF(std::ostream& output, std::deque<AlignmentRecord*>&){
+    assert(false);
+}
+
+void printBAM(std::ostream& output, std::deque<AlignmentRecord*>&){
+    assert(false);
+}
+
