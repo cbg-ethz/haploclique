@@ -32,7 +32,42 @@
  using namespace boost;
 
  const double NewEdgeCalculator::FRAME_SHIFT_WEIGHT = 0.01;
- 
+ namespace{
+     float phredProb(const char& qual){
+         return std::pow(10, (double)(-qual)/10.0);
+     }
+     std::array<float, 127> compute_error_probs(){
+         std::array<float, 127> result;
+         for (int i = 33; i < result.size(); i++){
+             result[i] = phredProb(i-33);
+         }
+         return result;
+     }
+     std::array<std::array<double,127>,127> compute_probM_eqBase_values(){
+        std::array<std::array<double, 127>, 127> result;
+        std::array<float, 127> error_probs = compute_error_probs();
+        for (int i = 33; i < result.size(); i++){
+            for(int j = 33; j < result.size(); j++){
+                result[i][j] = (1.0-error_probs[i])*(1.0-error_probs[j])+(error_probs[i])*(error_probs[j]/3);
+            }
+        }
+        return result;
+
+     }
+     std::array<std::array<double,127>,127> compute_probM_unEqBase_values(){
+        std::array<std::array<double, 127>, 127> result;
+        std::array<float, 127> error_probs = compute_error_probs();
+        for (int i = 33; i < result.size(); i++){
+            for(int j = 33; j < result.size(); j++){
+                result[i][j] = (1.0-error_probs[i])*(error_probs[j]/3)+(1.0-error_probs[j])*(error_probs[i]/3)+2*(error_probs[i]/3)*(error_probs[j]/3);
+            }
+        }
+        return result;
+     }
+
+     std::array<std::array<double,127>,127> probM_eqBase_values = compute_probM_eqBase_values();
+     std::array<std::array<double,127>,127> probM_unEqBase_values = compute_probM_unEqBase_values();
+ }
 
 NewEdgeCalculator::NewEdgeCalculator(double Q, double edge_quasi_cutoff, double overlap, bool frameshift_merge, unordered_map<int, double>& simpson_map, double edge_quasi_cutoff_single, double overlap_single, double edge_quasi_cutoff_mixed, unsigned int maxPosition, bool noProb0) {
     this->Q = Q;
@@ -55,9 +90,10 @@ NewEdgeCalculator::~NewEdgeCalculator() {
 void NewEdgeCalculator::calculateProbM(const AlignmentRecord::mapValue & val1,const AlignmentRecord::mapValue & val2, double& res) const{
     double sum = 0.0;
     if(val1.base==val2.base){
-        sum+=(1.0-val1.prob)*(1.0-val2.prob)+(val1.prob)*(val2.prob/3);
+        //sum+=(1.0-val1.prob)*(1.0-val2.prob)+(val1.prob)*(val2.prob/3);
+        sum+=probM_eqBase_values[val1.qual][val2.qual];
     } else  {
-        sum+=(1.0-val1.prob)*(val2.prob/3)+(1.0-val2.prob)*(val1.prob/3)+2*(val1.prob/3)*(val2.prob/3);
+        sum+=probM_unEqBase_values[val1.qual][val2.qual];
     }
     res*=sum;
 }
