@@ -137,7 +137,7 @@ deque<AlignmentRecord*>* readBamFile(string filename, vector<string>& readNames,
     deque<AlignmentRecord*>* reads = new deque<AlignmentRecord*>;
     BamTools::BamReader bamreader;
     if (not bamreader.Open(filename)) {
-        cerr << bamrGFFeader.GetFilename() << endl;
+        cerr << bamreader.GetFilename() << endl;
         throw std::runtime_error("Couldn't open Bamfile");
     }
     BamTools::BamAlignment alignment;
@@ -418,15 +418,15 @@ int main(int argc, char* argv[]) {
         }
         reads->erase(new_end_it, reads->end());
     }
-    ofstream os(outfile + '.fasta', std::ofstream::out);
+    ofstream os(outfile + ".fasta", std::ofstream::out);
     setProbabilities(*reads);
     printReads(os, *reads, doc_haplotypes);
     if (gff){
-        ofstream os1(outfile + '.gff',std::ofstream::out);
+        ofstream os1(outfile + ".gff",std::ofstream::out);
         printGFF(os1,*reads);
     }
     if (bam){
-        ofstream os2(outfile + '.bam',std::ofstream::out);
+        ofstream os2(outfile + ".bam",std::ofstream::out);
         printBAM(os2,*reads);
     }
 

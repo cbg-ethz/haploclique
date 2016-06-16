@@ -169,7 +169,7 @@ void CLEVER::addAlignment(std::unique_ptr<AlignmentRecord>& alignment_autoptr, i
 			adjacent.set(it->second, true);
 			// cerr << " --> EDGE";
 			if (lw != nullptr) {
-                lw->reportEdge(alignment->getName(), alignment2->getName());
+                lw->reportEdge(alignment->getID(), alignment2->getID());
 			}
 
         converged = false;
