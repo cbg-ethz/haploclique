@@ -250,7 +250,7 @@ void BronKerbosch::printEdges(std::string filename) {
     }
 }
 
-void BronKerbosch::addAlignment(std::unique_ptr<AlignmentRecord>& alignment_autoptr) {
+void BronKerbosch::addAlignment(std::unique_ptr<AlignmentRecord>& alignment_autoptr, int& edgecounter) {
 	assert(alignment_autoptr.get() != nullptr);
 	assert(cliques!=nullptr);
     assert(initialized);

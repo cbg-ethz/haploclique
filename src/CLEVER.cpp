@@ -121,7 +121,7 @@ void CLEVER::reorganize_storage() {
 	capacity = new_capacity;
 }
 
-void CLEVER::addAlignment(std::unique_ptr<AlignmentRecord>& alignment_autoptr) {
+void CLEVER::addAlignment(std::unique_ptr<AlignmentRecord>& alignment_autoptr, int& edgecounter) {
     assert(alignment_autoptr.get() != 0);
 	assert(cliques!=0);
     assert(initialized);
@@ -150,7 +150,6 @@ void CLEVER::addAlignment(std::unique_ptr<AlignmentRecord>& alignment_autoptr) {
 	iterator_t it = alignments_by_length.begin();
 	iterator_t end = alignments_by_length.end();
 	// iterate through all alignments
-    int counter = 0;
 	for (; it!=end; ++it) {
 		const AlignmentRecord* alignment2 = alignments[it->second];
         //if(alignment->getName().find("normal14") != string::npos && alignment2->getName().find("normal14") != string::npos){
@@ -165,19 +164,18 @@ void CLEVER::addAlignment(std::unique_ptr<AlignmentRecord>& alignment_autoptr) {
 			set_edge = second_edge_calculator->edgeBetween(*alignment, *alignment2);
 		}
 		if (set_edge) {
-            counter++;
+            edgecounter++;
             //cout << "Edge: " << alignment->getName() << " and " << alignment2->getName() << endl;
 			adjacent.set(it->second, true);
 			// cerr << " --> EDGE";
 			if (lw != nullptr) {
-				lw->reportEdge(alignment->getID(), alignment2->getID());
+                lw->reportEdge(alignment->getName(), alignment2->getName());
 			}
 
         converged = false;
 		}
 		// cerr << endl;
 	}
-    //cout << "Number of Edges after loop: " << counter << endl;
 
     alignments_by_length.insert(make_pair(0, index));
 

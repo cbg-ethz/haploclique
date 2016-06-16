@@ -34,7 +34,7 @@ public:
         
     }
 
-    virtual void addAlignment(std::unique_ptr<AlignmentRecord>& ap) = 0;
+    virtual void addAlignment(std::unique_ptr<AlignmentRecord>& ap, int& edgecounter) = 0;
 
     virtual void initialize() = 0;
 

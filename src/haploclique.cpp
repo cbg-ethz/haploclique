@@ -357,7 +357,8 @@ int main(int argc, char* argv[]) {
         //}
         return (ct == 1 and filter_singletons and read->getReadCount() <= 1) or (ct > 1 and significance != 0.0 and read->getProbability() < 1.0 / size - significance*stdev);
     };
-    cout << "start: " << originalReadNames.size() << endl;
+    int edgecounter = 0;
+    cout << "start: " << originalReadNames.size();
     while (ct != iterations) {
         clique_finder->initialize();
         //cout << "Clique_finder initialized " << ct << endl;
@@ -380,9 +381,10 @@ int main(int argc, char* argv[]) {
             reads->pop_front();
             if (filter_fn(al_ptr,size)) continue;
 
-            clique_finder->addAlignment(al_ptr);
+            clique_finder->addAlignment(al_ptr,edgecounter);
             //cout << "addAlignment " << ct << endl;
         }
+        cout << "\tedges: " << edgecounter << endl;
 
         delete reads;
         //cout << "reads deleted " << ct << endl;
@@ -395,7 +397,8 @@ int main(int argc, char* argv[]) {
         stdev = setProbabilities(*reads);
         //if(ct == 5) break;
         if (clique_finder->hasConverged()) break;
-        cout << ct++ << ": " << reads->size() << endl;
+        cout << ct++ << ": " << reads->size();
+        edgecounter = 0;
     }
 
     // Filter superreads according to read probability

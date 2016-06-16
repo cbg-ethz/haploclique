@@ -50,7 +50,7 @@ public:
     void finish();
     void initialize();
 
-    void addAlignment(std::unique_ptr<AlignmentRecord>& ap);
+    void addAlignment(std::unique_ptr<AlignmentRecord>& ap, int& edgecounter);
 };
 
 #endif /* CLEVER_H_ */

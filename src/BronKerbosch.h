@@ -38,7 +38,7 @@ public:
     	return *(alignments_[index]);
     }
 
-    void addAlignment(std::unique_ptr<AlignmentRecord>& ap);
+    void addAlignment(std::unique_ptr<AlignmentRecord>& ap, int &edgecounter);
     void initialize();
     void finish();
 };
