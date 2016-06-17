@@ -36,7 +36,7 @@ using namespace std;
 using namespace boost;
 
 namespace {
-//helper functions to merge DNA sequences; +33 is substracted beforehand
+//helper functions to merge DNA sequences
 int agreement(const char& qual1, const char& qual2){
     float prob1 = std::pow(10,(float)-qual1/10);
     float prob2 = std::pow(10,(float)-qual2/10);
@@ -56,7 +56,7 @@ int disagreement(const char& qual1, const char& qual2){
 float phredProb(const char& qual){
     return std::pow(10, (double)(-qual)/10.0);
 }
-
+//error probabilites are precomputed for all phred scores
 std::array<float, 127> compute_error_probs(){
     std::array<float, 127> result;
     for (int i = 33; i < result.size(); i++){
@@ -64,6 +64,7 @@ std::array<float, 127> compute_error_probs(){
     }
     return result;
 }
+//new values for updated error probabilites are precomputed
 std::array<std::array<int, 127>, 127> compute_error_agreement(){
     std::array<std::array<int, 127>, 127> result;
     for (int i = 33; i < result.size(); i++){
