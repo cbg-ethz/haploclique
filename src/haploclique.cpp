@@ -131,7 +131,7 @@ bool read_mean_and_sd(const string& filename, double* mean, double* sd) {
     return true;
 }
 
-deque<AlignmentRecord*>* readBamFile(string filename, vector<string>& readNames, unsigned int& maxPosition) {
+deque<AlignmentRecord*>* readBamFile(string filename, vector<string>& readNames, unsigned int& maxPosition, BamTools::SamHeader& header, BamTools::RefVector& references) {
     typedef std::unordered_map<std::string, AlignmentRecord*> name_map_t;
     name_map_t names_to_reads;
     deque<AlignmentRecord*>* reads = new deque<AlignmentRecord*>;
@@ -141,6 +141,9 @@ deque<AlignmentRecord*>* readBamFile(string filename, vector<string>& readNames,
         throw std::runtime_error("Couldn't open Bamfile");
     }
     BamTools::BamAlignment alignment;
+    // retrieve 'metadata' from input BAM files, these are required by BamWriter
+    header = bamreader.GetHeader();
+    references = bamreader.GetReferenceData();
 
     //int readcounter = 0;
     //int singleendcounter = 0;
@@ -314,7 +317,9 @@ int main(int argc, char* argv[]) {
     clock_t clock_start = clock();
     vector<string> originalReadNames;
     unsigned int maxPosition1;
-    deque<AlignmentRecord*>* reads = readBamFile(bamfile, originalReadNames,maxPosition1);
+    BamTools::SamHeader header;
+    BamTools::RefVector references;
+    deque<AlignmentRecord*>* reads = readBamFile(bamfile, originalReadNames,maxPosition1,header,references);
     EdgeCalculator* edge_calculator = nullptr;
     EdgeCalculator* indel_edge_calculator = nullptr;
     unique_ptr<vector<mean_and_stddev_t> > readgroup_params(nullptr);
@@ -348,8 +353,9 @@ int main(int argc, char* argv[]) {
     if (indel_edge_calculator != 0) {
         clique_finder->setSecondEdgeCalculator(indel_edge_calculator);
     }
-
     ofstream* reads_ofstream = 0;
+
+
 
 
 
@@ -427,7 +433,7 @@ int main(int argc, char* argv[]) {
     }
     if (bam){
         ofstream os2(outfile + ".bam",std::ofstream::out);
-        printBAM(os2,*reads);
+        printBAM(os2,outfile + ".bam",*reads,header,references);
     }
 
     cout << "final: " << reads->size() << endl;

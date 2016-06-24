@@ -28,6 +28,7 @@
 
 #include <api/BamAux.h>
 #include <api/BamAlignment.h>
+#include <api/BamWriter.h>
 
 #include "Types.h"
 #include "ShortDnaSequence.h"
@@ -122,7 +123,7 @@ public:
 	unsigned int getStart2() const;
 	const std::vector<BamTools::CigarOp>& getCigar1() const;
 	const std::vector<BamTools::CigarOp>& getCigar2() const;
-	const ShortDnaSequence& getSequence1() const;
+    const ShortDnaSequence& getSequence1() const;
 	const ShortDnaSequence& getSequence2() const;
 	int getReadGroup() const;
 	unsigned int getInsertStart() const;
@@ -150,8 +151,8 @@ public:
 
     friend double setProbabilities(std::deque<AlignmentRecord*>& reads);
     friend void printReads(std::ostream& output, std::deque<AlignmentRecord*>&, int doc_haplotypes);
-    friend void printGFF(std::ostream& output, std::deque<AlignmentRecord*>&);
-    friend void printBAM(std::ostream& output, std::deque<AlignmentRecord*>&);
+    friend void printGFF(std::ostream& output, std::deque<AlignmentRecord*>& reads);
+    friend void printBAM(std::ostream& output, std::string filename, std::deque<AlignmentRecord*>& reads, BamTools::SamHeader& header, BamTools::RefVector& references);
 };
 
 #endif /* ALIGNMENTRECORD_H_ */

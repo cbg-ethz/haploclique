@@ -1923,7 +1923,7 @@ void printReads(std::ostream& outfile, std::deque<AlignmentRecord*>& reads, int 
                 outfile << "|start2:" << r->getStart2();
                 outfile << "|end2:" << r->getEnd2();
             }
-            outfile << "#reads:" << abs_number_reads;
+            outfile << "|#reads:" << abs_number_reads;
             outfile << endl;
 
             outfile << r->sequence1;
@@ -2044,11 +2044,117 @@ void printReads(std::ostream& outfile, std::deque<AlignmentRecord*>& reads, int 
     }
 }
 
-void printGFF(std::ostream& output, std::deque<AlignmentRecord*>&){
+void printGFF(std::ostream& output, std::deque<AlignmentRecord*>& reads){
     assert(false);
 }
 
-void printBAM(std::ostream& output, std::deque<AlignmentRecord*>&){
-    assert(false);
+void printBAM(std::ostream& output, std::string filename, std::deque<AlignmentRecord*>& reads ,BamTools::SamHeader& header, BamTools::RefVector& references){
+    BamTools::BamAlignment al;
+    BamTools::BamWriter writer;
+    //get Header and get References
+    if ( !writer.Open(filename, header, references) ) {
+        cerr << "Could not open output BAM file" << endl;
+        throw std::runtime_error("Couldn't open output Bamfile");
+    return;
+    }
+    /*
+        std::string Name;               // read name
+        int32_t     Length;             // length of query sequence
+        std::string QueryBases;         // 'original' sequence (contained in BAM file)
+        std::string AlignedBases;       // 'aligned' sequence (QueryBases plus deletion, padding, clipping chars)
+        std::string Qualities;          // FASTQ qualities (ASCII characters, not numeric values)
+        std::string TagData;            // tag data (use provided methods to query/modify)
+        int32_t     RefID;              // ID number for reference sequence
+        int32_t     Position;           // position (0-based) where alignment starts
+        uint16_t    Bin;                // BAM (standard) index bin number for this alignment
+        uint16_t    MapQuality;         // mapping quality score
+        uint32_t    AlignmentFlag;      // alignment bit-flag (use provided methods to query/modify)
+        std::vector<CigarOp> CigarData; // CIGAR operations for this alignment
+        int32_t     MateRefID;          // ID number for reference sequence where alignment's mate was aligned
+        int32_t     MatePosition;       // position (0-based) where alignment's mate starts
+        int32_t     InsertSize;         // mate-pair insert size
+        std::string Filename;           // name of BAM file which this alignment comes from
+
+    BamAlignment::BamAlignment(void)
+    : Length(0)
+    , RefID(-1)
+    , Position(-1)
+    , Bin(0)
+    , MapQuality(0)
+    , AlignmentFlag(0)
+    , MateRefID(-1)
+    , MatePosition(-1)
+    , InsertSize(0)
+    */
+    // iterate through all alignments and write them to output
+    for (auto&& r : reads){
+        //set members of al
+        if(r->single_end){
+            al.Name = r->getName();
+            al.Length = r->getSequence1().size();
+            al.QueryBases = r->getSequence1().toString();
+            al.Qualities = r->getSequence1().qualityString();
+            //al.RefID = "B.FR.1983.HXB2-LAI-IIIB-BRU.K03455";
+            al.Position = r->getStart1()-1;
+            al.CigarData = r->getCigar1();
+            al.Filename = filename;
+            //set flags
+            al.SetIsDuplicate(false);
+            al.SetIsFailedQC(false);
+            al.SetIsMapped(true);
+            al.SetIsPaired(false);
+            al.SetIsPrimaryAlignment(true);
+            al.SetIsReverseStrand(false);
+            writer.SaveAlignment(al);
+        } else {
+            al.Name = r->getName();
+            al.Length = r->getSequence1().size();
+            al.QueryBases = r->getSequence1().toString();
+            al.Qualities = r->getSequence1().qualityString();
+            //al.RefID = "B.FR.1983.HXB2-LAI-IIIB-BRU.K03455";
+            al.Position = r->getStart1()-1;
+            al.CigarData = r->getCigar1();
+            al.MatePosition = r->getStart2()-1;
+            al.InsertSize =r->getEnd2()-r->getStart1()+1;
+            al.Filename = filename;
+            //set flags
+            al.SetIsDuplicate(false);
+            al.SetIsFailedQC(false);
+            al.SetIsFirstMate(true);
+            al.SetIsMapped(true);
+            al.SetIsMateMapped(true);
+            al.SetIsMateReverseStrand(false);
+            al.SetIsPaired(true);
+            al.SetIsPrimaryAlignment(true);
+            al.SetIsProperPair(true);
+            al.SetIsReverseStrand(false);
+            al.SetIsSecondMate(false);
+            writer.SaveAlignment(al);
+            al.Name = r->getName();
+            al.Length = r->getSequence2().size();
+            al.QueryBases = r->getSequence2().toString();
+            al.Qualities = r->getSequence2().qualityString();
+            //al.RefID = "B.FR.1983.HXB2-LAI-IIIB-BRU.K03455";
+            al.Position = r->getStart2()-1;
+            al.CigarData = r->getCigar2();
+            al.MatePosition = r->getStart1()-1;
+            al.InsertSize =(-1)*(r->getEnd2()-r->getStart1()+1);
+            //set flags
+            al.SetIsDuplicate(false);
+            al.SetIsFailedQC(false);
+            al.SetIsFirstMate(false);
+            al.SetIsMapped(true);
+            al.SetIsMateMapped(true);
+            al.SetIsMateReverseStrand(false);
+            al.SetIsPaired(true);
+            al.SetIsPrimaryAlignment(true);
+            al.SetIsProperPair(true);
+            al.SetIsReverseStrand(false);
+            al.SetIsSecondMate(true);
+            writer.SaveAlignment(al);
+        }
+        //write to output
+    }
+    writer.Close();
 }
 
