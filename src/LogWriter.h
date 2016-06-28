@@ -33,11 +33,11 @@ public:
         logfile_ << ">--" << iteration_++ << "--<" << std::endl;
 
         for (const auto& adj : vertices_) {
-            logfile_ << adj.first << " ->";
+            logfile_ << adj.first << " -- {";
             for (const auto& i : adj.second) {
                 logfile_ << " " << i;
             }
-            logfile_ << std::endl;
+            logfile_ << "};"<< std::endl;
         }
 
         logfile_ << "---" << std::endl;

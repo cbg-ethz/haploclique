@@ -94,14 +94,14 @@ Options:
   -s NUM --significance=NUM               Filter out reads witch are below
                                               <num> standard deviations.
                                               [default: 3.0]
-  -L FILE, --log=FILE                      Write log to <file>.
-  -d NUM --doc_haplotypes=NUM              Use for Simulation Study with known
+  -L FILE --log=FILE                       Write log to <file>.
+  -d NUM --doc_haplotypes=NUM              Used in simulation studies with known
                                            haplotypes to document which reads
                                            contributed to which final cliques (3 or 5).
   -p0 --noProb0                            ignore the tail probabilites during edge
-                                           calculation.
-  -gff --gff                               Option to create GFF File from output.
-  -bam --bam                               Option to create BAM File from output
+                                           calculation in <output>.
+  -gff --gff                               Option to create GFF File from output. <output> is used as prefix.
+  -bam --bam                               Option to create BAM File from output. <output> is used as prefix.
 )";
 
 void usage() {
