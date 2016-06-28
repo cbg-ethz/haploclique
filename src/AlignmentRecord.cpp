@@ -2050,6 +2050,46 @@ void printGFF(std::ostream& output, std::deque<AlignmentRecord*>& reads){
 
 void printBAM(std::ostream& output, std::string filename, std::deque<AlignmentRecord*>& reads ,BamTools::SamHeader& header, BamTools::RefVector& references){
     BamTools::BamAlignment al;
+    //Debugging: read in bam file of singletons to member variables:
+    /*
+    BamTools::BamReader bamreader;
+    if (not bamreader.Open("/MMCI/TM/structvar/work/hivhaplo/output/KMT/singletons.bam")) {
+        cerr << bamreader.GetFilename() << endl;
+        throw std::runtime_error("Couldn't open Bamfile");
+    }
+    int counter = 0;
+    while (bamreader.GetNextAlignment(al)){
+        cout << al.IsDuplicate() << endl;
+        cout << al.IsFailedQC() << endl;
+        cout << al.IsFirstMate() << endl;
+        cout << al.IsMapped() << endl;
+        cout << al.IsMateMapped() << endl;
+        cout << al.IsMateReverseStrand() << endl;
+        cout << al.IsPaired() << endl;
+        cout << al.IsPrimaryAlignment() << endl;
+        cout << al.IsProperPair() << endl;
+        cout << al.IsReverseStrand() << endl;
+        cout << al.IsSecondMate() << endl;
+        cout << al.Length << endl;
+        cout << al.QueryBases << endl;
+        cout << al.AlignedBases << endl;
+        cout << al.Qualities << endl;
+        cout << al.TagData << endl;
+        cout << al.RefID << endl;
+        cout << al.Position << endl;
+        cout << al.Bin << endl;
+        cout << al.MapQuality << endl;
+        cout << al.AlignmentFlag << endl;
+        cout << al.MateRefID << endl;
+        cout << al.MatePosition << endl;
+        cout << al.InsertSize << endl;
+        cout << al.Filename << endl;
+        counter++;
+        if (counter == 3){
+            break;
+        }
+    }
+    */
     BamTools::BamWriter writer;
     //get Header and get References
     if ( !writer.Open(filename, header, references) ) {
@@ -2093,26 +2133,42 @@ void printBAM(std::ostream& output, std::string filename, std::deque<AlignmentRe
             al.Name = r->getName();
             al.Length = r->getSequence1().size();
             al.QueryBases = r->getSequence1().toString();
+            //no aligned bases
             al.Qualities = r->getSequence1().qualityString();
-            //al.RefID = "B.FR.1983.HXB2-LAI-IIIB-BRU.K03455";
+            //no tag data
+            al.RefID = 0;
             al.Position = r->getStart1()-1;
+            //no bin, map quality. alignment flag is set extra
+            al.MateRefID = 0;
+            al.MatePosition = r->getStart1()-1;
+            al.InsertSize = 0;
             al.CigarData = r->getCigar1();
             al.Filename = filename;
             //set flags
             al.SetIsDuplicate(false);
             al.SetIsFailedQC(false);
+            al.SetIsFirstMate(true);
             al.SetIsMapped(true);
-            al.SetIsPaired(false);
+            al.SetIsMateMapped(false);
+            al.SetIsMateReverseStrand(false);
+            al.SetIsPaired(true);
             al.SetIsPrimaryAlignment(true);
+            al.SetIsProperPair(false);
             al.SetIsReverseStrand(false);
+            al.SetIsSecondMate(false);
             writer.SaveAlignment(al);
         } else {
             al.Name = r->getName();
             al.Length = r->getSequence1().size();
             al.QueryBases = r->getSequence1().toString();
+            //no aligned bases
             al.Qualities = r->getSequence1().qualityString();
-            //al.RefID = "B.FR.1983.HXB2-LAI-IIIB-BRU.K03455";
+            //no tag data
+            //given the case that reads were mapped against more than one reference, al.RefID has to be modified
+            al.RefID = 0;
             al.Position = r->getStart1()-1;
+            //no bin, map quality. alignment flag is set extra
+            al.MateRefID = 0;
             al.CigarData = r->getCigar1();
             al.MatePosition = r->getStart2()-1;
             al.InsertSize =r->getEnd2()-r->getStart1()+1;
@@ -2133,12 +2189,17 @@ void printBAM(std::ostream& output, std::string filename, std::deque<AlignmentRe
             al.Name = r->getName();
             al.Length = r->getSequence2().size();
             al.QueryBases = r->getSequence2().toString();
+            //no aligned bases
             al.Qualities = r->getSequence2().qualityString();
-            //al.RefID = "B.FR.1983.HXB2-LAI-IIIB-BRU.K03455";
+            //no tag data
+            //given the case that reads were mapped against more than one reference, al.RefID has to be modified
+            al.RefID = 0;
             al.Position = r->getStart2()-1;
+            //no bin, map quality. alignment flag is set extra.
             al.CigarData = r->getCigar2();
             al.MatePosition = r->getStart1()-1;
             al.InsertSize =(-1)*(r->getEnd2()-r->getStart1()+1);
+            al.Filename = filename;
             //set flags
             al.SetIsDuplicate(false);
             al.SetIsFailedQC(false);

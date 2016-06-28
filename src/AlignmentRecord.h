@@ -29,6 +29,7 @@
 #include <api/BamAux.h>
 #include <api/BamAlignment.h>
 #include <api/BamWriter.h>
+#include <api/BamReader.h>
 
 #include "Types.h"
 #include "ShortDnaSequence.h"
