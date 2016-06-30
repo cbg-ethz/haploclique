@@ -22,6 +22,7 @@ add_executable (haploclique
 	Clique.cpp
 	QuasispeciesEdgeCalculator.cpp
         NewEdgeCalculator.cpp
+        #NoMeEdgeCalculator.cpp
 	GaussianEdgeCalculator.cpp
 	AnyDistributionEdgeCalculator.cpp
 	AlignmentRecord.cpp

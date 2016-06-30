@@ -292,6 +292,8 @@ void NewEdgeCalculator::iterateRemainingCovAp2(const AlignmentRecord& ap2, const
 bool NewEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const AlignmentRecord & ap2) const{
     const auto& cov_ap1 = ap1.getCovmap();
     const auto& cov_ap2 = ap2.getCovmap();
+    // -----    ------
+    //                   -----     ----
     if(cov_ap1.back().ref < cov_ap2[0].ref  || cov_ap2.back().ref < cov_ap1[0].ref){
         return false;
     }

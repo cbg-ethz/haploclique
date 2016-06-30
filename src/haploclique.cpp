@@ -40,6 +40,7 @@
 #include "AlignmentRecord.h"
 #include "QuasispeciesEdgeCalculator.h"
 #include "NewEdgeCalculator.h"
+//#include "NoMeEdgeCalculator.h"
 #include "CliqueFinder.h"
 #include "CLEVER.h"
 #include "BronKerbosch.h"
@@ -325,6 +326,7 @@ int main(int argc, char* argv[]) {
     unique_ptr<vector<mean_and_stddev_t> > readgroup_params(nullptr);
     maxPosition1 = (maxPosition1>maxPosition2) ? maxPosition1 : maxPosition2;
     edge_calculator = new NewEdgeCalculator(Q, edge_quasi_cutoff_cliques, overlap_cliques, frameshift_merge, simpson_map, edge_quasi_cutoff_single, overlap_single, edge_quasi_cutoff_mixed, maxPosition1, noProb0);
+    //edge_calculator = new NoMeEdgeCalculator("HELLO");
     if (call_indels) {
         double insert_mean = -1.0;
         double insert_stddev = -1.0;
