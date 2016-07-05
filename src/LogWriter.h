@@ -12,6 +12,7 @@ class LogWriter {
 private:
     std::map<unsigned int, std::list<unsigned int>> vertices_;
     std::map<unsigned int, std::list<unsigned int>> cliques_;
+    std::map<unsigned int, unsigned int> reads_in_cliques_;
     std::ofstream logfile_;
     std::string filename_;
     unsigned int iteration_;
@@ -28,7 +29,8 @@ public:
     };
 
     void reportClique(unsigned int id, std::list<unsigned int> clique) {cliques_[id] = clique;};
-    void initialize() {vertices_.clear(); cliques_.clear();};
+    void reportReadsInCliques(unsigned int id, unsigned int reads) { reads_in_cliques_[id] = reads;};
+    void initialize() {vertices_.clear(); cliques_.clear(); reads_in_cliques_.clear();};
     void finish() {
         logfile_ << ">--" << iteration_++ << "--<" << std::endl;
 
@@ -47,7 +49,7 @@ public:
             for (const auto& i : cl.second) {
                 logfile_ << " " << i;
             }
-            logfile_ << std::endl;
+            logfile_ << " (" << reads_in_cliques_[cl.first] << ")"<< std::endl;
         }
 
     };

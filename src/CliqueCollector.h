@@ -63,6 +63,10 @@ public:
             this->id++;
         }
 
+        if (lw != nullptr) {
+            lw->reportReadsInCliques(this->id-1,al->getReadNamesSet().size());
+        }
+
         superReads->push_back(al);
     };
 
