@@ -64,7 +64,8 @@ public:
         }
 
         if (lw != nullptr) {
-            lw->reportReadsInCliques(this->id-1,al->getReadNamesSet().size());
+            lw->reportReadsInCliques(this->id-1,al->getReadCount());
+            lw->reportReadsHasCliques(al->getReadNamesSet());
         }
 
         superReads->push_back(al);

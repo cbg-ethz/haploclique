@@ -2097,7 +2097,7 @@ void printBAM(std::ostream& output, std::string filename, std::deque<AlignmentRe
         throw std::runtime_error("Couldn't open output Bamfile");
     return;
     }
-    /*
+    /* for a better overview this comment contains information about the members of a BamTools::BamAlignment
         std::string Name;               // read name
         int32_t     Length;             // length of query sequence
         std::string QueryBases;         // 'original' sequence (contained in BAM file)

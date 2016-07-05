@@ -342,7 +342,9 @@ int main(int argc, char* argv[]) {
         indel_os = new ofstream(indel_output_file.c_str());
     }
     LogWriter* lw = nullptr;
-    if (logfile != "") lw = new LogWriter(logfile);
+    unsigned int number_of_reads = originalReadNames.size();
+    std::vector<unsigned int> read_clique_counter (number_of_reads);
+    if (logfile != "") lw = new LogWriter(logfile,read_clique_counter);
 
     CliqueCollector collector(lw);
     CliqueFinder* clique_finder;
@@ -373,7 +375,7 @@ int main(int argc, char* argv[]) {
         return (ct == 1 and filter_singletons and read->getReadCount() <= 1) or (ct > 1 and significance != 0.0 and read->getProbability() < 1.0 / size - significance*stdev);
     };
     int edgecounter = 0;
-    cout << "start: " << originalReadNames.size();
+    cout << "start: " << number_of_reads;
     while (ct != iterations) {
         clique_finder->initialize();
         //cout << "Clique_finder initialized " << ct << endl;
