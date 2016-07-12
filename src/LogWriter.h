@@ -42,7 +42,7 @@ public:
     void initialize() {vertices_.clear(); cliques_.clear(); reads_in_cliques_.clear(); std::fill(read_has_cliques_.begin(), read_has_cliques_.end(), 0);}
     void finish() {
         //logs edges of every node to other nodes
-        logfile_ << ">--" << iteration_++ << "--<" << std::endl;
+        logfile_ << ">--" << iteration_++ << ":edges" << "--<" << std::endl;
 
         for (const auto& adj : vertices_) {
             logfile_ << adj.first << " -- {";
@@ -52,7 +52,7 @@ public:
             logfile_ << "};"<< std::endl;
         }
 
-        logfile_ << "-" << iteration_-1 << "-" << std::endl;
+        logfile_ << ">--" << iteration_-1 << ":cliques" << "--<" << std::endl;
 
         //logs which clique contains which nodes (note: after merging of Alignment Records, these number does not represent the original alignment but of the merged ones)
         for (const auto& cl : cliques_) {
@@ -63,7 +63,7 @@ public:
             logfile_ << " (" << reads_in_cliques_[cl.first] << ")"<< std::endl;
         }
         //logs number of cliques in which each read appears
-        logfile_ << "---abundance of reads in cliques---" << std::endl;
+        logfile_ << ">--" << iteration_-1 <<":read in cliques" << "--<" << std::endl;
         for (int i = 0; i < read_has_cliques_.size(); i++){
             logfile_ << i << ": " << read_has_cliques_[i] << std::endl;
         }
