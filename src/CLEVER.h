@@ -34,12 +34,14 @@ private:
     size_t capacity;
     AlignmentRecord **alignments;
     LogWriter* lw;
+    unsigned int max_cliques;
+    unsigned int clique_counter;
 
     typedef std::pair<unsigned int,size_t> length_and_index_t;
     std::set<length_and_index_t> alignments_by_length;
     void reorganize_storage();
 public:
-    CLEVER(const EdgeCalculator& edge_calculator, CliqueCollector& clique_collector, LogWriter* lw);
+    CLEVER(const EdgeCalculator& edge_calculator, CliqueCollector& clique_collector, LogWriter* lw, unsigned int max_cliques);
     virtual ~CLEVER();
 
     const AlignmentRecord & getAlignmentByIndex(size_t index) const {

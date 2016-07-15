@@ -103,6 +103,8 @@ Options:
                                            calculation in <output>.
   -gff --gff                               Option to create GFF File from output. <output> is used as prefix.
   -bam --bam                               Option to create BAM File from output. <output> is used as prefix.
+  -mc NUM --max_cliques=NUM                Set a threshold for the maximal number of cliques which should be
+                                           considered in the next iteration.
 )";
 
 void usage() {
@@ -278,6 +280,8 @@ int main(int argc, char* argv[]) {
     //-ot CHAR --output_type=CHAR
     bool bam = args["--bam"].asBool();
     bool gff = args["--gff"].asBool();
+    int max_cliques = 0;
+    if (args["--max_cliques"]) max_cliques = stoi(args["--max_cliques"].asString());
 
 
     // END PARAMETERS
@@ -352,7 +356,7 @@ int main(int argc, char* argv[]) {
     if (args["bronkerbosch"].asBool()) {
         clique_finder = new BronKerbosch(*edge_calculator, collector, lw);
     } else {
-        clique_finder = new CLEVER(*edge_calculator, collector, lw);
+        clique_finder = new CLEVER(*edge_calculator, collector, lw, max_cliques);
     }
     if (indel_edge_calculator != 0) {
         clique_finder->setSecondEdgeCalculator(indel_edge_calculator);

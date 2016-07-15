@@ -28,7 +28,7 @@
 using namespace std;
 using namespace boost;
 
-CLEVER::CLEVER(const EdgeCalculator& edge_calculator, CliqueCollector& clique_collector, LogWriter* lw) : CliqueFinder(edge_calculator, clique_collector), lw(lw) {
+CLEVER::CLEVER(const EdgeCalculator& edge_calculator, CliqueCollector& clique_collector, LogWriter* lw, unsigned int max_cliques) : CliqueFinder(edge_calculator, clique_collector), lw(lw), max_cliques(max_cliques) {
     capacity = alignment_set_t::bits_per_block;
     alignments = nullptr;
 }
@@ -47,17 +47,33 @@ void CLEVER::initialize() {
   	alignment_count = 0;
     next_id = 0;
     alignments_by_length.clear();
-
+    clique_counter = 0;
     converged = true;
     initialized = true;
 }
 
 void CLEVER::finish() {
+
     clique_list_t::iterator clique_it = cliques->begin();
-    for (;clique_it!=cliques->end(); ++clique_it) {
-    	Clique* clique = *clique_it;
-    	clique_collector.add(unique_ptr<Clique>(clique));
+    if(max_cliques == 0){
+        for (;clique_it!=cliques->end(); ++clique_it) {
+            Clique* clique = *clique_it;
+            clique_collector.add(unique_ptr<Clique>(clique));
+        }
+    } else {
+        //TO DO: implement
+        while(clique_counter <= max_cliques){
+            std::unique_ptr<AlignmentRecord> read = getRead();
+            std::unique_ptr<Clique> clique = getLargestClique(read);
+            for (auto &r : clique){
+                reads_in_cliques[r] += 1;
+            }
+            clique_collector.add(unique_ptr<Clique>(clique));
+            clique_counter++;
+        }
     }
+
+
     delete cliques;
     cliques = nullptr;
 
