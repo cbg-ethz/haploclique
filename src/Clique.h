@@ -32,6 +32,7 @@ private:
 	size_t rightmost_segment_end;
 	size_t alignment_count;
 	alignment_set_t* alignment_set;
+    std::set<int> cliqueReadNames;
 	CliqueFinder& parent;
 	/** Computes insert_start, insert_end, and rightmost_segment_end from all contained alignments. */
 	void init();
@@ -66,6 +67,12 @@ public:
 	void computeIntervalIntersection(unsigned int* insert_start, unsigned int* insert_end);
 
 	friend std::ostream& operator<<(std::ostream&, const Clique& clique);
+
+    const std::set<int>& getCliqueReadNamesSet() const{
+        return cliqueReadNames;
+    }
+
+
 };
 
 #endif /* CLIQUE_H_ */

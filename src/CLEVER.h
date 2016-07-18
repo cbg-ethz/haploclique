@@ -36,17 +36,23 @@ private:
     LogWriter* lw;
     unsigned int max_cliques;
     unsigned int clique_counter;
+    std::vector<unsigned int> read_in_cliques;
+    bool filter_singletons;
 
     typedef std::pair<unsigned int,size_t> length_and_index_t;
     std::set<length_and_index_t> alignments_by_length;
     void reorganize_storage();
 public:
-    CLEVER(const EdgeCalculator& edge_calculator, CliqueCollector& clique_collector, LogWriter* lw, unsigned int max_cliques);
+    CLEVER(const EdgeCalculator& edge_calculator, CliqueCollector& clique_collector, LogWriter* lw, unsigned int max_cliques, unsigned int number_of_reads, bool filter_singletons);
     virtual ~CLEVER();
 
     const AlignmentRecord & getAlignmentByIndex(size_t index) const {
         assert(index<alignment_count);
     	return *(alignments[index]);
+    }
+
+    unsigned int getPriorityRead() {
+
     }
    
     void finish();

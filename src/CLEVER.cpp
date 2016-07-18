@@ -28,7 +28,9 @@
 using namespace std;
 using namespace boost;
 
-CLEVER::CLEVER(const EdgeCalculator& edge_calculator, CliqueCollector& clique_collector, LogWriter* lw, unsigned int max_cliques) : CliqueFinder(edge_calculator, clique_collector), lw(lw), max_cliques(max_cliques) {
+
+
+CLEVER::CLEVER(const EdgeCalculator& edge_calculator, CliqueCollector& clique_collector, LogWriter* lw, unsigned int max_cliques, unsigned int number_of_reads, bool filter_singletons) : CliqueFinder(edge_calculator, clique_collector), lw(lw), max_cliques(max_cliques), read_in_cliques(number_of_reads), filter_singletons(filter_singletons) {
     capacity = alignment_set_t::bits_per_block;
     alignments = nullptr;
 }
@@ -39,10 +41,15 @@ CLEVER::~CLEVER() {
 	}
 }
 
+// get index of element with smallest
+unsigned int CLEVER::getPriorityRead() {
+    int min_index = std::min_element(this->read_in_cliques.begin(),this->read_in_cliques.end()) - this->read_in_cliques.begin();
+    return min_index;
+}
+
 void CLEVER::initialize() {
     cliques = new clique_list_t();
     alignments = new AlignmentRecord*[capacity];
-
     capacity = alignment_set_t::bits_per_block;
   	alignment_count = 0;
     next_id = 0;
@@ -53,24 +60,36 @@ void CLEVER::initialize() {
 }
 
 void CLEVER::finish() {
-
-    clique_list_t::iterator clique_it = cliques->begin();
+    //entries of read_in_cliques is set to zero at the beginning of each iteration
+    std::fill(read_in_cliques.begin(), read_in_cliques.end(), 0);
     if(max_cliques == 0){
+        clique_list_t::iterator clique_it = cliques->begin();
         for (;clique_it!=cliques->end(); ++clique_it) {
             Clique* clique = *clique_it;
             clique_collector.add(unique_ptr<Clique>(clique));
         }
     } else {
         //TO DO: implement
-        while(clique_counter <= max_cliques){
-            std::unique_ptr<AlignmentRecord> read = getRead();
-            std::unique_ptr<Clique> clique = getLargestClique(read);
-            for (auto &r : clique){
-                reads_in_cliques[r] += 1;
+        if (filter_singletons){
+            while(clique_counter <= max_cliques){
+                //if filter singletons
+
+
+                //get read with largest priority
+                unsigned int read = getPriorityRead();
+                //get largest Clique to read
+                Clique* clique = getLargestClique(read);
+                //cout up all entries of reads which are contained in clique
+                for (const auto &r : clique->getCliqueReadNamesSet()){
+                    read_in_cliques[r] += 1;
+                }
+                clique_collector.add(unique_ptr<Clique>(clique));
+                clique_counter++;
             }
-            clique_collector.add(unique_ptr<Clique>(clique));
-            clique_counter++;
+        } else {
+
         }
+
     }
 
 
@@ -109,7 +128,7 @@ void CLEVER::reorganize_storage() {
 	for (size_t i=0; i<alignment_count; ++i) {
 		// test whether alignment i is still in use
 		if (set_union[i]) {
-			translation_table[j] = i;
+            translation_table[j] = i;
 			new_alignments[j] = alignments[i];
 			// TODO: Once edge criteria are fixed, we can try to (re-)gain some efficiency here...
 // 			if (single_end) {

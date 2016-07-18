@@ -135,6 +135,7 @@ bool read_mean_and_sd(const string& filename, double* mean, double* sd) {
 }
 
 deque<AlignmentRecord*>* readBamFile(string filename, vector<string>& readNames, unsigned int& maxPosition, BamTools::SamHeader& header, BamTools::RefVector& references) {
+    //readNames will contain original read names (not id which is set by addAlignment in CLEVER.cpp)
     typedef std::unordered_map<std::string, AlignmentRecord*> name_map_t;
     name_map_t names_to_reads;
     deque<AlignmentRecord*>* reads = new deque<AlignmentRecord*>;
@@ -356,7 +357,7 @@ int main(int argc, char* argv[]) {
     if (args["bronkerbosch"].asBool()) {
         clique_finder = new BronKerbosch(*edge_calculator, collector, lw);
     } else {
-        clique_finder = new CLEVER(*edge_calculator, collector, lw, max_cliques);
+        clique_finder = new CLEVER(*edge_calculator, collector, lw, max_cliques, originalReadNames.size(), filter_singletons);
     }
     if (indel_edge_calculator != 0) {
         clique_finder->setSecondEdgeCalculator(indel_edge_calculator);

@@ -57,6 +57,7 @@ public:
         AlignmentRecord* al;
 
         if (alignments->size() > 1) {
+            // id gets increased in all iterations, never set to 0 anymore
             al = new AlignmentRecord(alignments, this->id++);
         } else {
             al = new AlignmentRecord(*(alignments->front()));
