@@ -54,7 +54,8 @@ void Clique::init() {
 			leftmost_segment_start = min(leftmost_segment_start, (size_t)ap.getIntervalStart());
 			rightmost_segment_end = max(rightmost_segment_end, (size_t)ap.getIntervalEnd());
 		}
-        std::set<int> & readNames = const_cast<std::set<int> &> (ap.getReadNamesSet());
+        //std::set<int> & readNames = const_cast<std::set<int> &> (ap.getReadNamesSet());
+        const std::set<int> & readNames = ap.getReadNamesSet();
         cliqueReadNames.insert( readNames.begin(),readNames.end());
 		alignment_count += 1;
 	}
@@ -106,7 +107,8 @@ void Clique::add(size_t index) {
 	const AlignmentRecord& ap = parent.getAlignmentByIndex(index);
 	leftmost_segment_start = min(leftmost_segment_start,(size_t)ap.getIntervalStart());
 	rightmost_segment_end = max(rightmost_segment_end,(size_t)ap.getIntervalEnd());
-    std::set<int> & readNames = const_cast<std::set<int> &> (ap.getReadNamesSet());
+    //std::set<int> & readNames = const_cast<std::set<int> &> (ap.getReadNamesSet());
+    const std::set<int> & readNames = ap.getReadNamesSet();
     cliqueReadNames.insert( readNames.begin(),readNames.end());
     alignment_count += 1;
 }

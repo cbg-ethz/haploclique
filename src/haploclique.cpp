@@ -364,8 +364,9 @@ int main(int argc, char* argv[]) {
     }
     ofstream* reads_ofstream = 0;
 
-
-
+    //DEBUG
+    //std::vector<unsigned int> res = {0,0,2,3};
+    //int min_index = std::min_element(res.begin(),res.end()) - res.begin();
 
 
     // Main loop

@@ -51,10 +51,8 @@ public:
     	return *(alignments[index]);
     }
 
-    unsigned int getPriorityRead() {
-
-    }
-   
+    unsigned int getPriorityRead();
+    Clique* getLargestClique(unsigned int readref);
     void finish();
     void initialize();
 

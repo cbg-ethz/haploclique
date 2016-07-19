@@ -47,6 +47,24 @@ unsigned int CLEVER::getPriorityRead() {
     return min_index;
 }
 
+//get clique which contain read with id "read" and
+Clique* CLEVER::getLargestClique(unsigned int readref){
+    //TO DO: implement
+    const std::set<int> *readNames;
+    Clique* res_clique = nullptr;
+    int max = std::numeric_limits<int>::min();
+    clique_list_t::iterator clique_it = cliques->begin();
+    for (;clique_it!=cliques->end(); ++clique_it) {
+        readNames = &((*clique_it)->getCliqueReadNamesSet());
+        //first case: clique's set contains read
+        if(readNames->find(readref) != readNames->end() && readNames->size() > max){
+            max = readNames->size();
+            res_clique = *clique_it;
+        }
+    }
+    return res_clique;
+}
+
 void CLEVER::initialize() {
     cliques = new clique_list_t();
     alignments = new AlignmentRecord*[capacity];
@@ -69,29 +87,42 @@ void CLEVER::finish() {
             clique_collector.add(unique_ptr<Clique>(clique));
         }
     } else {
-        //TO DO: implement
-        if (filter_singletons){
-            while(clique_counter <= max_cliques){
-                //if filter singletons
-
-
-                //get read with largest priority
-                unsigned int read = getPriorityRead();
-                //get largest Clique to read
-                Clique* clique = getLargestClique(read);
-                //cout up all entries of reads which are contained in clique
-                for (const auto &r : clique->getCliqueReadNamesSet()){
-                    read_in_cliques[r] += 1;
-                }
-                clique_collector.add(unique_ptr<Clique>(clique));
-                clique_counter++;
+        //TO DO: finish implementation
+            while(clique_counter <= max_cliques && !cliques->empty()){
+                    //get read with largest priority
+                    unsigned int readref = getPriorityRead();
+                    //get largest Clique to read
+                    Clique* clique = getLargestClique(readref);
+                    if(clique!=nullptr){
+                        if(filter_singletons){
+                            if (clique->getCliqueReadCount() > 1){
+                                //cout up all entries of reads which are contained in clique
+                                for (const auto &r : clique->getCliqueReadNamesSet()){
+                                    read_in_cliques[r] += 1;
+                                }
+                                clique_collector.add(unique_ptr<Clique>(clique));
+                                clique_counter++;
+                            //Clique is a singleton and is not added to final clique set
+                            } else {
+                                read_in_cliques[readref] = std::numeric_limits<int>::max();
+                            }
+                            cliques->remove(clique);
+                        //singletons allowed
+                        } else {
+                            //cout up all entries of reads which are contained in clique
+                            for (const auto &r : clique->getCliqueReadNamesSet()){
+                                read_in_cliques[r] += 1;
+                            }
+                            clique_collector.add(unique_ptr<Clique>(clique));
+                            clique_counter++;
+                            cliques->remove(clique);
+                        }
+                    //clique==nullptr
+                    } else {
+                        read_in_cliques[readref] = std::numeric_limits<int>::max();
+                    }
             }
-        } else {
-
-        }
-
     }
-
 
     delete cliques;
     cliques = nullptr;

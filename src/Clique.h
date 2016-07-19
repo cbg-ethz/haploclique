@@ -68,9 +68,9 @@ public:
 
 	friend std::ostream& operator<<(std::ostream&, const Clique& clique);
 
-    const std::set<int>& getCliqueReadNamesSet() const{
-        return cliqueReadNames;
-    }
+    const std::set<int>& getCliqueReadNamesSet() const{return cliqueReadNames; }
+
+    unsigned int getCliqueReadCount() const { return cliqueReadNames.size(); }
 
 
 };
