@@ -50,15 +50,17 @@ unsigned int CLEVER::getPriorityRead() {
 //get clique which contain read with id "read" and
 Clique* CLEVER::getLargestClique(unsigned int readref){
     //TO DO: implement
-    const std::set<int> *readNames;
+    if (readref == 1857){
+        int k = 0;
+    }
     Clique* res_clique = nullptr;
-    int max = std::numeric_limits<int>::min();
+    auto max = std::numeric_limits<std::size_t>::min();
     clique_list_t::iterator clique_it = cliques->begin();
     for (;clique_it!=cliques->end(); ++clique_it) {
-        readNames = &((*clique_it)->getCliqueReadNamesSet());
+        auto readNames = (*clique_it)->getCliqueReadNamesSet();
         //first case: clique's set contains read
-        if(readNames->find(readref) != readNames->end() && readNames->size() > max){
-            max = readNames->size();
+        if(readNames.find(readref) != readNames.end() && readNames.size() > max){
+            max = readNames.size();
             res_clique = *clique_it;
         }
     }
@@ -88,7 +90,7 @@ void CLEVER::finish() {
         }
     } else {
         //TO DO: finish implementation
-            while(clique_counter <= max_cliques && !cliques->empty()){
+            while(clique_counter < max_cliques && !cliques->empty()){
                     //get read with largest priority
                     unsigned int readref = getPriorityRead();
                     //get largest Clique to read
@@ -102,11 +104,13 @@ void CLEVER::finish() {
                                 }
                                 clique_collector.add(unique_ptr<Clique>(clique));
                                 clique_counter++;
+                                cliques->remove(clique);
                             //Clique is a singleton and is not added to final clique set
                             } else {
                                 read_in_cliques[readref] = std::numeric_limits<int>::max();
+                                cliques->remove(clique);
+                                delete clique;
                             }
-                            cliques->remove(clique);
                         //singletons allowed
                         } else {
                             //cout up all entries of reads which are contained in clique
@@ -142,7 +146,7 @@ void CLEVER::reorganize_storage() {
 	for (;it!=cliques->end(); ++it) {
 		set_union |= (*it)->getAlignmentSet();
 	}
-	size_t new_alignment_count = set_union.count();
+    size_t new_alignment_count = set_union.count();
 	size_t new_capacity = new_alignment_count * 2;
 	// round up to next multiple of block size
 	int k = new_capacity % alignment_set_t::bits_per_block;
@@ -255,7 +259,8 @@ void CLEVER::addAlignment(std::unique_ptr<AlignmentRecord>& alignment_autoptr, i
 	vector<Clique*> new_cliques;
 	while (clique_it!=cliques->end()) {
 		Clique* clique = *clique_it;
-		if (clique->rightmostSegmentEnd() < alignment->getIntervalStart()) {
+        if (clique->rightmostSegmentEnd() < alignment->getIntervalStart() && max_cliques == 0) {
+            //TO DO !!!! should not be added to clique_collector unless criteria is fulfilled given max_cliques (Does it make things worse if cliques are still contained in cliques of clique_finder?
 			clique_it = cliques->erase(clique_it);
 			clique_collector.add(unique_ptr<Clique>(clique));
 		} else {
