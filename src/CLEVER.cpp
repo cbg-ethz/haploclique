@@ -49,10 +49,6 @@ unsigned int CLEVER::getPriorityRead() {
 
 //get clique which contains read with id "readef" and owns the largest number of reads
 Clique* CLEVER::getLargestClique(unsigned int readref){
-    //TO DO: implement
-    if (readref == 1857){
-        int k = 0;
-    }
     Clique* res_clique = nullptr;
     auto max = std::numeric_limits<std::size_t>::min();
     clique_list_t::iterator clique_it = cliques->begin();
