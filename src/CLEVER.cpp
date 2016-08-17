@@ -41,13 +41,13 @@ CLEVER::~CLEVER() {
 	}
 }
 
-// get index of element with smallest
+// get index of element with highest Priority
 unsigned int CLEVER::getPriorityRead() {
     int min_index = std::min_element(this->read_in_cliques.begin(),this->read_in_cliques.end()) - this->read_in_cliques.begin();
     return min_index;
 }
 
-//get clique which contain read with id "read" and
+//get clique which contains read with id "readef" and owns the largest number of reads
 Clique* CLEVER::getLargestClique(unsigned int readref){
     //TO DO: implement
     if (readref == 1857){
