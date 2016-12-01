@@ -42,7 +42,7 @@ HaploClique has not been tested on Windows. The scripts depend on the bash shell
 ######Installation routine:
 If you want to install HaploClique to a non-standard directory, change it with `cmake -DCMAKE_INSTALL_PREFIX=<prefix-path> ..`
 ```bash
-git clone https://github.com/armintoepfer/haploclique
+git clone https://github.com/cbg-ethz/haploclique
 cd haploclique
 git submodule init && git submodule update
 mkdir build
@@ -59,8 +59,4 @@ make install
  - Marcel Meyerheim
  
 ###Contact
-```
-Armin Töpfer
-armin.toepfer (at) gmail.com
-http://www.armintoepfer.com
-```
+Please use the issue tracker
