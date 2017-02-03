@@ -6,3 +6,4 @@ include/*
 *.pyc
 haploclique
 quasispecies.fasta
+.DS_Store

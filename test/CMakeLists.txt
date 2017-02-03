@@ -1,24 +1,32 @@
-find_package(Threads REQUIRED)
+enable_testing()
+add_subdirectory(${HC_EXTERNALDIR}/googletest/googletest external/gtest)
 
-include(ExternalProject)
+get_property(HC_COMPILE_FLAGS GLOBAL PROPERTY HC_COMPIPLE_FLAGS_GLOBAL)
+get_property(HC_LINK_FLAGS GLOBAL PROPERTY HC_LINK_FLAGS_GLOBAL)
+get_property(HC_STATIC GLOBAL PROPERTY HC_STATIC_GLOBAL)
 
-ExternalProject_Add(
-    gtest
-    URL https://github.com/google/googletest/archive/master.zip
-    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/gtest
-    INSTALL_COMMAND ""
+file(GLOB HC_TEST_CPP "unit/*.cpp")
+
+add_executable(unit EXCLUDE_FROM_ALL ${HC_TEST_CPP})
+
+target_link_libraries(unit
+    hc
+    gtest_main
+    ${Boost_LIBRARIES}
 )
+if (HC_STATIC)
+    target_link_libraries(unit BamTools-static)
+else()
+    target_link_libraries(unit BamTools)
+endif()
 
-ExternalProject_Get_Property(gtest source_dir binary_dir)
+set_target_properties(unit PROPERTIES COMPILE_FLAGS ${HC_COMPILE_FLAGS})
+if (HC_LINK_FLAGS)
+    set_target_properties(unit PROPERTIES LINK_FLAGS ${HC_LINK_FLAGS})
+endif()
 
-add_library(libgtest IMPORTED STATIC GLOBAL)
-add_dependencies(libgtest gtest)
-
-set_target_properties(libgtest PROPERTIES
-    "IMPORTED_LOCATION" "${binary_dir}/googlemock/gtest/libgtest.a"
-    "IMPORTED_LINK_INTERFACE_LIBRARIES" "${CMAKE_THREAD_LIBS_INIT}"
-)
-
-include_directories("${source_dir}/googletest/include")
-
-add_subdirectory(unit)
+add_custom_target(check
+    COMMAND unit
+    COMMAND __HC_EXE=${CMAKE_BINARY_DIR}/haploclique cram --xunit-file=${CMAKE_BINARY_DIR}/cram.xml ${HC_TESTDIR}/cram/*.t
+    DEPENDS haploclique unit
+    WORKING_DIRECTORY ${HC_ROOTDIR})
