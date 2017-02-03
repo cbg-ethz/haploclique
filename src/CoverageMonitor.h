@@ -56,7 +56,7 @@ public:
 	size_t getReadGroupCoverage(size_t read_group, size_t pos);
 
 	/** Returns vector of coverages for all read groups. */
-	std::auto_ptr<std::vector<size_t> > getReadGroupCoverages(size_t pos);
+	std::unique_ptr<std::vector<size_t> > getReadGroupCoverages(size_t pos);
 
 	friend std::ostream& operator<<(std::ostream& os, const CoverageMonitor& cm);
 };

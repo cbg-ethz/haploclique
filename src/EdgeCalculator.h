@@ -32,6 +32,8 @@ public:
 	 *  guaranteed not to have an edge to the given pair ap. */
 	virtual void getPartnerLengthRange(const AlignmentRecord& ap, unsigned int* min, unsigned int* max) const = 0;
 
+    virtual void setOverlapCliques(double){}
+
 };
 
 #endif /* EDGECALCULATOR_H_ */

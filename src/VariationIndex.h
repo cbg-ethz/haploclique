@@ -71,10 +71,10 @@ private:
 	bool overlap_queries_allowed;
 	int get_id(const std::string& chromosome, bool create_new);
 	
-	std::auto_ptr<std::vector<size_t> > _containedIn(int chromosome_id, size_t start, size_t end);
-	std::auto_ptr<std::vector<size_t> > _overlapping(int chromosome_id, size_t start, size_t end);
-	std::auto_ptr<std::vector<size_t> > _getDeletions(int chromosome_id, size_t start, size_t end);
-	std::auto_ptr<std::vector<size_t> > _getInsertions(int chromosome_id, size_t position);
+	std::unique_ptr<std::vector<size_t> > _containedIn(int chromosome_id, size_t start, size_t end);
+	std::unique_ptr<std::vector<size_t> > _overlapping(int chromosome_id, size_t start, size_t end);
+	std::unique_ptr<std::vector<size_t> > _getDeletions(int chromosome_id, size_t start, size_t end);
+	std::unique_ptr<std::vector<size_t> > _getInsertions(int chromosome_id, size_t position);
 public:
 	/** Indexes the given variations and keeps a reference to them. That is, the given
 	 *  reference must be valid throughout the lifetime of this object. 
@@ -91,24 +91,24 @@ public:
 	 *  start/end are interpreted as positions between two characters, that is, a value n
 	 *  refers to the position between character n and n-1. Returns a null pointer when there
 	 *  are no variations in that region. */
-	std::auto_ptr<std::vector<size_t> > containedIn(const std::string& chromosome, size_t start, size_t end);
-	std::auto_ptr<std::vector<size_t> > containedIn(int chromosome_id, size_t start, size_t end);
+	std::unique_ptr<std::vector<size_t> > containedIn(const std::string& chromosome, size_t start, size_t end);
+	std::unique_ptr<std::vector<size_t> > containedIn(int chromosome_id, size_t start, size_t end);
 	
 	/** Returns the set of indices (w.r.t. to the vector given at construction time) of
 	 *  variations that overlap with the given interval from start to end.
 	 *  start/end are interpreted as positions between two characters, that is, a value n
 	 *  refers to the position between character n and n-1. Returns a null pointer when there
 	 *  are no variations in that region. */
-	std::auto_ptr<std::vector<size_t> > overlapping(const std::string& chromosome, size_t start, size_t end);
-	std::auto_ptr<std::vector<size_t> > overlapping(int chromosome_id, size_t start, size_t end);
+	std::unique_ptr<std::vector<size_t> > overlapping(const std::string& chromosome, size_t start, size_t end);
+	std::unique_ptr<std::vector<size_t> > overlapping(int chromosome_id, size_t start, size_t end);
 	
 	/** Returns deletions with exactly the given start and end point. */
-	std::auto_ptr<std::vector<size_t> > getDeletions(const std::string& chromosome, size_t start, size_t end);
-	std::auto_ptr<std::vector<size_t> > getDeletions(int chromosome_id, size_t start, size_t end);
+	std::unique_ptr<std::vector<size_t> > getDeletions(const std::string& chromosome, size_t start, size_t end);
+	std::unique_ptr<std::vector<size_t> > getDeletions(int chromosome_id, size_t start, size_t end);
 	
 	/** Returns deletions with exactly the position. */
-	std::auto_ptr<std::vector<size_t> > getInsertions(const std::string& chromosome, size_t position);
-	std::auto_ptr<std::vector<size_t> > getInsertions(int chromosome_id, size_t position);
+	std::unique_ptr<std::vector<size_t> > getInsertions(const std::string& chromosome, size_t position);
+	std::unique_ptr<std::vector<size_t> > getInsertions(int chromosome_id, size_t position);
 };
 
 #endif /* VARIATIONINDEX_H_ */

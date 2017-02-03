@@ -26,10 +26,10 @@
 
 #include <boost/unordered_set.hpp>
 
-#include <bamtools/api/BamAux.h>
-#include <bamtools/api/BamAlignment.h>
-#include <bamtools/api/BamWriter.h>
-#include <bamtools/api/BamReader.h>
+#include <api/BamAux.h>
+#include <api/BamAlignment.h>
+#include <api/BamWriter.h>
+#include <api/BamReader.h>
 
 #include "IndelLengthDistribution.h"
 #include "PositionSet.h"
@@ -113,7 +113,7 @@ private:
 			int i2 = 0;
 			int pos1 = 0;
 			int pos2 = 0;
-			for (size_t j=0; j<indel_count1; ++j) {
+			for (int j=0; j<indel_count1; ++j) {
 				while ((s1.cigar[i1].Type != 'D') && (s1.cigar[i1].Type != 'I')) {
 					if ((s1.cigar[i1].Type == 'D') || (s1.cigar[i1].Type == 'M') || (s1.cigar[i1].Type == 'X') || (s1.cigar[i1].Type == '=')) {
 						pos1 += s1.cigar[i1].Length;
@@ -140,7 +140,7 @@ private:
 	} subalignment_comparator_t;
 	
 	static void write_alignment_record(BamTools::BamWriter& bam_writer, const std::vector<BamTools::BamAlignment*>& alignments, const std::vector<std::vector<subalignment_t> >& subalignments, int aln_idx, int cigar_idx, const BamTools::BamAlignment* mate_aln, double probability, bool is_primary, bool retain_alternative_cigars, bool reduce_cigar,  bool readgroups_from_names);
-	static std::auto_ptr<std::vector<double> > compute_alignment_distribution(const std::vector<std::vector<subalignment_t> >& subalignments, int* best);
+	static std::unique_ptr<std::vector<double> > compute_alignment_distribution(const std::vector<std::vector<subalignment_t> >& subalignments, int* best);
 public:
 	/** Parse a CIGAR string and append result to the given target vector. */
 	static void parseCigar(const std::string& cigar, std::vector<BamTools::CigarOp>* target);
@@ -152,7 +152,7 @@ public:
 	static void getSubalignments(const BamTools::BamAlignment& aln, std::vector<subalignment_t>* target);
 	
 	/** Extracts all subalignments and creates a record for a given read pair. */
-	static std::auto_ptr<read_t> createReadRecord(const std::vector<BamTools::BamAlignment*>& alignments1, const std::vector<BamTools::BamAlignment*>& alignments2);
+	static std::unique_ptr<read_t> createReadRecord(const std::vector<BamTools::BamAlignment*>& alignments1, const std::vector<BamTools::BamAlignment*>& alignments2);
 
 	/** Recompute PHRED score based on insertion/deletion length distributions, CIGAR string, and known PHRED scores of mismatches. */
 	static void recalibratePhredScore(subalignment_t* subalignment, const BamTools::BamAlignment& aln, const IndelLengthDistribution& insertion_costs, const IndelLengthDistribution& deletion_costs, PositionSet* snp_set = 0, int phred_offset = 33, VariationIndex* variation_set = 0);
@@ -176,7 +176,7 @@ public:
 	static void expandXA(const BamTools::BamReader& bam_reader, const BamTools::BamAlignment& aln, std::vector<BamTools::BamAlignment*>* target, boost::unordered_set<BamHelper::alignment_coordinate_t>* coordinates_set = 0, long long* skipped_counter = 0);
 
 	/** Returns variations, i.e. insertions and deletions, present in the given alignments. */
-	static std::auto_ptr<std::vector<Variation> > variationsFromAlignment(const BamTools::RefVector& bam_ref_data, const BamTools::BamAlignment& aln);
+	static std::unique_ptr<std::vector<Variation> > variationsFromAlignment(const BamTools::RefVector& bam_ref_data, const BamTools::BamAlignment& aln);
 
 	/** Reads all alignment pairs that lie in the given region and appends them to
 	 *  the given vector "target". Ownership is transferred, i.e. the alignments 

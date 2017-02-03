@@ -32,6 +32,7 @@ private:
 	size_t rightmost_segment_end;
 	size_t alignment_count;
 	alignment_set_t* alignment_set;
+    std::set<int> cliqueReadNames;
 	CliqueFinder& parent;
 	/** Computes insert_start, insert_end, and rightmost_segment_end from all contained alignments. */
 	void init();
@@ -40,13 +41,13 @@ private:
 
 public:
 	Clique(CliqueFinder& parent, size_t index, size_t capacity);
-	Clique(CliqueFinder& parent, std::auto_ptr<alignment_set_t> alignments);
+	Clique(CliqueFinder& parent, std::unique_ptr<alignment_set_t>& alignments);
 	virtual ~Clique();
 
 	void add(size_t index);
 
 	/** Returns the intersection between nodes in the clique and the given set of nodes. */
-	std::auto_ptr<alignment_set_t> intersect(const alignment_set_t& set) const;
+	std::unique_ptr<alignment_set_t> intersect(const alignment_set_t& set) const;
 
 	/** Updates the current bit set representation by a new one, where
 	 *  new_table[j] := old_table[translation_table[j]]. */
@@ -61,18 +62,17 @@ public:
 
 	const alignment_set_t& getAlignmentSet() const { return *alignment_set; }
 
-	std::auto_ptr<std::vector<const AlignmentRecord*> > getAllAlignments() const;
+	std::unique_ptr<std::vector<const AlignmentRecord*> > getAllAlignments() const;
 
 	void computeIntervalIntersection(unsigned int* insert_start, unsigned int* insert_end);
 
-	/** Returns the total coverage of all alignments at the center of the represented intervals, not
-	 *  only those that are in the clique. */
-	size_t totalCenterCoverage();
-
-	/** Returns coverage at putative breakpoint for all read groups separately. */
-	std::auto_ptr<std::vector<size_t> > readGroupWiseCoverage();
-
 	friend std::ostream& operator<<(std::ostream&, const Clique& clique);
+
+    const std::set<int>& getCliqueReadNamesSet() const{return cliqueReadNames; }
+
+    unsigned int getCliqueReadCount() const { return cliqueReadNames.size(); }
+
+
 };
 
 #endif /* CLIQUE_H_ */

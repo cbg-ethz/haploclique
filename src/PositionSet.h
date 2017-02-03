@@ -23,7 +23,7 @@
 #include <boost/unordered_map.hpp>
 #include <boost/dynamic_bitset.hpp>
 
-#include <bamtools/api/BamAux.h>
+#include <api/BamAux.h>
 
 /** A set of genomic positions represented by bitvectors. */
 class PositionSet {

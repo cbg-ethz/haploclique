@@ -71,9 +71,9 @@ size_t CoverageMonitor::getReadGroupCoverage(size_t read_group, size_t pos) {
 	return readwise_monitors[read_group].getCoverage(pos);
 }
 
-auto_ptr<vector<size_t> > CoverageMonitor::getReadGroupCoverages(size_t pos) {
+unique_ptr<vector<size_t> > CoverageMonitor::getReadGroupCoverages(size_t pos) {
 	assert(read_groups != 0);
-	auto_ptr<vector<size_t> > result(new vector<size_t>());
+	unique_ptr<vector<size_t> > result(new vector<size_t>());
 	for (size_t i=0; i<read_groups->size(); ++i) {
 		result->push_back(readwise_monitors[i].getCoverage(pos));
 	}

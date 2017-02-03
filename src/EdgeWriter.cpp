@@ -20,32 +20,35 @@
 
 using namespace std;
 
-EdgeWriter::EdgeWriter(std::ostream& os) : os(os) {
-	offset = 0;
-	finished = false;
+EdgeWriter::EdgeWriter(std::ostream& os) : os(os), vertex_to_read_names() {
+	finished = true;
 }
 
 EdgeWriter::~EdgeWriter() {
 	finish();
 }
 
+void EdgeWriter::initialize() {
+    nodes.clear();
+    vertex_to_read_names.clear();
+
+    finished = false;
+}
 
 void EdgeWriter::addEdge(const AlignmentRecord& node1, const AlignmentRecord& node2) {
 	assert(!finished);
-	assert((node1.getID()>=offset) && (node2.getID()>=offset));
-	alignment_id_t max_id = max(node1.getID(), node2.getID());
-	while (offset + nodes.size() <= max_id) {
-		nodes.push_back(new node_set_t());
-	}
-	nodes[node1.getID() - offset]->insert(node2.getID());
-	nodes[node2.getID() - offset]->insert(node1.getID());
+
+	nodes[node1.getID()].insert(node2.getID());
+	nodes[node2.getID()].insert(node1.getID());
+
+    vertex_to_read_names[node1.getID()] = node1.getName();
+    vertex_to_read_names[node2.getID()] = node2.getName();
 }
 
 void EdgeWriter::printNode(alignment_id_t id) {
-	assert(nodes[id-offset]!=0);
-	vector<alignment_id_t> adj_nodes(nodes[id-offset]->begin(), nodes[id-offset]->end());
+	vector<alignment_id_t> adj_nodes(nodes[id].begin(), nodes[id].end());
 	sort(adj_nodes.begin(), adj_nodes.end());
-	os << id << " ->";
+	os << id << ":" << vertex_to_read_names[id] << " ->";
 	for (size_t i=0; i<adj_nodes.size(); ++i) {
 		os << " " << adj_nodes[i];
 	}
@@ -54,27 +57,12 @@ void EdgeWriter::printNode(alignment_id_t id) {
 
 void EdgeWriter::setNodeCompleted(const AlignmentRecord& node) {
 	assert(!finished);
-	const alignment_id_t& id = node.getID();
-	assert(id>=offset);
-	while (offset + nodes.size() <= id) {
-		nodes.push_back(new node_set_t());
-	}
-	printNode(id);
-	delete nodes[id-offset];
-	nodes[id-offset] = 0;
-	while (nodes[0] == 0) {
-		nodes.pop_front();
-		offset += 1;
-	}
 }
 
 void EdgeWriter::finish() {
 	if (finished) return;
-	for (size_t i=0; i<nodes.size(); ++i) {
-		if (nodes[i] != 0) {
-			printNode(i+offset);
-			delete nodes[i];
-		}
+	for (auto const &it : nodes) {
+		printNode(it.first);
 	}
 	nodes.clear();
 	finished = true;

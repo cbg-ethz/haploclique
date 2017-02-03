@@ -104,7 +104,7 @@ void HistogramBasedDistribution::printWithGaussian(ostream& os, double mean, dou
 	}
 }
 
-std::auto_ptr<std::vector<double> > HistogramBasedDistribution::toDistribution(double tailCutoff, int* offset) const {
+std::unique_ptr<std::vector<double> > HistogramBasedDistribution::toDistribution(double tailCutoff, int* offset) const {
 	// determine start point
 	int min_insert_length = min;
 	int min_idx = -1;
@@ -136,7 +136,7 @@ std::auto_ptr<std::vector<double> > HistogramBasedDistribution::toDistribution(d
 		p_sum += p;
 	}
 	// create result
-	auto_ptr<vector<double> > result(new vector<double>());
+	unique_ptr<vector<double> > result(new vector<double>());
 	int k = min_idx;
 	int i = min_insert_length;
 	while (i <= max_insert_length) {

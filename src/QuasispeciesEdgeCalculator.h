@@ -19,6 +19,8 @@
 #ifndef QUASISPECIESEDGECALCULATOR_H_
 #define QUASISPECIESEDGECALCULATOR_H_
 
+#include <set>
+
 #include "AlignmentRecord.h"
 #include "EdgeCalculator.h"
 

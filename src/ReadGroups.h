@@ -25,9 +25,9 @@
 
 #include <boost/unordered_map.hpp>
 
-#include <bamtools/api/SamReadGroup.h>
-#include <bamtools/api/SamReadGroupDictionary.h>
-#include <bamtools/api/BamAlignment.h>
+#include <api/SamReadGroup.h>
+#include <api/SamReadGroupDictionary.h>
+#include <api/BamAlignment.h>
 
 class ReadGroups {
 private:

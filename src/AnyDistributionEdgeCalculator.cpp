@@ -1,5 +1,4 @@
-/* Copyright 2012 Tobias Marschall
- * 
+/* 
  * This file is part of HaploClique.
  * 
  * HaploClique is free software: you can redistribute it and/or modify
@@ -37,7 +36,7 @@ AnyDistributionEdgeCalculator::AnyDistributionEdgeCalculator(double significance
 	for (size_t i=0; i < insert_size_dist->size(); ++i) insert_size_dist->at(i) /= sum;
 	allowable_insert_size_diff = computeAllowableInsertSizeDiff();
 	// cout << "allowable insert size difference: " << allowable_insert_size_diff << endl;
-	auto_ptr<vector<double> > insert_size_sum_dist = Distributions::convolve(*insert_size_dist, *insert_size_dist, insert_size_dist_offset, insert_size_dist_offset, &insert_size_sum_ccdf_offset);
+	unique_ptr<vector<double> > insert_size_sum_dist = Distributions::convolve(*insert_size_dist, *insert_size_dist, insert_size_dist_offset, insert_size_dist_offset, &insert_size_sum_ccdf_offset);
 	this->insert_size_sum_ccdf = Distributions::toCCDF(*insert_size_sum_dist).release();
 }
 
