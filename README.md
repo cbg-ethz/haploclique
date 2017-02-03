@@ -15,7 +15,7 @@ Armin Töpfer, Tobias Marschall, Rowena A. Bull, Fabio Luciani, Alexander Schön
 ## Documentation
  - [Installation](doc/INSTALL.md)
  - [Usage](doc/USAGE.md)
-
+ 
 ## Contributions
  - [Armin Töpfer](http://www.armintoepfer.com)
  - [Tobias Marschall](https://bioinf.mpi-inf.mpg.de/homepage/index.php?&account=marschal)
@@ -25,3 +25,6 @@ Armin Töpfer, Tobias Marschall, Rowena A. Bull, Fabio Luciani, Alexander Schön
 
 ## Contact
 Please use the issue tracker
+
+## Build
+[![CircleCI](https://img.shields.io/circleci/project/github/RedSparr0w/node-csgo-parser.svg)](https://circleci.com/gh/cbg-ethz/haploclique/tree/master)
