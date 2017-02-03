@@ -13,7 +13,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HaploClique.  If not, see <http://www.gnu.org/licenses/>.
+# along with HaploClique. If not, see <http://www.gnu.org/licenses/>
 
 cmake_minimum_required (VERSION 2.6) 
 project (STRUCTVAR)
@@ -56,5 +56,6 @@ endif()
 
 add_subdirectory(external/BamTools/src/api)
 add_subdirectory(src)
+add_subdirectory(test)
 
 #install(PROGRAMS scripts/haploclique-assembly scripts/postprocess-predictions bwa/bwa samtools/samtools DESTINATION bin)

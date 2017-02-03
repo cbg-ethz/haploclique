@@ -8,6 +8,7 @@ machine:
 
   environment:
     # Add environment variable SAF as the parent directory of ConsensusFixer and InDelFixer.
+
     SAF: "${HOME}/${CIRCLE_PROJECT_REPONAME}/"
 
 ## Customize checkout
