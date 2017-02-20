@@ -140,57 +140,43 @@ deque<AlignmentRecord*>* readBamFile(string filename, vector<string>& readNames,
     name_map_t names_to_reads;
     deque<AlignmentRecord*>* reads = new deque<AlignmentRecord*>;
     BamTools::BamReader bamreader;
+
     if (not bamreader.Open(filename)) {
-        cerr << bamreader.GetFilename() << endl;
-        throw std::runtime_error("Couldn't open Bamfile");
+        throw std::runtime_error("Couldn't open Bamfile.");
     }
+    
     BamTools::BamAlignment alignment;
+    
     // retrieve 'metadata' from input BAM files, these are required by BamWriter
     header = bamreader.GetHeader();
     references = bamreader.GetReferenceData();
 
-    //int readcounter = 0;
-    //int singleendcounter = 0;
-    //int pairedendcounter = 0;
-    //int overlap = 0;
-
     while (bamreader.GetNextAlignment(alignment)) {
-        /*std::size_t found = alignment.QueryBases.find('N');
-        if (found!=std::string::npos){
-            cout << alignment.Name << endl;
-            cout << alignment.QueryBases << endl;
-            cout << alignment.Qualities << endl;
-            cout << endl;
-        }*/
         bool valid = false;
         for (auto& i : alignment.CigarData){
             if (i.Type == 'M' && i.Length > 0) valid = true;
         }
         if(alignment.CigarData.size() > 0 && valid){
             if(names_to_reads.count(alignment.Name) > 0) {
-                //cout << alignment.Name << endl;
                 names_to_reads[alignment.Name]->pairWith(alignment);
-                /*if (names_to_reads[alignment.Name]->isSingleEnd()){
-                    ++overlap;
-                    ++readcounter;
-                } else {
-                    pairedendcounter++;
-                    ++readcounter;
-                }*/
                 reads->push_back(names_to_reads[alignment.Name]);
                 names_to_reads.erase(alignment.Name);
             } else {
                 names_to_reads[alignment.Name] = new AlignmentRecord(alignment, readNames.size(), &readNames);
                 readNames.push_back(alignment.Name);
-                //++readcounter;
             }
         }
     }
 
-    // Push all single-end reads remaining in names_to_reads into the reads vector. Unmapped reads are filtered out in advance.
+    // push all single-end reads remaining in names_to_reads into the reads vector. Unmapped reads are filtered out in advance.
     for (const auto& i : names_to_reads) {
         reads->push_back(i.second);
-        //readcounter++;
+    }
+    
+    // if no reads could be retrieved from the BamFile
+    if (reads->empty()){
+        cerr << bamreader.GetFilename() << endl;
+        throw std::runtime_error("No reads could be retrieved from the BamFile. ");
     }
 
     bamreader.Close();
@@ -200,39 +186,10 @@ deque<AlignmentRecord*>* readBamFile(string filename, vector<string>& readNames,
     sort(reads->begin(), reads->end(), comp);
     cout << "Read BamFile: done" << endl;
 
-    //DEBUGGING
-    //check which alignments have no cigar string -> no covered positions -> no edge possible
-    /*while(not reads->empty()){
-        assert(reads->front() != nullptr);
-        unique_ptr<AlignmentRecord> al_ptr(reads->front());
-        reads->pop_front();
-        if (al_ptr->getCigar1().size() == 0){
-            cout << al_ptr->getName() << endl;
-        }
-    }
-    //cout << "Number of Reads: " << readcounter << endl;
-    //cout << "Number of Pairs: " << pairedendcounter << endl;
-    //cout << "Number of Overlapping Pairs: " << overlap << endl;
-    //check number of single ends and paired ends after merging
-    int counter = 0;
-    while(not reads->empty()){
-            assert(reads->front() != nullptr);
-            unique_ptr<AlignmentRecord> al_ptr(reads->front());
-            reads->pop_front();
-            if (al_ptr->isSingleEnd()){
-                singleendcounter++;
-            } else if (al_ptr->isPairedEnd()){
-                pairedendcounter++;
-            }
-            counter++;
-    }
-    cout << singleendcounter << " " << pairedendcounter << " " <<  counter << endl;
-    */
     maxPosition = (*std::max_element(std::begin(*reads), std::end(*reads),
                               [](const AlignmentRecord* lhs,const AlignmentRecord* rhs){
         return lhs->getIntervalEnd() < rhs->getIntervalEnd();
     }))->getIntervalEnd();
-
 
     return reads;
 }
@@ -325,7 +282,20 @@ int main(int argc, char* argv[]) {
     unsigned int maxPosition1;
     BamTools::SamHeader header;
     BamTools::RefVector references;
-    deque<AlignmentRecord*>* reads = readBamFile(bamfile, originalReadNames,maxPosition1,header,references);
+
+    deque<AlignmentRecord*>* reads;
+    try{
+        reads = readBamFile(bamfile, originalReadNames,maxPosition1,header,references);
+    }
+    catch(const runtime_error& error){
+        cerr << error.what() << endl;
+        return 1;
+    }
+    catch(...){
+        cerr << "Unexpected error while reading BamFile." << endl;
+        return 1;
+    }
+    
     EdgeCalculator* edge_calculator = nullptr;
     EdgeCalculator* indel_edge_calculator = nullptr;
     unique_ptr<vector<mean_and_stddev_t> > readgroup_params(nullptr);
