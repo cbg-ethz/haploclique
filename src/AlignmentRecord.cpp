@@ -2219,3 +2219,77 @@ void printBAM(std::ostream& output, std::string filename, std::deque<AlignmentRe
     writer.Close();
 }
 
+void AlignmentRecord::saveAlignmentRecord(const char * filename){
+    std::ofstream ofs;
+    ofs.exceptions(ofstream::failbit | ofstream::badbit);
+    
+    try{
+        ofs.open(filename);
+        ofs << this->name << endl;
+        ofs << this->start1 << endl;
+        ofs << this->end1 << endl;
+        ofs << this->phred_sum1 << endl;
+        ofs << this->start2 << endl;
+        ofs << this->end2 << endl;
+        ofs << this->phred_sum2 << endl;
+        ofs << this->probability << endl;
+        ofs << this->single_end << endl;
+        ofs << this->cov_pos.size() << endl;
+        
+        std::vector<AlignmentRecord::mapValue>::const_iterator it;
+        
+        for(it = this->cov_pos.begin(); it != this->cov_pos.end(); it++){
+            ofs << it->ref << " "
+            << it->base << " "
+            << it->qual << " "
+            << it->prob << " "
+            << it->pir << " "
+            << it->read
+            << '\n';
+        }
+    }
+    catch (const ifstream::failure& e) {
+        cout << "Exception opening/writing "<< filename;
+    }
+    
+    ofs.close();
+}
+
+void AlignmentRecord::restoreAlignmentRecord(const char * filename){
+    std::ifstream ifs;
+    ifs.exceptions(ifstream::failbit | ifstream::badbit);
+    
+    try{
+        ifs.open(filename);
+        ifs >> this->name;
+        ifs >> this->start1;
+        ifs >> this->end1;
+        ifs >> this->phred_sum1;
+        ifs >> this->start2;
+        ifs >> this->end2;
+        ifs >> this->phred_sum2;
+        ifs >> this->probability;
+        ifs >> this->single_end;
+        
+        int nob = 0;
+        ifs >> nob;
+        
+        int ref; //pos in ref
+        char base;
+        char qual; //phred score of base (QUALiy+33)
+        double prob; //error probability for qual
+        int pir; //position in read
+        int read; //number of paired end read: 0 for first, 1 for second read
+        
+        for(int i=0; i<nob; i++){
+            ifs >> ref >> base >> qual >> prob >> pir >> read;
+            this->cov_pos.push_back({ref,base,qual,prob,pir,read});
+        }
+    }
+    catch (const ifstream::failure& e) {
+        cout << "Exception opening/reading "<< filename;
+    }
+    
+    ifs.close();
+}
+

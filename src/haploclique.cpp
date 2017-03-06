@@ -180,9 +180,9 @@ deque<AlignmentRecord*>* readBamFile(string filename, vector<string>& readNames,
     }
 
     bamreader.Close();
-
+    
     auto comp = [](AlignmentRecord* r1, AlignmentRecord* r2) { return r1->getIntervalStart() < r2->getIntervalStart(); };
-
+    
     sort(reads->begin(), reads->end(), comp);
     cout << "Read BamFile: done" << endl;
 
@@ -196,8 +196,6 @@ deque<AlignmentRecord*>* readBamFile(string filename, vector<string>& readNames,
 
 int main(int argc, char* argv[]) {
  
-    //cout << "Test\n" << endl;
-
     map<std::string, docopt::value> args
         = docopt::docopt(USAGE,
                          { argv + 1, argv + argc },
@@ -269,13 +267,10 @@ int main(int argc, char* argv[]) {
             } else {
                 simpson_map[atoi(words[0].c_str())] = std::log10(pow(atof(words[1].c_str()),2)+pow(atof(words[2].c_str()),2)+pow(atof(words[3].c_str()),2)+pow(atof(words[4].c_str()),2));
                 maxPosition2=atoi(words[0].c_str());
-                //cerr << simpson_map[atoi(words[0].c_str())] << endl;
             }
         }
         ia.close();
     }
-    //cout << "PARSE PRIOR: done" << endl;
-
 
     clock_t clock_start = clock();
     vector<string> originalReadNames;
@@ -301,7 +296,7 @@ int main(int argc, char* argv[]) {
     unique_ptr<vector<mean_and_stddev_t> > readgroup_params(nullptr);
     maxPosition1 = (maxPosition1>maxPosition2) ? maxPosition1 : maxPosition2;
     edge_calculator = new NewEdgeCalculator(Q, edge_quasi_cutoff_cliques, overlap_cliques, frameshift_merge, simpson_map, edge_quasi_cutoff_single, overlap_single, edge_quasi_cutoff_mixed, maxPosition1, noProb0);
-    //edge_calculator = new NoMeEdgeCalculator("HELLO");
+
     if (call_indels) {
         double insert_mean = -1.0;
         double insert_stddev = -1.0;
@@ -312,10 +307,12 @@ int main(int argc, char* argv[]) {
         cerr << "Null distribution: mean " << insert_mean << ", sd " <<  insert_stddev << endl;
         indel_edge_calculator = new GaussianEdgeCalculator(indel_edge_sig_level,insert_mean,insert_stddev);
     }
+    
     std::ofstream* indel_os = nullptr;
     if (call_indels) {
         indel_os = new ofstream(indel_output_file.c_str());
     }
+    
     LogWriter* lw = nullptr;
     unsigned int number_of_reads = originalReadNames.size();
     std::vector<unsigned int> read_clique_counter (number_of_reads);
@@ -334,61 +331,35 @@ int main(int argc, char* argv[]) {
     }
     ofstream* reads_ofstream = 0;
 
-    //DEBUG
-    //std::vector<unsigned int> res = {0,0,2,3};
-    //int min_index = std::min_element(res.begin(),res.end()) - res.begin();
-
-
     // Main loop
     int ct = 0;
     double stdev = 1.0;
     auto filter_fn = [&](unique_ptr<AlignmentRecord>& read, int size) {
-        //if (ct == 8){
-        //    cout << read->getName() << " " <<read->getProbability() << " " << 1.0 /(size) << " " << significance*stdev << endl;
-        //    bool t =  read->getProbability() < 1.0 /size - significance*stdev;
-        //    cout << t << endl;
-        //}
         return (ct == 1 and filter_singletons and read->getReadCount() <= 1) or (ct > 1 and significance != 0.0 and read->getProbability() < 1.0 / size - significance*stdev);
     };
+    
     int edgecounter = 0;
     cout << "start: " << number_of_reads;
     while (ct != iterations) {
         clique_finder->initialize();
-        //cout << "Clique_finder initialized " << ct << endl;
-        //if(ct >= 5 && reads->size()<100 ){
-        //if(ct== 5){
-        //    edge_calculator->setOverlapCliques(0.1);
-        //}
-        //if(ct==8){
-        //    int k = 0;
-        //}
         if (lw != nullptr) lw->initialize();
         int size = reads->size();
         while(not reads->empty()) {
             assert(reads->front() != nullptr);
-
             unique_ptr<AlignmentRecord> al_ptr(reads->front());
-            //if(al_ptr->getName() == "Clique_1037"){
-            //    int k = 0;
-            //}
             reads->pop_front();
             if (filter_fn(al_ptr,size)) continue;
-
             clique_finder->addAlignment(al_ptr,edgecounter);
-            //cout << "addAlignment " << ct << endl;
         }
+        
         cout << "\tedges: " << edgecounter << endl;
 
         delete reads;
-        //cout << "reads deleted " << ct << endl;
         clique_finder->finish();
-        //cout << "clique_finder finished " << ct << endl;
         reads = collector.finish();
-        //cout << "collector finish " << ct << endl;
         if (lw != nullptr) lw->finish();
 
         stdev = setProbabilities(*reads);
-        //if(ct == 5) break;
         if (clique_finder->hasConverged()) break;
         cout << ct++ << ": " << reads->size();
         edgecounter = 0;
@@ -419,11 +390,6 @@ int main(int argc, char* argv[]) {
     cout << "final: " << reads->size() << endl;
 
     for (auto&& r : *reads) {
-    //    if(r->getName() == "Clique_3370"){
-    //        for (auto& i : r->getReadNames()){
-    //            cout << i << endl;
-    //       }
-    //    }
         delete r;
     }
 

@@ -80,6 +80,7 @@ private:
     void mergeAlignmentRecordsPaired(const AlignmentRecord& ar);
     void mergeAlignmentRecordsMixed(const AlignmentRecord& ar);
 public:
+    AlignmentRecord(){}
     AlignmentRecord(const BamTools::BamAlignment& alignment, int id, std::vector<std::string>* readNameMap);
     AlignmentRecord(std::unique_ptr<std::vector<const AlignmentRecord*>>& alignments,unsigned int clique_id);
     /** merges overlapping paired end reads while reading in bam files*/
@@ -154,6 +155,8 @@ public:
     friend void printReads(std::ostream& output, std::deque<AlignmentRecord*>&, int doc_haplotypes);
     friend void printGFF(std::ostream& output, std::deque<AlignmentRecord*>& reads);
     friend void printBAM(std::ostream& output, std::string filename, std::deque<AlignmentRecord*>& reads, BamTools::SamHeader& header, BamTools::RefVector& references);
+    void restoreAlignmentRecord(const char * filename); 
+    void saveAlignmentRecord(const char * filename);
 };
 
 #endif /* ALIGNMENTRECORD_H_ */
