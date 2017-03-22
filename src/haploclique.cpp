@@ -207,7 +207,7 @@ int main(int argc, char* argv[]) {
     }
     // PARAMETERS
     string bamfile = args["<bamfile>"].asString();
-    string outfile = "quasispecies.fasta";
+    string outfile = "quasispecies";
     if (args["<output>"]) outfile = args["<output>"].asString();
     double edge_quasi_cutoff_cliques = stod(args["--edge_quasi_cutoff_cliques"].asString());
     double edge_quasi_cutoff_single = stod(args["--edge_quasi_cutoff_single"].asString());
