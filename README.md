@@ -7,7 +7,7 @@ Our approach can be used to:
  - assemble full-length viral haplotypes
  - detect large deletions and insertions from paired-end data.
 
-####Reference implementation of:
+#### Reference implementation of:
 Armin Töpfer, Tobias Marschall, Rowena A. Bull, Fabio Luciani, Alexander Schönhuth, and Niko Beerenwinkel.
 <b>[Viral quasispecies assembly via maximal clique finding](http://www.ploscompbiol.org/article/info%3Adoi%2F10.1371%2Fjournal.pcbi.1003515)</b>
 <i>PLOS Computational Biology</i>, 2014.
