@@ -40,7 +40,6 @@
 #include "AlignmentRecord.h"
 #include "QuasispeciesEdgeCalculator.h"
 #include "NewEdgeCalculator.h"
-//#include "NoMeEdgeCalculator.h"
 #include "CliqueFinder.h"
 #include "CLEVER.h"
 #include "BronKerbosch.h"
@@ -99,7 +98,7 @@ Options:
   -d NUM --doc_haplotypes=NUM              Used in simulation studies with known
                                            haplotypes to document which reads
                                            contributed to which final cliques (3 or 5).
-  -p0 --noProb0                            ignore the tail probabilites during edge
+  -p0 --no_prob0                            ignore the tail probabilites during edge
                                            calculation in <output>.
   -gff --gff                               Option to create GFF File from output. <output> is used as prefix.
   -bam --bam                               Option to create BAM File from output. <output> is used as prefix.
@@ -134,7 +133,7 @@ bool read_mean_and_sd(const string& filename, double* mean, double* sd) {
     return true;
 }
 
-deque<AlignmentRecord*>* readBamFile(string filename, vector<string>& readNames, unsigned int& maxPosition, BamTools::SamHeader& header, BamTools::RefVector& references) {
+deque<AlignmentRecord*>* readBamFile(string filename, vector<string>& readNames, unsigned int& max_position, BamTools::SamHeader& header, BamTools::RefVector& references) {
     //readNames will contain original read names (not id which is set by addAlignment in CLEVER.cpp)
     typedef std::unordered_map<std::string, AlignmentRecord*> name_map_t;
     name_map_t names_to_reads;
@@ -186,7 +185,7 @@ deque<AlignmentRecord*>* readBamFile(string filename, vector<string>& readNames,
     sort(reads->begin(), reads->end(), comp);
     cout << "Read BamFile: done" << endl;
 
-    maxPosition = (*std::max_element(std::begin(*reads), std::end(*reads),
+    max_position = (*std::max_element(std::begin(*reads), std::end(*reads),
                               [](const AlignmentRecord* lhs,const AlignmentRecord* rhs){
         return lhs->getIntervalEnd() < rhs->getIntervalEnd();
     }))->getIntervalEnd();
@@ -232,7 +231,7 @@ int main(int argc, char* argv[]) {
     if (args["--log"]) logfile = args["--log"].asString();
     int doc_haplotypes = 0;
     if (args["--doc_haplotypes"]) doc_haplotypes = stoi(args["--doc_haplotypes"].asString());
-    bool noProb0 = args["--noProb0"].asBool();
+    bool no_prob0 = args["--no_prob0"].asBool();
     //-ot CHAR --output_type=CHAR
     bool bam = args["--bam"].asBool();
     bool gff = args["--gff"].asBool();
@@ -250,7 +249,7 @@ int main(int argc, char* argv[]) {
 
     //read allel frequency distributions
     std::unordered_map<int, double> simpson_map;
-    unsigned int maxPosition2 = 0;
+    unsigned int max_position2 = 0;
     //cerr << "PARSE PRIOR";
     cerr.flush();
     if (allel_frequencies_path.size() > 0) {
@@ -266,21 +265,21 @@ int main(int argc, char* argv[]) {
             if (insertion_words.size() > 1) {
             } else {
                 simpson_map[atoi(words[0].c_str())] = std::log10(pow(atof(words[1].c_str()),2)+pow(atof(words[2].c_str()),2)+pow(atof(words[3].c_str()),2)+pow(atof(words[4].c_str()),2));
-                maxPosition2=atoi(words[0].c_str());
+                max_position2=atoi(words[0].c_str());
             }
         }
         ia.close();
     }
 
     clock_t clock_start = clock();
-    vector<string> originalReadNames;
-    unsigned int maxPosition1;
+    vector<string> original_read_names;
+    unsigned int max_position1;
     BamTools::SamHeader header;
     BamTools::RefVector references;
 
     deque<AlignmentRecord*>* reads;
     try{
-        reads = readBamFile(bamfile, originalReadNames,maxPosition1,header,references);
+        reads = readBamFile(bamfile, original_read_names,max_position1,header,references);
     }
     catch(const runtime_error& error){
         cerr << error.what() << endl;
@@ -294,8 +293,8 @@ int main(int argc, char* argv[]) {
     EdgeCalculator* edge_calculator = nullptr;
     EdgeCalculator* indel_edge_calculator = nullptr;
     unique_ptr<vector<mean_and_stddev_t> > readgroup_params(nullptr);
-    maxPosition1 = (maxPosition1>maxPosition2) ? maxPosition1 : maxPosition2;
-    edge_calculator = new NewEdgeCalculator(Q, edge_quasi_cutoff_cliques, overlap_cliques, frameshift_merge, simpson_map, edge_quasi_cutoff_single, overlap_single, edge_quasi_cutoff_mixed, maxPosition1, noProb0);
+    max_position1 = (max_position1>max_position2) ? max_position1 : max_position2;
+    edge_calculator = new NewEdgeCalculator(Q, edge_quasi_cutoff_cliques, overlap_cliques, frameshift_merge, simpson_map, edge_quasi_cutoff_single, overlap_single, edge_quasi_cutoff_mixed, max_position1, no_prob0);
 
     if (call_indels) {
         double insert_mean = -1.0;
@@ -314,7 +313,7 @@ int main(int argc, char* argv[]) {
     }
     
     LogWriter* lw = nullptr;
-    unsigned int number_of_reads = originalReadNames.size();
+    unsigned int number_of_reads = original_read_names.size();
     std::vector<unsigned int> read_clique_counter (number_of_reads);
     if (logfile != "") lw = new LogWriter(logfile,read_clique_counter);
 
@@ -324,7 +323,7 @@ int main(int argc, char* argv[]) {
     if (args["bronkerbosch"].asBool()) {
         clique_finder = new BronKerbosch(*edge_calculator, collector, lw);
     } else {
-        clique_finder = new CLEVER(*edge_calculator, collector, lw, max_cliques, originalReadNames.size(), filter_singletons);
+        clique_finder = new CLEVER(*edge_calculator, collector, lw, max_cliques, original_read_names.size(), filter_singletons);
     }
     if (indel_edge_calculator != 0) {
         clique_finder->setSecondEdgeCalculator(indel_edge_calculator);
