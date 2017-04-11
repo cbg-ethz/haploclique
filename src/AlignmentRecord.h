@@ -81,16 +81,16 @@ private:
     void mergeAlignmentRecordsMixed(const AlignmentRecord& ar);
 public:
     AlignmentRecord(){}
-    AlignmentRecord(const BamTools::BamAlignment& alignment, int id, std::vector<std::string>* readNameMap);
+    AlignmentRecord(const BamTools::BamAlignment& bam_alignment, int id, std::vector<std::string>* readNameMap);
     AlignmentRecord(std::unique_ptr<std::vector<const AlignmentRecord*>>& alignments,unsigned int clique_id);
     /** merges overlapping paired end reads while reading in bam files*/
-    void noOverlapMerge(std::string& dna, std::string& qualities, std::string& nucigar, int& c_pos, int& q_pos, int& ref_pos, int i) const;
-    void noOverlapMerge(const BamTools::BamAlignment& alignment, std::string& dna, std::string& qualities, std::string& nucigar, std::vector<char>& cigar_temp_unrolled, int& c_pos, int& q_pos, int& ref_pos) const;
-    void overlapMerge(const BamTools::BamAlignment& alignment, std::string& dna, std::string& qualities, std::string& nucigar, std::vector<char>& cigar_temp_unrolled, int& c_pos1, int& c_pos2, int& q_pos1, int& q_pos2, int& ref_pos) const;
-    void overlapMerge(const AlignmentRecord& alignment, std::string& dna, std::string& qualities, std::string& nucigar, int& c_pos1, int& c_pos2, int& q_pos1, int& q_pos2, int& ref_pos, int i, int j) const;
-    void getMergedDnaSequence(const BamTools::BamAlignment& alignment);
+    void noOverlapMerge(std::string& dna, std::string& qualities, std::string& cigar_unrolled_new, int& c_pos, int& q_pos, int& ref_pos, int i) const;
+    void noOverlapMerge(const BamTools::BamAlignment& bam_alignment, std::string& dna, std::string& qualities, std::string& cigar_unrolled_new, std::vector<char>& cigar_temp_unrolled, int& c_pos, int& q_pos, int& ref_pos) const;
+    void overlapMerge(const BamTools::BamAlignment& bam_alignment, std::string& dna, std::string& qualities, std::string& cigar_unrolled_new, std::vector<char>& cigar_temp_unrolled, int& c_pos1, int& c_pos2, int& q_pos1, int& q_pos2, int& ref_pos) const;
+    void overlapMerge(const AlignmentRecord& ar, std::string& dna, std::string& qualities, std::string& cigar_unrolled_new, int& c_pos1, int& c_pos2, int& q_pos1, int& q_pos2, int& ref_pos, int i, int j) const;
+    void getMergedDnaSequence(const BamTools::BamAlignment& bam_alignment);
     /** combines to reads belonging to a paired end to one Alignment Record. They are merged if they overlap. */
-    void pairWith(const BamTools::BamAlignment& alignment);
+    void pairWith(const BamTools::BamAlignment& bam_alignment);
 
     unsigned int getRecordNr() const;
 	int getPhredSum1() const;
@@ -109,11 +109,11 @@ public:
 	unsigned int getIntervalEnd() const;
 	/** Returns length of intersection between two alignments with respect to the intervals given 
 	  * by getIntervalStart() and getIntervalEnd(). */
-	size_t intersectionLength(const AlignmentRecord& ap) const;
+	size_t intersectionLength(const AlignmentRecord& ar) const;
 
 	/** Returns length of intersection between two alignments with respect to the intervals given 
 	  * by getInsertStart() and getInsertEnd(). */
-	size_t internalSegmentIntersectionLength(const AlignmentRecord& ap) const;
+	size_t internalSegmentIntersectionLength(const AlignmentRecord& ar) const;
 
     /** Returns a map containing the reference positions which are covered by a read.  */
     std::vector<AlignmentRecord::mapValue> coveredPositions() const;
@@ -152,7 +152,7 @@ public:
     unsigned int getReadCount() const { return readNames.size(); }
 
     friend double setProbabilities(std::deque<AlignmentRecord*>& reads);
-    friend void printReads(std::ostream& output, std::deque<AlignmentRecord*>&, int doc_haplotypes);
+    friend void printReads(std::ostream& output, std::deque<AlignmentRecord*>& reads, int doc_haplotypes);
     friend void printGFF(std::ostream& output, std::deque<AlignmentRecord*>& reads);
     friend void printBAM(std::ostream& output, std::string filename, std::deque<AlignmentRecord*>& reads, BamTools::SamHeader& header, BamTools::RefVector& references);
     void restoreAlignmentRecord(const char * filename); 
