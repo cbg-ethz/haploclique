@@ -110,7 +110,7 @@ void usage() {
     cerr << USAGE;
     exit(1);
 }
-
+/** reads mean and standard deviation of the insert size */
 bool read_mean_and_sd(const string& filename, double* mean, double* sd) {
     typedef boost::tokenizer<boost::char_separator<char> > tokenizer_t;
     boost::char_separator<char> whitespace_separator(" \t");
@@ -132,9 +132,9 @@ bool read_mean_and_sd(const string& filename, double* mean, double* sd) {
     }
     return true;
 }
-
+/** reads BamFile */
 deque<AlignmentRecord*>* readBamFile(string filename, vector<string>& readNames, unsigned int& max_position, BamTools::SamHeader& header, BamTools::RefVector& references) {
-    //readNames will contain original read names (not id which is set by addAlignment in CLEVER.cpp)
+    // readNames will contain original read names (not id which is set by addAlignment in CLEVER.cpp)
     typedef std::unordered_map<std::string, AlignmentRecord*> name_map_t;
     name_map_t names_to_reads;
     deque<AlignmentRecord*>* reads = new deque<AlignmentRecord*>;
@@ -232,12 +232,11 @@ int main(int argc, char* argv[]) {
     int doc_haplotypes = 0;
     if (args["--doc_haplotypes"]) doc_haplotypes = stoi(args["--doc_haplotypes"].asString());
     bool no_prob0 = args["--no_prob0"].asBool();
-    //-ot CHAR --output_type=CHAR
+    // -ot CHAR --output_type=CHAR
     bool bam = args["--bam"].asBool();
     bool gff = args["--gff"].asBool();
     int max_cliques = 0;
     if (args["--max_cliques"]) max_cliques = stoi(args["--max_cliques"].asString());
-
 
     // END PARAMETERS
 
@@ -247,10 +246,9 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    //read allel frequency distributions
+    // read allel frequency distributions
     std::unordered_map<int, double> simpson_map;
     unsigned int max_position2 = 0;
-    //cerr << "PARSE PRIOR";
     cerr.flush();
     if (allel_frequencies_path.size() > 0) {
         ifstream ia(allel_frequencies_path.c_str());

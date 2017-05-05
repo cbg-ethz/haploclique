@@ -38,24 +38,25 @@ private:
     unsigned int clique_counter;
     std::vector<unsigned int> read_in_cliques;
     bool filter_singletons;
-
     typedef std::pair<unsigned int,size_t> length_and_index_t;
     std::set<length_and_index_t> alignments_by_length;
+    /** reorganizes the AlignmentRecord data structure to save memory. */
     void reorganize_storage();
 public:
     CLEVER(const EdgeCalculator& edge_calculator, CliqueCollector& clique_collector, LogWriter* lw, unsigned int max_cliques, unsigned int number_of_reads, bool filter_singletons);
     virtual ~CLEVER();
-
     const AlignmentRecord & getAlignmentByIndex(size_t index) const {
         assert(index<alignment_count);
     	return *(alignments[index]);
     }
-
+    /** returns index of the element with the highest Priority. */
     unsigned int getPriorityRead();
+    /** returns the largest clique that contains the read with id equal to "readref". */
     Clique* getLargestClique(unsigned int readref);
+    /** adds qualified cliques to clique_collector and filter the rest. */
     void finish();
     void initialize();
-
+    /** constructs the adjacancy bitset for the new alignment and performs clique operations (i.e. create new clique, split a clique) based on the adjacancy bitset of the new Alignment Record. */
     void addAlignment(std::unique_ptr<AlignmentRecord>& ap, int& edgecounter);
 };
 
