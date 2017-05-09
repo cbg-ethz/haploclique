@@ -27,23 +27,22 @@
 
 class CliqueCollector {
 private:
-    std::deque<AlignmentRecord*>* superReads;
+    std::deque<AlignmentRecord*>* super_reads;
     LogWriter* lw;
     unsigned int id;
 public:
     CliqueCollector(LogWriter* lw) : lw(lw), id(0) {
-        superReads = new std::deque<AlignmentRecord*>;
+        super_reads = new std::deque<AlignmentRecord*>;
     };
 
     virtual ~CliqueCollector() {
-        assert(superReads->empty());
-        delete superReads;
+        assert(super_reads->empty());
+        delete super_reads;
     };
-
+    /** adds deactivated and qualified cliques to cliqueCollector. */
 	void add(std::unique_ptr<Clique> clique) {
         assert(clique.get() != nullptr);
 
-//        std::cerr << "Clique " << id << std::endl;
         std::unique_ptr<std::vector<const AlignmentRecord*>> alignments = clique->getAllAlignments();
 
         if (lw != nullptr) {
@@ -54,33 +53,32 @@ public:
             lw->reportClique(this->id, cll);
         }
 
-        AlignmentRecord* al;
-
+        AlignmentRecord* ar;
         if (alignments->size() > 1) {
             // id gets increased in all iterations, never set to 0 anymore
-            al = new AlignmentRecord(alignments, this->id++);
+            ar = new AlignmentRecord(alignments, this->id++);
         } else {
-            al = new AlignmentRecord(*(alignments->front()));
+            ar = new AlignmentRecord(*(alignments->front()));
             this->id++;
         }
 
         if (lw != nullptr) {
-            lw->reportReadsInCliques(this->id-1,al->getReadCount());
-            lw->reportReadsHasCliques(al->getReadNamesSet());
+            lw->reportReadsInCliques(this->id-1,ar->getReadCount());
+            lw->reportReadsHasCliques(ar->getReadNamesSet());
         }
 
-        superReads->push_back(al);
+        super_reads->push_back(ar);
     };
-
+    /** sorts the Alignment Records based on their starting position and returns them. */
     std::deque<AlignmentRecord*>* finish()
     {
-        auto retVal = superReads;
+        auto retVal = super_reads;
 
         auto comp = [](AlignmentRecord* r1, AlignmentRecord* r2) { return r1->getIntervalStart() < r2->getIntervalStart(); };
 
         sort(retVal->begin(), retVal->end(), comp);
 
-        superReads = new std::deque<AlignmentRecord*>;
+        super_reads = new std::deque<AlignmentRecord*>;
         return retVal;
     };
 };

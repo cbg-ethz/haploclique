@@ -30,23 +30,19 @@ public:
         initialized = false;
         converged = false;        
     }
+    
     virtual ~CliqueFinder() {
         
     }
 
     virtual void addAlignment(std::unique_ptr<AlignmentRecord>& ap, int& edgecounter) = 0;
-
     virtual void initialize() = 0;
-
     virtual void finish() = 0;
-
     virtual const AlignmentRecord & getAlignmentByIndex(size_t index) const = 0;
-
     /** Add a second edge calculator: edges will only be drawn when both edge calculators agree
 	 *  that the edge is present.
 	 */
     virtual void setSecondEdgeCalculator(const EdgeCalculator* ec) { this->second_edge_calculator = ec; }
-
     virtual bool hasConverged() { return converged; };
 };
 

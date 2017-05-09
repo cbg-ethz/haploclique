@@ -43,7 +43,6 @@ Clique::~Clique() {
 void Clique::init() {
 	int n = 0;
 	alignment_count = 0;
-	// for (size_t i=alignment_set->find_first(); i!=alignment_set_t::npos; i=alignment_set->find_next(i)) {
 	for (size_t i=0; i<alignment_set->size(); ++i) {
 		if (!alignment_set->test(i)) continue;
 		const AlignmentRecord& ap = parent.getAlignmentByIndex(i);
@@ -54,7 +53,6 @@ void Clique::init() {
 			leftmost_segment_start = min(leftmost_segment_start, (size_t)ap.getIntervalStart());
 			rightmost_segment_end = max(rightmost_segment_end, (size_t)ap.getIntervalEnd());
 		}
-        //std::set<int> & readNames = const_cast<std::set<int> &> (ap.getReadNamesSet());
         const std::set<int> & readNames = ap.getReadNamesSet();
         cliqueReadNames.insert( readNames.begin(),readNames.end());
 		alignment_count += 1;
@@ -63,7 +61,6 @@ void Clique::init() {
 
 void Clique::computeIntervalIntersection(unsigned int* interval_start, unsigned int* interval_end) {
 	int n = 0;
-	// for (size_t i=alignment_set->find_first(); i!=alignment_set_t::npos; i=alignment_set->find_next(i)) {
 	for (size_t i=0; i<alignment_set->size(); ++i) {
 		if (!alignment_set->test(i)) continue;
 		const AlignmentRecord& ap = parent.getAlignmentByIndex(i);
@@ -107,7 +104,6 @@ void Clique::add(size_t index) {
 	const AlignmentRecord& ap = parent.getAlignmentByIndex(index);
 	leftmost_segment_start = min(leftmost_segment_start,(size_t)ap.getIntervalStart());
 	rightmost_segment_end = max(rightmost_segment_end,(size_t)ap.getIntervalEnd());
-    //std::set<int> & readNames = const_cast<std::set<int> &> (ap.getReadNamesSet());
     const std::set<int> & readNames = ap.getReadNamesSet();
     cliqueReadNames.insert( readNames.begin(),readNames.end());
     alignment_count += 1;
@@ -136,7 +132,6 @@ ostream& operator<<(ostream& ostream, const Clique& clique) {
 	for (size_t i=clique.alignment_set->find_first(); i!=alignment_set_t::npos; i=clique.alignment_set->find_next(i)) {
 		ids.push_back(clique.parent.getAlignmentByIndex(i).getID());
 	}
-	//sort(ids.begin(), ids.end());
 	ostream << "[" << clique.leftmost_segment_start << ":" << clique.rightmost_segment_end << "]";
 	ostream << "(";
 	int n = 0;

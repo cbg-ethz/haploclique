@@ -25,12 +25,12 @@ class EdgeCalculator {
 public:
 	virtual ~EdgeCalculator() {}
 	
-	/** Decides whether an edge is to be drawn between the two given nodes. */
-	virtual bool edgeBetween(const AlignmentRecord& ap1, const AlignmentRecord& ap2) const = 0;
+	/** decides whether an edge is to be drawn between two given nodes. */
+	virtual bool edgeBetween(const AlignmentRecord& ar1, const AlignmentRecord& ar2) const = 0;
 
-	/** Compute a length range. An alignment pair with a length outside this range is
+	/** computes a length range. An alignment pair with a length outside this range is
 	 *  guaranteed not to have an edge to the given pair ap. */
-	virtual void getPartnerLengthRange(const AlignmentRecord& ap, unsigned int* min, unsigned int* max) const = 0;
+	virtual void getPartnerLengthRange(const AlignmentRecord& ar, unsigned int* min, unsigned int* max) const = 0;
 
     virtual void setOverlapCliques(double){}
 
