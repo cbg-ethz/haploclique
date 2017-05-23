@@ -35,6 +35,7 @@ private:
     AlignmentRecord **alignments;
     LogWriter* lw;
     unsigned int max_cliques;
+    unsigned int limit_clique_size;
     unsigned int clique_counter;
     std::vector<unsigned int> read_in_cliques;
     bool filter_singletons;
@@ -43,7 +44,7 @@ private:
     /** reorganizes the AlignmentRecord data structure to save memory. */
     void reorganize_storage();
 public:
-    CLEVER(const EdgeCalculator& edge_calculator, CliqueCollector& clique_collector, LogWriter* lw, unsigned int max_cliques, unsigned int number_of_reads, bool filter_singletons);
+    CLEVER(const EdgeCalculator& edge_calculator, CliqueCollector& clique_collector, LogWriter* lw, unsigned int max_cliques, unsigned int limit_clique_size, unsigned int number_of_reads, bool filter_singletons);
     virtual ~CLEVER();
     const AlignmentRecord & getAlignmentByIndex(size_t index) const {
         assert(index<alignment_count);

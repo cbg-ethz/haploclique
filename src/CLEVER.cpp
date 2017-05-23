@@ -28,7 +28,7 @@
 using namespace std;
 using namespace boost;
 
-CLEVER::CLEVER(const EdgeCalculator& edge_calculator, CliqueCollector& clique_collector, LogWriter* lw, unsigned int max_cliques, unsigned int number_of_reads, bool filter_singletons) : CliqueFinder(edge_calculator, clique_collector), lw(lw), max_cliques(max_cliques), read_in_cliques(number_of_reads), filter_singletons(filter_singletons) {
+CLEVER::CLEVER(const EdgeCalculator& edge_calculator, CliqueCollector& clique_collector, LogWriter* lw, unsigned int max_cliques, unsigned int limit_clique_size, unsigned int number_of_reads, bool filter_singletons) : CliqueFinder(edge_calculator, clique_collector), lw(lw), max_cliques(max_cliques), limit_clique_size(limit_clique_size), read_in_cliques(number_of_reads), filter_singletons(filter_singletons) {
     capacity = alignment_set_t::bits_per_block;
     alignments = nullptr;
 }
@@ -242,7 +242,7 @@ void CLEVER::addAlignment(std::unique_ptr<AlignmentRecord>& alignment_autoptr, i
 	vector<Clique*> new_cliques;
 	while (clique_it!=cliques->end()) {
 		Clique* clique = *clique_it;
-        if (clique->rightmostSegmentEnd() < alignment->getIntervalStart() && max_cliques == 0) {
+        if ((clique->rightmostSegmentEnd() < alignment->getIntervalStart() && max_cliques == 0) || ( limit_clique_size!=0 && clique->size() == limit_clique_size)){
             // TO DO !!!! should not be added to clique_collector unless criteria is fulfilled given max_cliques (Does it make things worse if cliques are still contained in cliques of clique_finder?
 			clique_it = cliques->erase(clique_it);
 			clique_collector.add(unique_ptr<Clique>(clique));
