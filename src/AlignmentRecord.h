@@ -52,8 +52,8 @@ class AlignmentRecord {
 private:
 	std::string name;
 	int phred_sum1;
-	unsigned int start1;
-	unsigned int end1;
+	int start1;
+	int end1;
 	std::vector<BamTools::CigarOp> cigar1;
 	std::vector<char> cigar1_unrolled;
 	int length_incl_deletions1;
@@ -61,8 +61,8 @@ private:
 	ShortDnaSequence sequence1;
     std::string al_sequence1;
 	int phred_sum2;
-	unsigned int start2;
-	unsigned int end2;
+	int start2;
+	int end2;
 	std::vector<BamTools::CigarOp> cigar2;
 	std::vector<char> cigar2_unrolled;
     int length_incl_deletions2;
@@ -118,11 +118,11 @@ public:
     /** Returns a map containing the reference positions which are covered by a read.  */
     std::vector<AlignmentRecord::mapValue> coveredPositions() const;
 
-	unsigned int getEnd1() const;
-	unsigned int getEnd2() const;
+	int getEnd1() const;
+	int getEnd2() const;
 	std::string getName() const;
-	unsigned int getStart1() const;
-	unsigned int getStart2() const;
+	int getStart1() const;
+	int getStart2() const;
 	const std::vector<BamTools::CigarOp>& getCigar1() const;
 	const std::vector<BamTools::CigarOp>& getCigar2() const;
     const ShortDnaSequence& getSequence1() const;

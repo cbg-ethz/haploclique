@@ -175,10 +175,10 @@ std::pair<char,char> computeEntry(const char& base1, const char& qual1, const ch
     }
     else if (qual1>=qual2) {
         result.first = base1;
-        result.second = error_disagreement[qual1][qual2]+33;
+        result.second = std::min(error_disagreement[qual1][qual2]+33,126);
     } else {
         result.first = base2;
-        result.second = error_disagreement[qual2][qual1]+33;
+        result.second = std::min(error_disagreement[qual2][qual1]+33,126);
     }
     return result;
 }
@@ -456,8 +456,8 @@ void AlignmentRecord::getMergedDnaSequence(const BamTools::BamAlignment& bam_ali
                 noOverlapMerge(dna,qualities,cigar_unrolled_new,c_pos1,q_pos1,ref_s_pos2,1);
             }
         }
-        this->start1 = std::min(this->start1,(unsigned int)bam_alignment.Position+1);
-        this->end1=std::max((unsigned int)bam_alignment.GetEndPosition(),this->end1);
+        this->start1 = std::min(this->start1,bam_alignment.Position+1);
+        this->end1=std::max(bam_alignment.GetEndPosition(),this->end1);
         this->single_end= true;
         this->cigar1 = createCigar(cigar_unrolled_new);
         this->sequence1=ShortDnaSequence(dna,qualities);
@@ -1699,11 +1699,11 @@ double AlignmentRecord::getProbability() const {
 	return probability;
 }
 
-unsigned int AlignmentRecord::getEnd1() const {
+int AlignmentRecord::getEnd1() const {
 	return end1;
 }
 
-unsigned int AlignmentRecord::getEnd2() const {
+int AlignmentRecord::getEnd2() const {
 	assert(!single_end);
 	return end2;
 }
@@ -1712,11 +1712,11 @@ std::string AlignmentRecord::getName() const {
 	return name;
 }
 
-unsigned int AlignmentRecord::getStart1() const {
+int AlignmentRecord::getStart1() const {
 	return start1;
 }
 
-unsigned int AlignmentRecord::getStart2() const {
+int AlignmentRecord::getStart2() const {
 	assert(!single_end);
 	return start2;
 }
