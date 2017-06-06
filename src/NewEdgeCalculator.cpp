@@ -338,7 +338,7 @@ bool NewEdgeCalculator::edgeBetween(const AlignmentRecord & ap1, const Alignment
         unsigned int s22= ap2.getStart2();
         //--------   ---------
         //           ---------   -------
-        if(e11 < s21 && e12 < s12){
+        if(e11 < s21 && e12 < s22){
             return false;
         } //         ---------    ---------
         //-------    ---------
