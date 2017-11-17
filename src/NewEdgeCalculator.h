@@ -50,6 +50,9 @@ private:
     void iterateRemainingCovAp(int& tc, bool pe1, const std::vector<AlignmentRecord::mapValue>& cov_ap2, bool pe2, double& prob0, const AlignmentRecord& ap1, const AlignmentRecord& ap2, const std::vector<AlignmentRecord::mapValue>& cov_ap1, unsigned int& pos1) const;
     void iterateRemainingCovAp2(const AlignmentRecord& ap2, const std::vector<AlignmentRecord::mapValue>& cov_ap2, bool pe1, const AlignmentRecord& ap1, int& tc, double& prob0, const std::vector<AlignmentRecord::mapValue>& cov_ap1, bool pe2, unsigned int& pos2) const;
 
+    void computeProbM(const char& base1, const char& qual1, const char& base2, const char& qual2, double &res ) const;
+    void computeProb0(int ref_pos, double &res ) const;
+    
 
 public:
     NewEdgeCalculator(double Q, double edge_quasi_cutoff, double overlap, bool frameshift_merge, unordered_map<int, double>& simpson_map, double edge_quasi_cutoff_single, double overlap_single, double edge_quasi_cutoff_mixed, unsigned int maxPosition, bool noProb0);
@@ -63,6 +66,16 @@ public:
     virtual void getPartnerLengthRange(const AlignmentRecord& ap, unsigned int* min, unsigned int* max) const;
 
     void setOverlapCliques(double d);
+    
+    double getOverlapCliques() const;
+    
+    bool checkGapsCigar(const AlignmentRecord& ap1, const AlignmentRecord& ap2, double& probM, double& prob0 ,int& cc, int& tc) const;
+    bool checkGapsSingle(const AlignmentRecord& ap1, const AlignmentRecord& ap2, double& probM, double& prob0, int& cc, int& tc, int i, int j) const;
+    bool checkGapsPaired(const AlignmentRecord& ap1, const AlignmentRecord& ap2, double& probM, double& prob0, int& cc, int& tc) const;
+    bool checkGapsMixed(const AlignmentRecord& ap1, const AlignmentRecord& ap2, double& probM, double& prob0,int& cc, int& tc) const;
+    void noOverlapCheckgap(const AlignmentRecord& ap, int& c_pos, int& q_pos, int& ref_pos, double& prob0, int& tc, int i) const;
+    bool overlapCheckgap(const AlignmentRecord& ap1, const AlignmentRecord& ap2, int& c_pos1, int& c_pos2, int& q_pos1, int& q_pos2, int& ref_pos, double& probM,int& cc, int i, int j) const;
+
 
 };
 #endif /* NEWEDGECALCULATOR_H_ */

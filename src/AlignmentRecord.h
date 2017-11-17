@@ -162,6 +162,12 @@ public:
     void restoreAlignmentRecord(const char * filename); 
     /** saves an AlignmentRecord to be used for unit testing. */
     void saveAlignmentRecord(const char * filename);
+    void saveCompleteAlignmentRecord(const char * filename) const;
+    void saveCompleteBamAlignment(const char * filename, const BamTools::BamAlignment& alignment);
+    void restoreCompleteAlignmentRecord(const char * filename);
+    bool operator == (const AlignmentRecord& ar) const;
+    void setCovmap(const std::vector<mapValue>& tmp_cov_map);
+
 };
 
 #endif /* ALIGNMENTRECORD_H_ */
