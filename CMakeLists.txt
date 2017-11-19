@@ -16,7 +16,7 @@
 # along with HaploClique. If not, see <http://www.gnu.org/licenses/>
 
 cmake_policy(SET CMP0048 NEW)
-project (HAPLOCLIQUE VERSION 1.2.0 LANGUAGES CXX C)
+project (HAPLOCLIQUE VERSION 1.3.0 LANGUAGES CXX C)
 cmake_minimum_required (VERSION 3.2)
 
 if(NOT CMAKE_BUILD_TYPE)
