@@ -19,6 +19,7 @@
 #ifndef ALIGNMENTRECORD_H_
 #define ALIGNMENTRECORD_H_
 
+#include <memory>
 #include <string>
 #include <deque>
 #include <utility>

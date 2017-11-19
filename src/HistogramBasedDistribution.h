@@ -19,6 +19,7 @@
 #ifndef HISTOGRAMBASEDDISTRIBUTION_H_
 #define HISTOGRAMBASEDDISTRIBUTION_H_
 
+#include <memory>
 #include <vector>
 #include <boost/math/distributions/normal.hpp>
 
