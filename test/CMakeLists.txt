@@ -15,9 +15,9 @@ target_link_libraries(unit
     ${Boost_LIBRARIES}
 )
 if (HC_STATIC)
-    target_link_libraries(unit BamTools-static)
+    target_link_libraries(unit BamTools-static docopt_s)
 else()
-    target_link_libraries(unit BamTools)
+    target_link_libraries(unit BamTools docopt_s)
 endif()
 
 set_target_properties(unit PROPERTIES COMPILE_FLAGS ${HC_COMPILE_FLAGS})

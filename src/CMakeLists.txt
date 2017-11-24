@@ -27,20 +27,28 @@ target_include_directories(hc PUBLIC
 	${HC_SRCDIR}
 	${Boost_INCLUDE_DIR}
 	${HC_EXTERNALDIR}/BamTools/src
+	${HC_EXTERNALDIR}/docopt.cpp
+	${PROJECT_BINARY_DIR}
 )
 target_link_libraries(hc
 	${Boost_LIBRARIES}
 )
 if (HC_STATIC)
-	target_link_libraries(hc BamTools-static)
+	target_link_libraries(hc BamTools-static docopt_s)
 else()
-	target_link_libraries(hc BamTools)
+	target_link_libraries(hc BamTools docopt_s)
 endif()
 
 set_target_properties(hc PROPERTIES COMPILE_FLAGS ${HC_COMPILE_FLAGS})
 if (HC_LINK_FLAGS)
 	set_target_properties(hc PROPERTIES LINK_FLAGS ${HC_LINK_FLAGS})
 endif()
+
+# Version
+configure_file (
+	"${HC_SRCDIR}/version.h.in"
+	"${PROJECT_BINARY_DIR}/version.h"
+)
 
 # Haploclique executable
 add_executable (haploclique	haploclique.cpp)

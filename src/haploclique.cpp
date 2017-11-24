@@ -28,7 +28,7 @@
 #include <algorithm>
 #include <deque>
 
-#include "docopt/docopt.h"
+#include <docopt.h>
 
 #include <boost/tokenizer.hpp>
 #include <boost/lexical_cast.hpp>
@@ -47,6 +47,8 @@
 #include "AnyDistributionEdgeCalculator.h"
 #include "GaussianEdgeCalculator.h"
 #include "LogWriter.h"
+
+#include "version.h"
 
 using namespace std;
 using namespace boost;
@@ -105,6 +107,9 @@ Options:
   -mc NUM --max_cliques=NUM                Set a threshold for the maximal number of cliques which
                                            should be considered in the next iteration.
   -lc NUM --limit_clique_size=NUM          Set a threshold to limit the size of cliques.
+
+  -h --help                                Display this help text
+  -v --version                             Display version
 
 )";
 
@@ -200,7 +205,7 @@ int main(int argc, char* argv[]) {
     map<std::string, docopt::value> args
         = docopt::docopt(USAGE,
                          { argv + 1, argv + argc },
-                         false);
+                         true, HAPLOCLIQUE_VERSION);
 
     for(auto elem : args)
     {

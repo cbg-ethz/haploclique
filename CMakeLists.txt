@@ -16,7 +16,7 @@
 # along with HaploClique. If not, see <http://www.gnu.org/licenses/>
 
 cmake_policy(SET CMP0048 NEW)
-project (HAPLOCLIQUE VERSION 1.3.0 LANGUAGES CXX C)
+project (HAPLOCLIQUE VERSION 1.3.1 LANGUAGES CXX C)
 cmake_minimum_required (VERSION 3.2)
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -38,5 +38,6 @@ include(hc-compilerflags)
 include(hc-dependencies)
 
 add_subdirectory(${HC_EXTERNALDIR}/BamTools external/bamtools)
+add_subdirectory(${HC_EXTERNALDIR}/docopt.cpp external/docopt.cpp)
 add_subdirectory(src)
 add_subdirectory(test)
