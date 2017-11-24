@@ -38,5 +38,6 @@ include(hc-compilerflags)
 include(hc-dependencies)
 
 add_subdirectory(${HC_EXTERNALDIR}/BamTools external/bamtools)
+add_subdirectory(${HC_EXTERNALDIR}/docopt.cpp external/docopt.cpp)
 add_subdirectory(src)
 add_subdirectory(test)
