@@ -22,6 +22,7 @@ Armin Töpfer, Tobias Marschall, Rowena A. Bull, Fabio Luciani, Alexander Schön
  - Maryam Zaheri
  - Bernhard Lang
  - Marcel Meyerheim
+ - The HaploClique implementation was derived from [CLEVER](https://bitbucket.org/tobiasmarschall/clever-toolkit)
 
 ## Contact
 Please use the issue tracker
